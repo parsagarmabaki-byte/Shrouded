@@ -1,3 +1,4 @@
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL_net.h>
 #include <stdio.h>
 #include <string.h>
