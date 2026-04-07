@@ -69,6 +69,7 @@ int send_join(UDPsocket socket, IPaddress server_addr)
     return 1;
 }
 
+
 int send_client_input(UDPsocket socket, IPaddress server_addr, clientInput *input)
 {
     UDPpacket *packet = SDLNet_AllocPacket(512);
@@ -119,5 +120,30 @@ int send_game_state(UDPsocket socket, UDPpacket *packet, IPaddress addr, gameSta
         printf("SDLNet_UDP_Send: %s\n", SDLNet_GetError());
         return 0;
     }
+    return 1;
+}
+int send_leave(UDPsocket socket, IPaddress server_addr)
+{
+    UDPpacket *packet = SDLNet_AllocPacket(512);
+    if (!packet)
+    {
+        printf("SDLNet_AllockPacket leave error: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    leaveMessage leave = {0};
+    leave.type = MSG_LEAVE;
+
+    memcpy(packet->data, &leave, sizeof(leaveMessage));
+    packet->len = sizeof(leaveMessage);
+    packet->address = server_addr;
+
+    if (!SDLNet_UDP_Send(socket, -1, packet))
+    {
+        printf("SDLNet_UDP_Send leave error: %s\n", SDLNet_GetError());
+        SDLNet_FreePacket(packet);
+        return 0;
+    }
+
+    SDLNet_FreePacket(packet);
     return 1;
 }

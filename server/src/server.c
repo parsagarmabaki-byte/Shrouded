@@ -34,23 +34,6 @@ UDPpacket *createPacket(int size)
     return packet;
 }
 
-int receiveJoinMessage(UDPsocket server_socket, UDPpacket *receive_packet, joinMessage *join)
-{
-    if (!SDLNet_UDP_Recv(server_socket, receive_packet))
-    {
-        return 0;
-    }
-
-    if (receive_packet->len < (int)sizeof(joinMessage))
-    {
-        printf("Received packet too small for joinMessage\n");
-        return 0;
-    }
-
-    memcpy(join, receive_packet->data, sizeof(joinMessage));
-    return 1;
-}
-
 void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket *send_packet)
 {
     if (receive_packet)
@@ -71,18 +54,6 @@ void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket
     SDLNet_Quit();
 }
 
-int countActivePlayers(gameState *state)
-{
-    int count = 0;
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        if (state->players[i].active)
-        {
-            count++;
-        }
-    }
-    return count;
-}
 int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -127,6 +98,20 @@ void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, I
     }
     
 }
+int removeFromLobby(gameState *state, IPaddress *clientAddress, int *clientUsed, IPaddress addr)
+{
+    int player = findClientByAddress(clientAddress, clientUsed, addr);
+
+    if (player >= 0)
+    {
+        clientUsed[player] = 0;
+        state->players[player].active = 0;
+        state->players[player].player_id = -1;
+        return player;
+    }
+    
+    return -1;
+}
 int main(void)
 {
     UDPsocket server_socket = NULL;
@@ -159,40 +144,37 @@ int main(void)
     }
 
     printf("Server listening on port %d...\n", SERVER_PORT);
-    printf("Waiting for clients... %d/%d\n", countActivePlayers(&state), MAX_PLAYERS);
 
     while (1)
     {
-        joinMessage join;
-
-        if (receiveJoinMessage(server_socket, receive_packet, &join))
+        if (SDLNet_UDP_Recv(server_socket, receive_packet))
         {
-            if (join.type == MSG_JOIN)
+            MessageType type;
+            memcpy(&type, receive_packet->data, sizeof(MessageType));
+            
+            if (type == MSG_JOIN)
             {
                 int existingPlayer = findClientByAddress(clientAddresses,clientUsed, receive_packet->address);
 
-                if (existingPlayer >= 0)
-                {
-                    printf("Client already connected as player %d\n", existingPlayer);
-                }
-                else 
+                if (existingPlayer < 0)
                 {
                     int newPlayer = addToLobby(&state, clientAddresses, clientUsed, receive_packet->address);
-
                     if (newPlayer >= 0)
                     {
-                        printf("Client joined as player %d\n", newPlayer);
-                        printf("Players connected: %d/%d\n", countActivePlayers(&state), MAX_PLAYERS);
-
                         broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
-                    }
-                    else
-                    {
-                        printf("Lobby full.\n");
                     }
                 }
             }
-         }
+            else if (type == MSG_LEAVE)
+            {
+                int removedPlayer = removeFromLobby(&state, clientAddresses, clientUsed, receive_packet->address);
+
+                if (removedPlayer >= 0)
+                {
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
+        }
     }
     cleanupServer(server_socket, receive_packet, send_packet);
     return 0;

@@ -299,6 +299,7 @@ int main()
         {
             if (event.type == SDL_QUIT)
             {
+                send_leave(client.socket, client.serverAddr);
                 running = 0;
             }
         }
