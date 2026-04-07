@@ -62,8 +62,7 @@ pacman -S mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image ming
 ## Build & Run
 
 ```bash
-make          # build
-make run      # build and run
+make all      # build all files
 make clean    # remove build files
 ```
 
@@ -71,7 +70,9 @@ make clean    # remove build files
 
 **Step 1 — Host starts the server:**
 ```bash
-./server
+
+./build/server # Start the server
+./build/client # Start one or more clients
 ```
 
 **Step 2 — All players start the client:**
