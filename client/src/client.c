@@ -10,6 +10,7 @@ typedef struct
     UDPsocket socket;
     IPaddress serverAddr;
     UDPpacket *sendpacket;
+    UDPpacket *recievepacket;
 } Client;
 
 typedef struct
@@ -59,6 +60,16 @@ int allocateSendPacket(Client *client, int size)
     }
     return 1;
 }
+int allocateReceivePacket(Client *client, int size)
+{
+    client->recievepacket = SDLNet_AllocPacket(size);
+    if (!client->recievepacket)
+    {
+        printf("Failed to allocate receive packet: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    return 1;
+}
 int sendMessage(Client *client)
 {
     joinMessage join;
@@ -85,6 +96,11 @@ void cleanClient(Client *client)
     {
         SDLNet_FreePacket(client->sendpacket);
         client->sendpacket = NULL;
+    }
+    if (client->recievepacket)
+    {
+        SDLNet_FreePacket(client->recievepacket);
+        client->recievepacket = NULL;
     }
     if (client->socket)
     {
@@ -179,16 +195,33 @@ int initiate(waitForPlayers *pWait)
     return 1;
 
 }
+int countActivePlayers(gameState *state)
+{
+    int count = 0;
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (state->players[i].active)
+        {
+            count++;
+        }
+    }
+    return count;
+}
 
-void renderWaitingScreen(waitForPlayers *pWait)
+void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
 {
     SDL_Color white = {255, 255, 255, 255};
 
     SDL_RenderCopy(pWait->renderer, pWait->background, NULL, NULL);
 
+    int connectedPlayers = countActivePlayers(state);
+
+    char text[64];
+    snprintf(text,sizeof(text), "Players connected: %d/%d", connectedPlayers, MAX_PLAYERS);
+
     SDL_Surface *surface = TTF_RenderText_Blended(
         pWait->Font,
-        "Waiting for players...",
+        text,
         white);
     if (!surface)
     {
@@ -218,9 +251,16 @@ void renderWaitingScreen(waitForPlayers *pWait)
     SDL_DestroyTexture(texture);
 
 }
+
+
 int main()
 {
     Client client = {0};
+    waitForPlayers lobby = {0};
+    SDL_Event event;
+    gameState state = {0};
+    int running = 1;
+
 
     if (!initNetworking())
     {
@@ -238,14 +278,16 @@ int main()
     {
         return 1;
     }
+    if (!allocateReceivePacket(&client, 512))
+    {
+        return 1;
+    }
     if (!sendMessage(&client))
     {
         return 1;
     }
 
-    waitForPlayers lobby = {0};
-    SDL_Event event;
-    int running = 1;
+    
 
     if (!initiate(&lobby))
     {
@@ -260,7 +302,8 @@ int main()
                 running = 0;
             }
         }
-        renderWaitingScreen(&lobby);
+        receive_game_state(client.socket, client.recievepacket, &state);
+        renderWaitingScreen(&lobby, &state);
     }
     TTF_CloseFont(lobby.Font);
     SDL_DestroyTexture(lobby.background);

@@ -51,12 +51,11 @@ int send_join(UDPsocket socket, IPaddress server_addr)
         printf("SDLNet_AllockPacket error: %s\n", SDLNet_GetError());
         return 0;
     }
-    clientInput input = {0};
-    input.type = MSG_JOIN;
-    input.player_id = -1;
+    joinMessage join = {0};
+    join.type = MSG_JOIN;
 
-    memcpy(packet->data, &input, sizeof(clientInput));
-    packet->len = sizeof(clientInput);
+    memcpy(packet->data, &join, sizeof(joinMessage));
+    packet->len = sizeof(joinMessage);
     packet->address = server_addr;
 
     if (!SDLNet_UDP_Send(socket, -1, packet))
@@ -93,12 +92,32 @@ int send_client_input(UDPsocket socket, IPaddress server_addr, clientInput *inpu
     return 1;
 }
 
-int recieve_client_input(UDPsocket socket, UDPpacket *packet, clientInput *input)
+int receive_client_input(UDPsocket socket, UDPpacket *packet, clientInput *input)
 {
     if (SDLNet_UDP_Recv(socket, packet))
     {
         memcpy(input, packet->data, sizeof(clientInput));
-        return 1;
+        return 0;
     }
-    return 0;
+    return 1;
+}
+
+int receive_game_state(UDPsocket socket, UDPpacket *packet, gameState *state){
+    if (SDLNet_UDP_Recv(socket, packet)){
+        memcpy(state, packet->data, sizeof(gameState));
+        return 0;
+    }
+    return 1;
+}
+
+int send_game_state(UDPsocket socket, UDPpacket *packet, IPaddress addr, gameState *state){
+    memcpy(packet->data, state, sizeof(gameState));
+    packet->len = sizeof(gameState);
+    packet->address = addr;
+
+    if (!SDLNet_UDP_Send(socket, -1, packet)){
+        printf("SDLNet_UDP_Send: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    return 1;
 }

@@ -20,9 +20,11 @@ OBJDIR = build
 
 CLIENT_SRC = client/src/client.c
 SERVER_SRC = server/src/server.c
+NETWORK_SRC = lib/src/network.c
 
 CLIENT_OBJ = $(OBJDIR)/client.o
 SERVER_OBJ = $(OBJDIR)/server.o
+NETWORK_OBJ = $(OBJDIR)/network.o
 
 CFLAGS  = -g -c -Ilib/include
 LDFLAGS = -lSDL2main -lSDL2 -lSDL2_image -lSDL2_net -lm -lSDL2_ttf -lm
@@ -58,11 +60,14 @@ $(CLIENT_OBJ): $(CLIENT_SRC) | $(OBJDIR)
 $(SERVER_OBJ): $(SERVER_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) $(SERVER_SRC) -o $(SERVER_OBJ)
 
-$(CLIENT_OUT): $(CLIENT_OBJ)
-	$(CC) $(CLIENT_OBJ) -o $(CLIENT_OUT) $(LDFLAGS)
+$(NETWORK_OBJ): $(NETWORK_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) $(NETWORK_SRC) -o $(NETWORK_OBJ)
 
-$(SERVER_OUT): $(SERVER_OBJ)
-	$(CC) $(SERVER_OBJ) -o $(SERVER_OUT) $(LDFLAGS)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(NETWORK_OBJ)
+	$(CC) $(CLIENT_OBJ) $(NETWORK_OBJ) -o $(CLIENT_OUT) $(LDFLAGS)
+
+$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ)
+	$(CC) $(SERVER_OBJ) $(NETWORK_OBJ) -o $(SERVER_OUT) $(LDFLAGS)
 
 run: $(CLIENT_OUT)
 	./$(CLIENT_OUT)
