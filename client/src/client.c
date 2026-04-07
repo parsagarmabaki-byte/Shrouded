@@ -135,7 +135,8 @@ int initiate(waitForPlayers *pWait)
         "Shrouded Lobby",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        800, 600, 0);
+        800, 600,
+        SDL_WINDOW_FULLSCREEN_DESKTOP);
 
     if (!pWait->window)
     {
@@ -157,7 +158,7 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
-    pWait->Font = TTF_OpenFont("assets/fonts/Roboto-Regular.ttf", 32);
+    pWait->Font = TTF_OpenFont("assets/fonts/BebasNeue-Regular.ttf", 60);
     if (!pWait->Font)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
@@ -218,7 +219,7 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
     int connectedPlayers = countActivePlayers(state);
 
     char text[64];
-    snprintf(text,sizeof(text), "Players connected: %d/%d", connectedPlayers, MAX_PLAYERS);
+    snprintf(text,sizeof(text), "%d/%d CONNECTED", connectedPlayers, MAX_PLAYERS);
 
     SDL_Surface *surface = TTF_RenderText_Blended(
         pWait->Font,
@@ -237,12 +238,16 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
         SDL_FreeSurface(surface);
         return;
     }
-
+    
     SDL_Rect dst;
     dst.w = surface->w;
     dst.h = surface->h;
-    dst.x = (800 - dst.w) / 2;
-    dst.y = (600 - dst.h) / 2;
+
+    int windowWidth, windowHeight;
+    SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
+
+    dst.x = (windowWidth - dst.w) / 2;
+    dst.y = windowHeight / 6;
 
     SDL_FreeSurface(surface);
 
