@@ -70,17 +70,20 @@ make clean    # remove build files
 
 **Step 1 — Host starts the server:**
 ```bash
-
 ./build/server # Start the server
-./build/client # Start one or more clients
 ```
 
 **Step 2 — All players start the client:**
 ```bash
-./client 127.0.0.1      # if you are the host
-./client 192.168.1.5    # other players (use host's local IP)
+./build/client # Start one or more clients
 ```
+**Step 3 — Multiplayer (LAN)**
+```bash
 
+./build/client 127.0.0.1      # if you are the host
+./build/client 192.168.1.5    # other players (host's local IP)
+
+```
 Find the host's IP:
 ```bash
 ifconfig   # Mac/Linux
