@@ -7,7 +7,7 @@
 
 #define PACKET_SIZE 512
 
-int init_server_network(UDPsocket *server_socket)
+int initServerNetwork(UDPsocket *server_socket)
 {
     if (SDLNet_Init() < 0)
     {
@@ -25,7 +25,7 @@ int init_server_network(UDPsocket *server_socket)
 
     return 1;
 }
-UDPpacket *create_packet(int size)
+UDPpacket *createPacket(int size)
 {
     UDPpacket *packet = SDLNet_AllocPacket(size);
     if (!packet)
@@ -35,56 +35,47 @@ UDPpacket *create_packet(int size)
     return packet;
 }
 
-int receive_join_message(UDPsocket server_socket, UDPpacket *receive_packet, joinMessage *join)
-{
-    if (!SDLNet_UDP_Recv(server_socket, receive_packet))
-    {
-        return 0;
-    }
-
-    if (receive_packet->len < (int)sizeof(joinMessage))
-    {
-        printf("Received packet too small for joinMessage\n");
-        return 0;
-    }
-
-    memcpy(join, receive_packet->data, sizeof(joinMessage));
-    return 1;
-}
-
-void cleanup_server(UDPsocket server_socket, UDPpacket *receive_packet)
+void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket *send_packet)
 {
     if (receive_packet)
     {
         SDLNet_FreePacket(receive_packet);
     }
 
+    if (send_packet)
+    {
+        SDLNet_FreePacket(send_packet);
+    }
     if (server_socket)
     {
         SDLNet_UDP_Close(server_socket);
     }
 
+
     SDLNet_Quit();
 }
 
-int count_active_players(gameState *state)
+int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
-    int count = 0;
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (state->players[i].active)
+        if (clientUsed[i] && clientAddresses[i].host == addr.host && clientAddresses[i].port == addr.port)
         {
-            count++;
+            return i;
         }
     }
-    return count;
+    return -1;
+    
 }
-int add_to_lobby(gameState *state)
+int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (!state->players[i].active)
+        if (!clientUsed[i])
         {
+            clientUsed[i] = 1;
+            clientAddresses[i] = addr;
+
             state->players[i].active = 1;
             state->players[i].player_id = i;
             return i;
@@ -92,51 +83,100 @@ int add_to_lobby(gameState *state)
     }
     return -1;
 }
+void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (clientUsed[i])
+        {
+            state->local_player_id = i;
+
+            if (!send_game_state(socket,packet, clientAddresses[i], state))
+            {
+                printf("Failed to send game state to player %d\n", i);
+            }
+        }
+    }
+    
+}
+int removeFromLobby(gameState *state, IPaddress *clientAddress, int *clientUsed, IPaddress addr)
+{
+    int player = findClientByAddress(clientAddress, clientUsed, addr);
+
+    if (player >= 0)
+    {
+        clientUsed[player] = 0;
+        state->players[player].active = 0;
+        state->players[player].player_id = -1;
+        return player;
+    }
+    
+    return -1;
+}
 int main(void)
 {
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
+    UDPpacket *send_packet = NULL;
 
     gameState state = {0};
     state.type = MSG_GAME_STATE;
     state.phase = GAME_LOBBY;
 
-    if (!init_server_network(&server_socket))
+    IPaddress clientAddresses[MAX_PLAYERS];
+    int clientUsed[MAX_PLAYERS] = {0};
+
+    if (!initServerNetwork(&server_socket))
     {
         return 1;
     }
 
-    receive_packet = create_packet(PACKET_SIZE);
+    receive_packet = createPacket(PACKET_SIZE);
     if (!receive_packet)
     {
-        cleanup_server(server_socket, NULL);
+        cleanupServer(server_socket, NULL, NULL);
+        return 1;
+    }
+    send_packet = createPacket(PACKET_SIZE);
+    if (!send_packet)
+    {
+        cleanupServer(server_socket, receive_packet, NULL);
         return 1;
     }
 
     printf("Server listening on port %d...\n", SERVER_PORT);
-    printf("Waiting for clients... %d/%d\n", count_active_players(&state), MAX_PLAYERS);
 
     while (1)
     {
-        joinMessage join;
-
-        if (receive_join_message(server_socket, receive_packet, &join))
+        if (SDLNet_UDP_Recv(server_socket, receive_packet))
         {
-            if (join.type == MSG_JOIN)
+            MessageType type;
+            memcpy(&type, receive_packet->data, sizeof(MessageType));
+            
+            if (type == MSG_JOIN)
             {
-                int player_id = add_to_lobby(&state);
-                if (player_id >= 0)
+                int existingPlayer = findClientByAddress(clientAddresses,clientUsed, receive_packet->address);
+
+                if (existingPlayer < 0)
                 {
-                    printf("Client joined as player %d\n", player_id);
-                    printf("Waiting for clients... %d/%d\n", count_active_players(&state), MAX_PLAYERS);
+                    int newPlayer = addToLobby(&state, clientAddresses, clientUsed, receive_packet->address);
+                    if (newPlayer >= 0)
+                    {
+                        broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                    }
                 }
-                else
+            }
+            else if (type == MSG_LEAVE)
+            {
+                int removedPlayer = removeFromLobby(&state, clientAddresses, clientUsed, receive_packet->address);
+
+                if (removedPlayer >= 0)
                 {
-                    printf("Lobby full.\n");
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
         }
     }
-    cleanup_server(server_socket, receive_packet);
+    cleanupServer(server_socket, receive_packet, send_packet);
     return 0;
 }

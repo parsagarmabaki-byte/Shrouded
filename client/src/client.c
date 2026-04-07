@@ -5,12 +5,13 @@
 #include <string.h>
 #include <stdio.h>
 #include "network.h"
-
+#include <SDL2/SDL_image.h>
 typedef struct
 {
     UDPsocket socket;
     IPaddress serverAddr;
     UDPpacket *sendpacket;
+    UDPpacket *recievepacket;
 } Client;
 
 typedef struct
@@ -18,6 +19,7 @@ typedef struct
     SDL_Window *window;
     SDL_Renderer *renderer;
     TTF_Font *Font;
+    SDL_Texture *background;
 } waitForPlayers;
 
 int initNetworking()
@@ -59,6 +61,16 @@ int allocateSendPacket(Client *client, int size)
     }
     return 1;
 }
+int allocateReceivePacket(Client *client, int size)
+{
+    client->recievepacket = SDLNet_AllocPacket(size);
+    if (!client->recievepacket)
+    {
+        printf("Failed to allocate receive packet: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    return 1;
+}
 int sendMessage(Client *client)
 {
     joinMessage join;
@@ -86,12 +98,18 @@ void cleanClient(Client *client)
         SDLNet_FreePacket(client->sendpacket);
         client->sendpacket = NULL;
     }
+    if (client->recievepacket)
+    {
+        SDLNet_FreePacket(client->recievepacket);
+        client->recievepacket = NULL;
+    }
     if (client->socket)
     {
         SDLNet_UDP_Close(client->socket);
         client->socket = NULL;
     }
     SDLNet_Quit();
+    
 }
 
 int initiate(waitForPlayers *pWait)
@@ -108,6 +126,11 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
+    if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)){
+        printf("IMG_Init: %s\n", IMG_GetError());
+        return 0;
+    }
+
     pWait->window = SDL_CreateWindow(
         "Shrouded Lobby",
         SDL_WINDOWPOS_CENTERED,
@@ -117,6 +140,7 @@ int initiate(waitForPlayers *pWait)
     if (!pWait->window)
     {
         printf("SDL_CreateWindow: %s\n", SDL_GetError());
+        IMG_Quit();
         TTF_Quit();
         SDL_Quit();
         return 0;
@@ -127,6 +151,7 @@ int initiate(waitForPlayers *pWait)
     {
         printf("SDL_CreateRenderer: %s\n", SDL_GetError());
         SDL_DestroyWindow(pWait->window);
+        IMG_Quit();
         TTF_Quit();
         SDL_Quit();
         return 0;
@@ -138,20 +163,66 @@ int initiate(waitForPlayers *pWait)
         printf("TTF_OpenFont: %s\n", TTF_GetError());
         SDL_DestroyRenderer(pWait->renderer);
         SDL_DestroyWindow(pWait->window);
+        IMG_Quit();
+        TTF_Quit();
+        SDL_Quit();
+        return 0;
+    }
+
+    SDL_Surface *bgSurface = IMG_Load("assets/lobbyscreen/waitingforplayers.png");
+    if (!bgSurface) {
+        printf("IMG_Load: %s\n", IMG_GetError());
+        TTF_CloseFont(pWait->Font);
+        SDL_DestroyRenderer(pWait->renderer);
+        SDL_DestroyWindow(pWait->window);
+        IMG_Quit();
+        TTF_Quit();
+        SDL_Quit();
+        return 0;
+    }
+    pWait->background = SDL_CreateTextureFromSurface(pWait->renderer, bgSurface);
+    SDL_FreeSurface(bgSurface);
+
+    if (!pWait->background){
+        printf("SDL_CreateTextureFromSurface: %s\n", SDL_GetError());
+        TTF_CloseFont(pWait->Font);
+        SDL_DestroyRenderer(pWait->renderer);
+        SDL_DestroyWindow(pWait->window);
+        IMG_Quit();
         TTF_Quit();
         SDL_Quit();
         return 0;
     }
     return 1;
+
+}
+int countActivePlayers(gameState *state)
+{
+    int count = 0;
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (state->players[i].active)
+        {
+            count++;
+        }
+    }
+    return count;
 }
 
-void renderWaitingScreen(waitForPlayers *pWait)
+void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
 {
     SDL_Color white = {255, 255, 255, 255};
 
+    SDL_RenderCopy(pWait->renderer, pWait->background, NULL, NULL);
+
+    int connectedPlayers = countActivePlayers(state);
+
+    char text[64];
+    snprintf(text,sizeof(text), "Players connected: %d/%d", connectedPlayers, MAX_PLAYERS);
+
     SDL_Surface *surface = TTF_RenderText_Blended(
         pWait->Font,
-        "Waiting for players...",
+        text,
         white);
     if (!surface)
     {
@@ -175,17 +246,22 @@ void renderWaitingScreen(waitForPlayers *pWait)
 
     SDL_FreeSurface(surface);
 
-    SDL_SetRenderDrawColor(pWait->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(pWait->renderer);
-
     SDL_RenderCopy(pWait->renderer, texture, NULL, &dst);
     SDL_RenderPresent(pWait->renderer);
 
     SDL_DestroyTexture(texture);
+
 }
+
+
 int main()
 {
     Client client = {0};
+    waitForPlayers lobby = {0};
+    SDL_Event event;
+    gameState state = {0};
+    int running = 1;
+
 
     if (!initNetworking())
     {
@@ -203,14 +279,16 @@ int main()
     {
         return 1;
     }
+    if (!allocateReceivePacket(&client, 512))
+    {
+        return 1;
+    }
     if (!sendMessage(&client))
     {
         return 1;
     }
 
-    waitForPlayers lobby = {0};
-    SDL_Event event;
-    int running = 1;
+    
 
     if (!initiate(&lobby))
     {
@@ -222,12 +300,15 @@ int main()
         {
             if (event.type == SDL_QUIT)
             {
+                send_leave(client.socket, client.serverAddr);
                 running = 0;
             }
         }
-        renderWaitingScreen(&lobby);
+        receive_game_state(client.socket, client.recievepacket, &state);
+        renderWaitingScreen(&lobby, &state);
     }
     TTF_CloseFont(lobby.Font);
+    SDL_DestroyTexture(lobby.background);
     SDL_DestroyRenderer(lobby.renderer);
     SDL_DestroyWindow(lobby.window);
     TTF_Quit();
