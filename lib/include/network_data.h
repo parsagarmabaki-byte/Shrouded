@@ -13,7 +13,6 @@ typedef enum{
     MSG_CLIENT_INPUT,
     MSG_GAME_STATE,
     MSG_READY_STATUS,
-    MSG_LOBBY_SELECTION
 } MessageType;
 
 typedef struct { // Info som användaren klickar in
