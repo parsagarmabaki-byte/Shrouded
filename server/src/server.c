@@ -89,7 +89,7 @@ void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, I
         if (clientUsed[i])
         {
             state->local_player_id = i;
-            
+
             if (!send_game_state(socket,packet, clientAddresses[i], state))
             {
                 printf("Failed to send game state to player %d\n", i);
@@ -171,6 +171,15 @@ int main(void)
 
                 if (removedPlayer >= 0)
                 {
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
+            else if (type == MSG_START_GAME)
+            {
+                if (state.phase == GAME_LOBBY)
+                {
+                    state.phase = GAME_RUNNING;
+                    printf("Game state is now GAME_RUNNING\n");
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }

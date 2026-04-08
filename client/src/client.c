@@ -72,7 +72,7 @@ int allocateReceivePacket(Client *client, int size)
     }
     return 1;
 }
-int sendMessage(Client *client)
+int sendJoinMessage(Client *client)
 {
     joinMessage join;
     join.type = MSG_JOIN;
@@ -89,6 +89,24 @@ int sendMessage(Client *client)
     else
     {
         printf("Join packet sent to server\n");
+        return 1;
+    }
+}
+int sendStartMessage(Client *client)
+{
+    startGameMessage start;
+    start.type = MSG_START_GAME;
+
+    memcpy(client->sendpacket->data, &start, sizeof(startGameMessage));
+    client->sendpacket->len = sizeof(startGameMessage);
+    client->sendpacket->address = client->serverAddr;
+    if (SDLNet_UDP_Send(client->socket, -1, client->sendpacket) == 0)
+    {
+        printf("Failed to send start packet: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    else
+    {
         return 1;
     }
 }
@@ -253,20 +271,42 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
     SDL_FreeSurface(surface);
 
     SDL_RenderCopy(pWait->renderer, texture, NULL, &dst);
-    SDL_RenderPresent(pWait->renderer);
 
     SDL_DestroyTexture(texture);
 
+    if (connectedPlayers >= 1)
+    {
+        SDL_Surface *startSurface = TTF_RenderText_Blended(
+        pWait->Font,
+        "PRESS SPACE TO START",
+        white
+    );
+        if (startSurface)
+        {
+            SDL_Texture *startTexture = SDL_CreateTextureFromSurface(pWait->renderer, startSurface);
+            if (startTexture)
+            {
+                SDL_Rect startRect;
+                startRect.w = startSurface->w;
+                startRect.h = startSurface->h;
+                startRect.x = (windowWidth - startRect.w) / 2;
+                startRect.y = windowHeight - 180;
+
+                SDL_RenderCopy(pWait->renderer, startTexture, NULL, &startRect);
+                SDL_DestroyTexture(startTexture);
+            }
+            SDL_FreeSurface(startSurface);
+        }
+    }
+    SDL_RenderPresent(pWait->renderer);
+
 }
-
-
 int main()
 {
     Client client = {0};
     waitForPlayers lobby = {0};
     SDL_Event event;
     gameState state = {0};
-    waitForPlayers *pWait;
     bool running = true;
 
 
@@ -290,7 +330,7 @@ int main()
     {
         return 1;
     }
-    if (!sendMessage(&client))
+    if (!sendJoinMessage(&client))
     {
         return 1;
     }
@@ -311,12 +351,30 @@ int main()
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 {
+                    send_leave(client.socket, client.serverAddr);
                     running = false;
                 }
+                else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+                {
+                    if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
+                    {
+                        sendStartMessage(&client);
+                    }
+                }
+                
             }
+            
         }
         receive_game_state(client.socket, client.recievepacket, &state);
-        renderWaitingScreen(&lobby, &state);
+        if (state.phase == GAME_RUNNING)
+        {
+            printf("Game is starting...\n");
+            running = false;
+        } else
+        {
+            renderWaitingScreen(&lobby, &state);
+        }
+
     }
     TTF_CloseFont(lobby.Font);
     SDL_DestroyTexture(lobby.background);

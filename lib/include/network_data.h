@@ -10,6 +10,7 @@
 typedef enum{
     MSG_JOIN,
     MSG_LEAVE,
+    MSG_START_GAME,
     MSG_CLIENT_INPUT,
     MSG_GAME_STATE,
     MSG_READY_STATUS,
@@ -57,5 +58,7 @@ typedef struct {
 typedef struct{
     MessageType type;
 } leaveMessage;
-
+typedef struct{
+    MessageType type;
+} startGameMessage;
 #endif
