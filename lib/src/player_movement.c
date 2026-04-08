@@ -12,7 +12,7 @@ int main()
     renderer = SDL_CreateRenderer(window, -1, 0);
 
     int window_width, window_height;
-    SDL_GetWindowSize(window, &window_height, &window_width);
+    SDL_GetWindowSize(window, &window_width, &window_height);
     Player player = init_player(window_width, window_height);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
@@ -30,20 +30,24 @@ void move_player(int window_width, int window_height, Player *player, float dt)
     const Uint8 *key = SDL_GetKeyboardState(NULL);
     if (key[player->player_controls.up])
     {
-        printf("%.5f\n%d\n", (PLAYER_SPEED * dt), PLAYER_SPEED);
+        //printf("%.5f\n%d\n", (PLAYER_SPEED * dt), PLAYER_SPEED);
         player->Hitbox.y -= PLAYER_SPEED * dt;
+        player->direction = DIR_UP;
     }
     if (key[player->player_controls.down])
     {
         player->Hitbox.y += PLAYER_SPEED * dt;
+        player->direction = DIR_DOWN;
     }
     if (key[player->player_controls.left])
     {
         player->Hitbox.x -= PLAYER_SPEED * dt;
+        player->direction = DIR_LEFT;
     }
     if (key[player->player_controls.right])
     {
         player->Hitbox.x += PLAYER_SPEED * dt;
+        player->direction = DIR_RIGHT;
     }
 }
 
@@ -76,12 +80,28 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
                 }
             }
         move_player(window_with, window_height, player, dt);
+        player->animation_timer += dt;
+        if (player->animation_timer > 0.1f)
+        {
+            player->current_frame++;
+            player->animation_timer = 0;
+
+            if (player->current_frame >= 4)  // assume 4 frames
+            {
+                player->current_frame = 0;
+            }
+            printf("Frame: %d\n", player->current_frame);
+        }
         renderPlayer(window, renderer, (*player));
     }
 }
 
 Player init_player(int window_width, int window_height)
 {
-    Player player = {{window_width / 2, window_height / 2}, {0, 0, 0, 0, 0}, {window_height / 2, window_width / 2, 45, 70}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
+    Player player = {{window_width / 2, window_height / 2}, {0, 0, 0, 0, 0}, {window_width / 2 - 45/2, window_height / 2 - 70/2, 45, 70}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
+    player.direction = DIR_DOWN;
+    //printf("Direction: %d\n", player.direction);
+    player.current_frame = 0;
+    player.animation_timer = 0.0f;
     return player;
 }

@@ -7,6 +7,13 @@
 
 typedef enum player_state{IDLE,Playing}PlayerState;
 
+typedef enum {
+    DIR_UP,
+    DIR_DOWN,
+    DIR_LEFT,
+    DIR_RIGHT
+} Direction;
+
 typedef struct position{
     float y;
     float x;
@@ -26,12 +33,17 @@ typedef struct Controls{
     SDL_Scancode right;
     SDL_Scancode left;
 }Player_controls;
+
 typedef struct player{
     Position player_pos;
     Velocity player_speed;
     SDL_FRect Hitbox;
     PlayerState state;
     Player_controls player_controls;
+
+    Direction direction;
+    int current_frame;
+    float animation_timer;
 }Player;
 
 Player init_player(int window_width,int window_height);
