@@ -3,6 +3,7 @@
 #include <SDL2/SDL_net.h>
 #include <SDL2/SDL_ttf.h>
 #include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "network.h"
 #include <SDL2/SDL_image.h>
@@ -265,7 +266,8 @@ int main()
     waitForPlayers lobby = {0};
     SDL_Event event;
     gameState state = {0};
-    int running = 1;
+    waitForPlayers *pWait;
+    bool running = true;
 
 
     if (!initNetworking())
@@ -292,9 +294,6 @@ int main()
     {
         return 1;
     }
-
-    
-
     if (!initiate(&lobby))
     {
         return 1;
@@ -306,7 +305,14 @@ int main()
             if (event.type == SDL_QUIT)
             {
                 send_leave(client.socket, client.serverAddr);
-                running = 0;
+                running = false;
+            }
+            if (event.type == SDL_KEYDOWN)
+            {
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                {
+                    running = false;
+                }
             }
         }
         receive_game_state(client.socket, client.recievepacket, &state);

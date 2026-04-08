@@ -41,7 +41,6 @@ void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket
     {
         SDLNet_FreePacket(receive_packet);
     }
-
     if (send_packet)
     {
         SDLNet_FreePacket(send_packet);
@@ -50,8 +49,6 @@ void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket
     {
         SDLNet_UDP_Close(server_socket);
     }
-
-
     SDLNet_Quit();
 }
 
@@ -59,7 +56,9 @@ int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress a
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (clientUsed[i] && clientAddresses[i].host == addr.host && clientAddresses[i].port == addr.port)
+        if (clientUsed[i] && 
+            clientAddresses[i].host == addr.host && 
+            clientAddresses[i].port == addr.port)
         {
             return i;
         }
@@ -90,7 +89,7 @@ void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, I
         if (clientUsed[i])
         {
             state->local_player_id = i;
-
+            
             if (!send_game_state(socket,packet, clientAddresses[i], state))
             {
                 printf("Failed to send game state to player %d\n", i);
