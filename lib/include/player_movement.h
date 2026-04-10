@@ -16,19 +16,6 @@ typedef enum {
     DIR_UP
 } Direction;
 
-typedef struct position{
-    float y;
-    float x;
-}Position;
-
-typedef struct velocity{
-    float speed;
-    float dx;
-    float dy;
-    float acceleration;
-    float max_speed;
-}Velocity;
-
 typedef struct Controls{
     SDL_Scancode up;
     SDL_Scancode down;
@@ -36,14 +23,33 @@ typedef struct Controls{
     SDL_Scancode left;
 }Player_controls;
 
-typedef struct player{
-    Position player_pos;
-    Velocity player_speed;
-    SDL_FRect Hitbox;
-    PlayerState state;
-    Player_controls player_controls;
+typedef enum
+{
+    PLAYER_RED,
+    PLAYER_BLUE,
+    PLAYER_GREEN,
+    PLAYER_YELLOW,
+    PLAYER_PURPLE,
+    PLAYER_BLACK
+} PlayerColor;
 
+typedef struct
+{
+    bool up;
+    bool down;
+    bool left;
+    bool right;
+} InputState;
+
+
+typedef struct player{
+    SDL_FRect Hitbox;
+    PlayerState State;
+
+    Player_controls controls;
     Direction direction;
+
+    PlayerColor SkinColor;
     int current_frame;
     float animation_timer;
 }Player;
@@ -52,5 +58,6 @@ Player init_player(int window_width,int window_height);
 void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture,SDL_Texture *background_texture);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player ,SDL_Texture *player_sprite, int window_width, int window_height);
+void read_input(Player player,InputState *input);
 
 
