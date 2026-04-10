@@ -21,6 +21,7 @@ int main(void)
     // zoomed out compared to 1280x720
     SDL_RenderSetLogicalSize(renderer, 1600, 900);
     SDL_GetWindowSize(window,&window_width,&window_height);
-    loading_img(window,renderer,window_width,window_height);   
+    loading_img(window,renderer,window_width,window_height);
+    SDL_Delay(1000);   
     return 0;
 }

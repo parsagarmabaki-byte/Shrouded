@@ -1,3 +1,5 @@
+#include "game_map.h"
+
 void loading_img(SDL_Window *window, SDL_Renderer *renderer, int window_width, int window_height)
 {
     SDL_Surface *surface = IMG_Load("assets/images/Game_map.png");

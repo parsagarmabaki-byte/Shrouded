@@ -30,6 +30,7 @@ GAME_MAP_SRC = lib/src/game_map.c
 NETWORK_SRC = lib/src/network.c
 
 PLAYER_MOVEMENT_TEST_SRC = test_files/test_player_movement.c
+GAME_MAP_TEST_SRC = test_files/test_game_map.c
 
 # ─── Object files ───────────────────────────────────────
 CLIENT_OBJ = $(OBJDIR)/client.o
@@ -40,12 +41,14 @@ GAME_MAP_OBJ = $(OBJDIR)/game_map.o
 NETWORK_OBJ = $(OBJDIR)/network.o
 
 PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
+GAME_MAP_TEST_OBJ = $(OBJDIR)/test_game_map.o
 
 # ─── Output files ───────────────────────────────────────
 CLIENT_OUT = $(OBJDIR)/client$(EXE)
 SERVER_OUT = $(OBJDIR)/server$(EXE)
-PLAYER_MOVEMENT_TEST_OUT = $(OBJDIR)/test_player_movement$(EXE)
 
+PLAYER_MOVEMENT_TEST_OUT = $(OBJDIR)/test_player_movement$(EXE)
+GAME_MAP_TEST_OUT = $(OBJDIR)/test_game_map$(EXE)
 
 # ─── Compiler ───────────────────────────────────────────
 CC = gcc
@@ -101,6 +104,9 @@ $(NETWORK_OBJ): $(NETWORK_SRC) | $(OBJDIR)
 $(PLAYER_MOVEMENT_TEST_OBJ): $(PLAYER_MOVEMENT_TEST_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(GAME_MAP_TEST_OBJ): $(GAME_MAP_TEST_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # ─── Link rules ─────────────────────────────────────────
 $(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
@@ -109,6 +115,9 @@ $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(PLAYER_MOVEMENT_TEST_OUT): $(PLAYER_MOVEMENT_TEST_OBJ) $(PLAYER_MOVEMENT_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+$(GAME_MAP_TEST_OUT): $(GAME_MAP_TEST_OBJ) $(GAME_MAP_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 # ─── Run targets ────────────────────────────────────────
@@ -120,6 +129,9 @@ run_server: $(SERVER_OUT)
 
 test_player_movement: $(PLAYER_MOVEMENT_TEST_OUT)
 	./$(PLAYER_MOVEMENT_TEST_OUT)
+
+test_game_map: $(GAME_MAP_TEST_OUT)
+	./$(GAME_MAP_TEST_OUT)
 
 # ─── Clean ──────────────────────────────────────────────
 clean:
