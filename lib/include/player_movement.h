@@ -49,7 +49,8 @@ typedef struct player{
 }Player;
 
 Player init_player(int window_width,int window_height);
-void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture);
 void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture,SDL_Texture *background_texture);
+void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture);
+void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player ,SDL_Texture *player_sprite, int window_width, int window_height);
 
 
