@@ -1,5 +1,6 @@
 #define SDL_MAIN_HANDLED
-#include <player_movement.h>
+#include "player_movement.h"
+#include "game_map.h"
 
 // int main(void)
 // {
@@ -89,6 +90,8 @@ int main(void)
     renderer = SDL_CreateRenderer(window, -1, 0);
 
     SDL_Texture* playerTexture = IMG_LoadTexture(renderer, "assets/sprites/charspritesv2.png");
+    SDL_Texture *background_texture = loading_img(renderer, "assets/images/Game_map.png");
+
     if (!playerTexture) {
     printf("Failed to load texture: %s\n", SDL_GetError());
     }
@@ -97,7 +100,7 @@ int main(void)
     SDL_GetWindowSize(window, &window_width, &window_height);
     Player player = init_player(window_width, window_height);
 
-    movement(window, renderer, &player, window_width, window_height, playerTexture);
+    movement(window, renderer, &player, window_width, window_height, playerTexture,background_texture);
 
     // SDL_Quit();
 }

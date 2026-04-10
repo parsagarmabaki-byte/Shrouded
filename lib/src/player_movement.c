@@ -60,8 +60,6 @@ bool move_player(int window_width, int window_height, Player *player, float dt)
 
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture)
 {
-    render_map()
-
     int frame_width = 128; 
     int frame_height = 128;
 
@@ -85,7 +83,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture)
     SDL_RenderPresent(renderer);
 }
 
-void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_with, int window_height, SDL_Texture *texture)
+void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture,SDL_Texture *background_texture)
 {
     SDL_Event event;
     bool running = true;
@@ -105,7 +103,7 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
                     running = false;
                 }
             }
-        bool moving = move_player(window_with, window_height, player, dt);
+        bool moving = move_player(window_width, window_height, player, dt);
         
         if(moving)
         {
@@ -126,13 +124,14 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
         {
             player->current_frame = 2; // reset to idle frame when not moving
         }
+        render_map(renderer,background_texture,window_width,window_height);
         renderPlayer(renderer, player, texture);
     }
 }
 
 Player init_player(int window_width, int window_height)
 {
-    Player player = {{window_width / 2, window_height / 2}, {0, 0, 0, 0, 0}, {window_width / 2 - 45/2, window_height / 2 - 70/2, 100, 100}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
+    Player player = {{window_width / 2, window_height / 2}, {0, 0, 0, 0, 0}, {window_width / 2 - 45/2, window_height / 2 - 70/2, 70, 70}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
     player.direction = DIR_DOWN;
     //printf("Direction: %d\n", player.direction);
     player.current_frame = 0;

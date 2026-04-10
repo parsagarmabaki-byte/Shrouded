@@ -21,14 +21,14 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
     return texture;
 }
 
-void render_map(int window_width,int window_height,SDL_Texture *renderer, int window_width,int winodw_height)
+void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, int window_width, int window_height)
 {
     SDL_Rect picturesize = {
         (window_width - GAME_MAP_WIDTH) / 2,
         (window_height / Game_MAP_HEIGHT) / 2,
         GAME_MAP_WIDTH, Game_MAP_HEIGHT};
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, background_texture, NULL, &picturesize);
+    SDL_RenderCopy(renderer, background_img, NULL, &picturesize);
 }
 
 

@@ -5,7 +5,7 @@
 #include <SDL2/SDL_image.h>
 
 
-#define PLAYER_SPEED 350
+#define PLAYER_SPEED 200
 
 typedef enum player_state{IDLE,Playing}PlayerState;
 
@@ -49,8 +49,7 @@ typedef struct player{
 }Player;
 
 Player init_player(int window_width,int window_height);
-void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_with, int window_height, SDL_Texture *texture);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture);
-void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_with, int window_height, SDL_Texture *texture);
+void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture,SDL_Texture *background_texture);
 
 

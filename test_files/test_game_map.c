@@ -21,11 +21,7 @@ int main(void)
     // SDL_RenderSetLogicalSize(renderer, 1600, 900);
     SDL_GetWindowSize(window, &window_width, &window_height);
     SDL_Texture *background_texture = loading_img(renderer, "assets/images/Game_map.png");
-    SDL_Rect picturesize = {
-        (window_width - GAME_MAP_WIDTH) / 2,
-        (window_height / Game_MAP_HEIGHT) / 2,
-        GAME_MAP_WIDTH, Game_MAP_HEIGHT};
-    SDL_RenderCopy(renderer, background_texture, NULL,&picturesize);
+    render_map(renderer,background_texture,window_width,window_height);
     SDL_RenderPresent(renderer);
     SDL_Delay(1000);
     return 0;

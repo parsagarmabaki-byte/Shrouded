@@ -8,4 +8,4 @@
 #define Game_MAP_HEIGHT 1024
 
 SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
-
+void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, int window_width, int window_height);
