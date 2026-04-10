@@ -8,10 +8,10 @@
 typedef enum player_state{IDLE,Playing}PlayerState;
 
 typedef enum {
-    DIR_UP,
     DIR_DOWN,
     DIR_LEFT,
-    DIR_RIGHT
+    DIR_RIGHT,
+    DIR_UP
 } Direction;
 
 typedef struct position{
@@ -47,8 +47,8 @@ typedef struct player{
 }Player;
 
 Player init_player(int window_width,int window_height);
-void movement(SDL_Window *window,SDL_Renderer *renderer,Player *player,int window_with,int window_height);
-void renderPlayer(SDL_Window *window, SDL_Renderer *renderer, Player player);
-void move_player(int window_width, int window_height, Player *player,float dt);
+void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture);
+void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture);
+bool move_player(int window_width, int window_height, Player *player,float dt);
 
 
