@@ -25,7 +25,7 @@ void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, int window_
 {
     SDL_Rect picturesize = {
         (window_width - GAME_MAP_WIDTH) / 2,
-        (window_height / Game_MAP_HEIGHT) / 2,
+        (window_height - Game_MAP_HEIGHT) / 2,
         GAME_MAP_WIDTH, Game_MAP_HEIGHT};
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, background_img, NULL, &picturesize);

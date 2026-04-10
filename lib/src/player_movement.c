@@ -12,26 +12,26 @@ bool move_player(int window_width, int window_height, Player *player, float dt)
     float dx = 0;
     float dy = 0;
 
-    if (key[player->player_controls.up])
+    if (key[player->player_controls.up] && player->Hitbox.y>((window_height-Game_MAP_HEIGHT)/2))
     {
         //printf("%.5f\n%d\n", (PLAYER_SPEED * dt), PLAYER_SPEED);
         dy -= 1;
         player->direction = DIR_UP;
         moving = true;
     }
-    if (key[player->player_controls.down])
+    if (key[player->player_controls.down] && player->Hitbox.y<(((window_height-Game_MAP_HEIGHT)/2)+Game_MAP_HEIGHT))
     {
         dy += 1;
         player->direction = DIR_DOWN;
         moving = true;
     }
-    if (key[player->player_controls.left])
+    if (key[player->player_controls.left] && player->Hitbox.x>((window_width-GAME_MAP_WIDTH)/2))
     {
         dx -= 1;
         player->direction = DIR_LEFT;
         moving = true;
     }
-    if (key[player->player_controls.right])
+    if (key[player->player_controls.right] && player->Hitbox.x<(((window_width-GAME_MAP_WIDTH)/2)+GAME_MAP_WIDTH))
     {
         dx += 1;
         player->direction = DIR_RIGHT;
