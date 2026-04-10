@@ -51,6 +51,7 @@ int main(void)
 
     int window_width, window_height;
     SDL_GetWindowSize(window, &window_width, &window_height);
+    printf("Wh: %d, WW %d",window_height, window_width);
 
     Player player = init_player(window_width, window_height);
 
