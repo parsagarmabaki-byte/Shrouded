@@ -1,109 +1,130 @@
 # =========================
 # Project: shrouded
-# SDL2 + SDL2_image
+# SDL2 + SDL2_image + SDL2_net + SDL2_ttf
 # =========================
 
-# ─── Detektera OS ────────────────────────────────────────
+# ─── Detect OS ───────────────────────────────────────────
 ifeq ($(OS),Windows_NT)
     PLATFORM = windows
+    EXE = .exe
 else
     UNAME := $(shell uname -s)
     ifeq ($(UNAME),Darwin)
         PLATFORM = mac
+        EXE =
     else
         PLATFORM = linux
+        EXE =
     endif
 endif
 
-# ─── Gemensamt ───────────────────────────────────────────
+# ─── Directories ────────────────────────────────────────
 OBJDIR = build
 
-CLIENT_SRC           = client/src/client.c
-SERVER_SRC           = server/src/server.c
-PLAYER_MOVEMENT_SRC  = lib/src/player_movement.c
-GAME_MAP_SRC         = lib/src/game_map.c
+# ─── Source files ───────────────────────────────────────
+CLIENT_SRC = client/src/client.c
+SERVER_SRC = server/src/server.c
 
-CLIENT_OBJ           = $(OBJDIR)/client.o
-SERVER_OBJ           = $(OBJDIR)/server.o
-PLAYER_MOVEMENT_OBJ  = $(OBJDIR)/player_movement.o
-GAME_MAP_OBJ         = $(OBJDIR)/game_map.o
+PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
+GAME_MAP_SRC = lib/src/game_map.c
+NETWORK_SRC = lib/src/network.c
 
-SERVER_OUT           = build/server
-CLIENT_OUT           = build/client
-PLAYER_MOVEMENT_OUT  = build/player_movement
-GAME_MAP_OUT         = build/game_map
+PLAYER_MOVEMENT_TEST_SRC = test_files/test_player_movement.c
 
-CFLAGS  = -g -Ilib/include
-COMPILE = $(CFLAGS) -c
-LDFLAGS = -lSDL2main -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf -lm
+# ─── Object files ───────────────────────────────────────
+CLIENT_OBJ = $(OBJDIR)/client.o
+SERVER_OBJ = $(OBJDIR)/server.o
 
-# ─── Per plattform ───────────────────────────────────────
+PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
+GAME_MAP_OBJ = $(OBJDIR)/game_map.o
+NETWORK_OBJ = $(OBJDIR)/network.o
+
+PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
+
+# ─── Output files ───────────────────────────────────────
+CLIENT_OUT = $(OBJDIR)/client$(EXE)
+SERVER_OUT = $(OBJDIR)/server$(EXE)
+PLAYER_MOVEMENT_TEST_OUT = $(OBJDIR)/test_player_movement$(EXE)
+
+
+# ─── Compiler ───────────────────────────────────────────
+CC = gcc
+CFLAGS = -g -Ilib/include
+LDFLAGS = -lm
+
+# ─── Platform-specific settings ─────────────────────────
 ifeq ($(PLATFORM),mac)
-    CC       = gcc
-    CFLAGS  += -I/opt/homebrew/include
-    LDFLAGS += -L/opt/homebrew/lib
-
-else ifeq ($(PLATFORM),linux)
-    CC       = gcc
-    CFLAGS  += -I/usr/include
-
-else ifeq ($(PLATFORM),windows)
-    CC       = gcc
-    CFLAGS  += -I/mingw64/include
-    LDFLAGS += -L/mingw64/lib -lmingw32
+    CC = clang
+    CFLAGS += -I/opt/homebrew/include -I/usr/local/include
+    LDFLAGS += -L/opt/homebrew/lib -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf
 endif
 
-# ─── Bygg-regler ─────────────────────────────────────────
+ifeq ($(PLATFORM),windows)
+    CC = gcc
+    CFLAGS += -I/mingw64/include
+    LDFLAGS += -L/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf
+endif
+
+ifeq ($(PLATFORM),linux)
+    CC = gcc
+    CFLAGS += -I/usr/include
+    LDFLAGS += -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf
+endif
+
+# ─── Build folder ───────────────────────────────────────
 $(OBJDIR):
+ifeq ($(PLATFORM),windows)
+	if not exist $(OBJDIR) mkdir $(OBJDIR)
+else
 	mkdir -p $(OBJDIR)
+endif
 
-all: $(SERVER_OUT) $(CLIENT_OUT)
+# ─── Default target ─────────────────────────────────────
+all: $(CLIENT_OUT) $(SERVER_OUT)
 
-# ─── Objektfiler ─────────────────────────────────────────
+# ─── Compile rules ──────────────────────────────────────
 $(CLIENT_OBJ): $(CLIENT_SRC) | $(OBJDIR)
-	$(CC) $(COMPILE) $(CLIENT_SRC) -o $(CLIENT_OBJ)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(SERVER_OBJ): $(SERVER_SRC) | $(OBJDIR)
-	$(CC) $(COMPILE) $(SERVER_SRC) -o $(SERVER_OBJ)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(PLAYER_MOVEMENT_OBJ): $(PLAYER_MOVEMENT_SRC) | $(OBJDIR)
-	$(CC) $(COMPILE) $(PLAYER_MOVEMENT_SRC) -o $(PLAYER_MOVEMENT_OBJ)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(GAME_MAP_OBJ): $(GAME_MAP_SRC) | $(OBJDIR)
-	$(CC) $(COMPILE) $(GAME_MAP_SRC) -o $(GAME_MAP_OBJ)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# ─── Körbara filer ───────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ)
-	$(CC) $(CLIENT_OBJ) -o $(CLIENT_OUT) $(LDFLAGS)
+$(NETWORK_OBJ): $(NETWORK_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(SERVER_OUT): $(SERVER_OBJ)
-	$(CC) $(SERVER_OBJ) -o $(SERVER_OUT) $(LDFLAGS)
+$(PLAYER_MOVEMENT_TEST_OBJ): $(PLAYER_MOVEMENT_TEST_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(PLAYER_MOVEMENT_OUT): $(PLAYER_MOVEMENT_SRC) | $(OBJDIR)
-	$(CC) $(CFLAGS) $(PLAYER_MOVEMENT_SRC) -o $(PLAYER_MOVEMENT_OUT) $(LDFLAGS)
+# ─── Link rules ─────────────────────────────────────────
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-$(GAME_MAP_OUT): $(GAME_MAP_SRC) | $(OBJDIR)
-	$(CC) $(CFLAGS) $(GAME_MAP_SRC) -o $(GAME_MAP_OUT) $(LDFLAGS)
+$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-# ─── Snabbkommandon ──────────────────────────────────────
-build_player_movement: $(PLAYER_MOVEMENT_OUT)
+$(PLAYER_MOVEMENT_TEST_OUT): $(PLAYER_MOVEMENT_TEST_OBJ) $(PLAYER_MOVEMENT_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-build_game_map: $(GAME_MAP_OUT)
-
-player_movement: $(PLAYER_MOVEMENT_OUT)
-	./$(PLAYER_MOVEMENT_OUT)
-
-game_map: $(GAME_MAP_OUT)
-	./$(GAME_MAP_OUT)
-
-run: $(CLIENT_OUT)
+# ─── Run targets ────────────────────────────────────────
+run_client: $(CLIENT_OUT)
 	./$(CLIENT_OUT)
 
-# ─── Clean ───────────────────────────────────────────────
+run_server: $(SERVER_OUT)
+	./$(SERVER_OUT)
+
+test_player_movement: $(PLAYER_MOVEMENT_TEST_OUT)
+	./$(PLAYER_MOVEMENT_TEST_OUT)
+
+# ─── Clean ──────────────────────────────────────────────
 clean:
 ifeq ($(PLATFORM),windows)
-	del /Q $(CLIENT_OUT) $(SERVER_OUT) $(PLAYER_MOVEMENT_OUT) $(GAME_MAP_OUT)
-	rmdir /S /Q $(OBJDIR)
+	if exist $(OBJDIR) del /Q $(OBJDIR)\*.o $(OBJDIR)\*.exe
 else
 	rm -rf $(OBJDIR)
 endif
