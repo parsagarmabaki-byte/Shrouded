@@ -9,6 +9,13 @@
 
 typedef enum player_state{IDLE,Playing}PlayerState;
 
+typedef enum {
+    DIR_DOWN,
+    DIR_LEFT,
+    DIR_RIGHT,
+    DIR_UP
+} Direction;
+
 typedef struct position{
     float y;
     float x;
@@ -28,18 +35,22 @@ typedef struct Controls{
     SDL_Scancode right;
     SDL_Scancode left;
 }Player_controls;
+
 typedef struct player{
     Position player_pos;
     Velocity player_speed;
     SDL_FRect Hitbox;
     PlayerState state;
     Player_controls player_controls;
+
+    Direction direction;
+    int current_frame;
+    float animation_timer;
 }Player;
 
 Player init_player(int window_width,int window_height);
-Player init_player(int window_width, int window_height);
-void move_player(int window_width, int window_height, Player *player, float dt);
-void renderPlayer(SDL_Renderer *renderer, Player *player);
-void movement(SDL_Window *window, SDL_Renderer *renderer, SDL_Texture *backgroundTexture, Player *player, int window_width, int window_height);
-SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
+void movement(SDL_Window *window,SDL_Renderer *renderer,Player *player,int window_with,int window_height);
+void renderPlayer(SDL_Window *window, SDL_Renderer *renderer, Player player);
+void move_player(int window_width, int window_height, Player *player,float dt);
+
 
