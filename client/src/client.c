@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "network.h"
+#include "network_data.h"
 #include <SDL2/SDL_image.h>
 typedef struct
 {
@@ -23,74 +24,15 @@ typedef struct
     SDL_Texture *background;
 } waitForPlayers;
 
-int initNetworking()
+int allocatePacket(UDPpacket **packet, int size)
 {
-    if (SDLNet_Init() < 0)
+    *packet = SDLNet_AllocPacket(size);
+    if (!*packet)
     {
-        printf("SDLNet_Init failed: %s\n", SDLNet_GetError());
+        printf("Failed to allocate packet: %s\n",SDLNet_GetError());
         return 0;
     }
     return 1;
-}
-int openClientSocket(Client *client)
-{
-    client->socket = SDLNet_UDP_Open(0);
-    if (!client->socket)
-    {
-        printf("Failed to open client socket: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        return 0;
-    }
-    return 1;
-}
-int resolveServerAdress(Client *client, const char *host)
-{
-    if (SDLNet_ResolveHost(&client->serverAddr, host, SERVER_PORT) < 0)
-    {
-        printf("Failed to resolve host: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-int allocateSendPacket(Client *client, int size)
-{
-    client->sendpacket = SDLNet_AllocPacket(size);
-    if (!client->sendpacket)
-    {
-        printf("Failed to allocate send packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-int allocateReceivePacket(Client *client, int size)
-{
-    client->recievepacket = SDLNet_AllocPacket(size);
-    if (!client->recievepacket)
-    {
-        printf("Failed to allocate receive packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-int sendJoinMessage(Client *client)
-{
-    joinMessage join;
-    join.type = MSG_JOIN;
-
-    memcpy(client->sendpacket->data, &join, sizeof(joinMessage));
-    client->sendpacket->len = sizeof(joinMessage);
-    client->sendpacket->address = client->serverAddr;
-
-    if (SDLNet_UDP_Send(client->socket, -1, client->sendpacket) == 0)
-    {
-        printf("Failed to send join packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    else
-    {
-        printf("Join packet sent to server\n");
-        return 1;
-    }
 }
 int sendStartMessage(Client *client)
 {
@@ -310,27 +252,19 @@ int main()
     bool running = true;
 
 
-    if (!initNetworking())
+    if (!init_client(&client.socket, &client.serverAddr))
     {
         return 1;
     }
-    if (!openClientSocket(&client))
+    if (!allocatePacket(&client.sendpacket, 512))
     {
         return 1;
     }
-    if (!resolveServerAdress(&client, "127.0.0.1"))
+    if (!allocatePacket(&client.recievepacket, 512))
     {
         return 1;
     }
-    if (!allocateSendPacket(&client, 512))
-    {
-        return 1;
-    }
-    if (!allocateReceivePacket(&client, 512))
-    {
-        return 1;
-    }
-    if (!sendJoinMessage(&client))
+    if (!send_join(client.socket, client.serverAddr))
     {
         return 1;
     }

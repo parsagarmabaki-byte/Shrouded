@@ -7,24 +7,6 @@
 
 #define PACKET_SIZE 512
 
-int initServerNetwork(UDPsocket *server_socket)
-{
-    if (SDLNet_Init() < 0)
-    {
-        printf("SDLNet_Init failed: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    *server_socket = SDLNet_UDP_Open(SERVER_PORT);
-    if (!*server_socket)
-    {
-        printf("Failed to open server socket: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        return 0;
-    }
-
-    return 1;
-}
 UDPpacket *createPacket(int size)
 {
     UDPpacket *packet = SDLNet_AllocPacket(size);
@@ -125,7 +107,7 @@ int main(void)
     IPaddress clientAddresses[MAX_PLAYERS];
     int clientUsed[MAX_PLAYERS] = {0};
 
-    if (!initServerNetwork(&server_socket))
+    if (!init_server(&server_socket))
     {
         return 1;
     }
