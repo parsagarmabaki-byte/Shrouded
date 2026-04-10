@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <SDL2/SDL_image.h>
 
+#define GAME_MAP_WIDTH 1536
+#define Game_MAP_HEIGHT 1024
 
-void loading_img(SDL_Window *window, SDL_Renderer *renderer, int window_width, int window_height);
+SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
 

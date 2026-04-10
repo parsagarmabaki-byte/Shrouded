@@ -1,38 +1,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL_image.h>
 #include "player_movement.h"
+#include "game_map.h"
 #include <math.h>
-
-
-Player init_player(int window_width, int window_height)
-{
-    SDL_SetMainReady();
-    SDL_Init(SDL_INIT_VIDEO);
-    IMG_Init(IMG_INIT_PNG);
-
-    SDL_Window *window = NULL;
-    SDL_Renderer *renderer = NULL;
-    window = SDL_CreateWindow("Test window", 0, 0, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    renderer = SDL_CreateRenderer(window, -1, 0);
-
-    SDL_Texture* playerTexture = IMG_LoadTexture(renderer, "assets/sprites/charspritesv2.png");
-    if (!playerTexture) {
-    printf("Failed to load texture: %s\n", SDL_GetError());
-}
-
-    int window_width, window_height;
-    SDL_GetWindowSize(window, &window_width, &window_height);
-    Player player = init_player(window_width, window_height);
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-    SDL_RenderFillRectF(renderer, &(player.Hitbox));
-    SDL_RenderPresent(renderer);
-    // SDL_Delay(1000);
-
-    movement(window, renderer, &player, window_width, window_height, playerTexture);
-
-    // SDL_Quit();
-}
 
 bool move_player(int window_width, int window_height, Player *player, float dt)
 {
@@ -90,8 +60,7 @@ bool move_player(int window_width, int window_height, Player *player, float dt)
 
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture)
 {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
+    render_map()
 
     int frame_width = 128; 
     int frame_height = 128;
