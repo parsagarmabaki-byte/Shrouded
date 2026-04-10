@@ -5,7 +5,7 @@
 #include <SDL2/SDL_image.h>
 
 
-#define PLAYER_SPEED 200
+#define PLAYER_SPEED 140
 
 typedef enum player_state{IDLE,Playing}PlayerState;
 
