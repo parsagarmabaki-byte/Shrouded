@@ -170,9 +170,11 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, SDL_Texture *backgroun
         }
 
         move_player(window_width, window_height, player, dt);
+        SDL_Rect destRect = {0, 0, window_width, window_height};
 
+        SDL_SetRenderDrawColor(renderer,0,0,0,255);
         SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
+        SDL_RenderCopy(renderer, backgroundTexture, NULL, &destRect);
         renderPlayer(renderer, player);
         SDL_RenderPresent(renderer);
     }
