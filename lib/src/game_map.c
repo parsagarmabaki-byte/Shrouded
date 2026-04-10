@@ -1,14 +1,25 @@
 #include "game_map.h"
 
-void loading_img(SDL_Window *window, SDL_Renderer *renderer, int window_width, int window_height)
+
+
+SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
 {
-    SDL_Surface *surface = IMG_Load("assets/images/Game_map.png");
+    SDL_Surface *surface = IMG_Load(path);
+    if (!surface)
+    {
+        printf("IMG_Load failed: %s\n", IMG_GetError());
+        return NULL;
+    }
+
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     SDL_FreeSurface(surface);
 
-    SDL_Rect destRect = {150, 50, window_width, window_height};
+    if (!texture)
+    {
+        printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        return NULL;
+    }
 
-    SDL_RenderCopy(renderer, texture, NULL, &destRect);
-    SDL_RenderPresent(renderer);
+    return texture;
 }
 
