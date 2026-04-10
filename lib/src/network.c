@@ -68,6 +68,32 @@ int send_join(UDPsocket socket, IPaddress server_addr)
     SDLNet_FreePacket(packet);
     return 1;
 }
+int send_start_game(UDPsocket socket, IPaddress server_addr)
+{
+    UDPpacket *packet = SDLNet_AllocPacket(512);
+    if (!packet)
+    {
+        printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    startGameMessage start = {0};
+    start.type = MSG_START_GAME;
+
+    memcpy(packet->data, &start, sizeof(startGameMessage));
+    packet->len = sizeof(startGameMessage);
+    packet->address = server_addr;
+
+    if (!SDLNet_UDP_Send(socket, -1, packet))
+    {
+        printf("SDLNet_UDP_Send start error: %s\n", SDLNet_GetError());
+        SDLNet_FreePacket(packet);
+        return 0;
+    }
+    SDLNet_FreePacket(packet);
+    return 1;
+    
+    
+}
 
 
 int send_client_input(UDPsocket socket, IPaddress server_addr, clientInput *input)

@@ -12,7 +12,6 @@ typedef struct
 {
     UDPsocket socket;
     IPaddress serverAddr;
-    UDPpacket *sendpacket;
     UDPpacket *recievepacket;
 } Client;
 
@@ -34,31 +33,8 @@ int allocatePacket(UDPpacket **packet, int size)
     }
     return 1;
 }
-int sendStartMessage(Client *client)
-{
-    startGameMessage start;
-    start.type = MSG_START_GAME;
-
-    memcpy(client->sendpacket->data, &start, sizeof(startGameMessage));
-    client->sendpacket->len = sizeof(startGameMessage);
-    client->sendpacket->address = client->serverAddr;
-    if (SDLNet_UDP_Send(client->socket, -1, client->sendpacket) == 0)
-    {
-        printf("Failed to send start packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    else
-    {
-        return 1;
-    }
-}
 void cleanClient(Client *client)
 {
-    if (client->sendpacket)
-    {
-        SDLNet_FreePacket(client->sendpacket);
-        client->sendpacket = NULL;
-    }
     if (client->recievepacket)
     {
         SDLNet_FreePacket(client->recievepacket);
@@ -256,10 +232,6 @@ int main()
     {
         return 1;
     }
-    if (!allocatePacket(&client.sendpacket, 512))
-    {
-        return 1;
-    }
     if (!allocatePacket(&client.recievepacket, 512))
     {
         return 1;
@@ -292,7 +264,7 @@ int main()
                 {
                     if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
                     {
-                        sendStartMessage(&client);
+                        send_start_game(client.socket, client.serverAddr);
                     }
                 }
                 
