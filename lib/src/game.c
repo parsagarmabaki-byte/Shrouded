@@ -5,6 +5,9 @@
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
+
+#define PLAYER_SPEED 200
 
 void sendInput(Client *client, gameState *state)
 {
@@ -63,18 +66,22 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             }
         }
 
+        // Skicka input och ta emot state från servern
         sendInput(client, state);
         receive_game_state(client->socket, client->recievepacket, state);
 
-        player.Hitbox.x = state->players[local_id].x;
-        player.Hitbox.y = state->players[local_id].y;
-
+        // Client-side prediction — rör spelaren lokalt direkt
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
-        if (keys[SDL_SCANCODE_W]) player.direction = DIR_UP;
-        else if (keys[SDL_SCANCODE_S]) player.direction = DIR_DOWN;
-        else if (keys[SDL_SCANCODE_A]) player.direction = DIR_LEFT;
-        else if (keys[SDL_SCANCODE_D]) player.direction = DIR_RIGHT;
+        float dx = 0, dy = 0;
+        if (keys[SDL_SCANCODE_W]) { dy -= 1; player.direction = DIR_UP; }
+        if (keys[SDL_SCANCODE_S]) { dy += 1; player.direction = DIR_DOWN; }
+        if (keys[SDL_SCANCODE_A]) { dx -= 1; player.direction = DIR_LEFT; }
+        if (keys[SDL_SCANCODE_D]) { dx += 1; player.direction = DIR_RIGHT; }
+        if (dx != 0 && dy != 0) { dx *= 0.7071f; dy *= 0.7071f; }
+        player.Hitbox.x += dx * PLAYER_SPEED * dt;
+        player.Hitbox.y += dy * PLAYER_SPEED * dt;
 
+        // Animering
         bool moving = keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_S] ||
                       keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_D];
         if (moving)
@@ -91,19 +98,30 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             player.current_frame = 2;
         }
 
+        // Kamera följer lokal spelare
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, player.Hitbox.w, player.Hitbox.h);
         render_map(renderer, mapTexture, &cam);
 
+        // Rita alla aktiva spelare
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
             if (state->players[i].active)
             {
                 Player p = player;
-                p.Hitbox.x = state->players[i].x;
-                p.Hitbox.y = state->players[i].y;
 
-                if (i != local_id)
+                if (i == local_id)
                 {
+                    // Lokal spelare — använd prediction-position
+                    p.Hitbox.x = player.Hitbox.x;
+                    p.Hitbox.y = player.Hitbox.y;
+                    p.current_frame = player.current_frame;
+                    p.direction = player.direction;
+                }
+                else
+                {
+                    // Andra spelare — använd server-position
+                    p.Hitbox.x = state->players[i].x;
+                    p.Hitbox.y = state->players[i].y;
                     p.current_frame = 2;
                     p.direction = DIR_DOWN;
                 }
