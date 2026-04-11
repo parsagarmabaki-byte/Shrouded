@@ -175,7 +175,7 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
         SDL_FreeSurface(surface);
         return;
     }
-    
+
     SDL_Rect dst;
     dst.w = surface->w;
     dst.h = surface->h;
@@ -208,10 +208,32 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
                 startRect.w = startSurface->w;
                 startRect.h = startSurface->h;
                 startRect.x = (windowWidth - startRect.w) / 2;
-                startRect.y = windowHeight - 180;
+                startRect.y = windowHeight - 240;
 
                 SDL_RenderCopy(pWait->renderer, startTexture, NULL, &startRect);
                 SDL_DestroyTexture(startTexture);
+
+                SDL_Surface *leaveSurface = TTF_RenderText_Blended(
+                    pWait->Font,
+                    "PRESS ESC TO LEAVE",
+                    white
+                );
+                if (leaveSurface)
+                {
+                    SDL_Texture *leaveTexture = SDL_CreateTextureFromSurface(pWait->renderer, leaveSurface);
+                    if (leaveTexture)
+                    {
+                        SDL_Rect leaveRect;
+                        leaveRect.w = leaveSurface->w;
+                        leaveRect.h = leaveSurface->h;
+                        leaveRect.x = (windowWidth - leaveRect.w) / 2;
+                        leaveRect.y = startRect.y + startRect.h + 10;
+
+                        SDL_RenderCopy(pWait->renderer, leaveTexture, NULL, &leaveRect);
+                        SDL_DestroyTexture(leaveTexture);
+                    }
+                    SDL_FreeSurface(leaveSurface);
+                }
             }
             SDL_FreeSurface(startSurface);
         }
