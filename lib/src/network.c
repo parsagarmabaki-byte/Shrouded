@@ -35,7 +35,7 @@ int init_client(UDPsocket *socket, IPaddress *server_addr)
         return 0;
     }
 
-    if (SDLNet_ResolveHost(server_addr, "127.0.0.1", SERVER_PORT) != 0)
+    if (SDLNet_ResolveHost(server_addr, "192.168.8.13", SERVER_PORT) != 0)
     {
         printf("SDLNet_ResolveHost error: %s\n", SDLNet_GetError());
         return 0;

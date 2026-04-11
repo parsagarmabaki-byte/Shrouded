@@ -28,12 +28,11 @@ typedef struct { // Info som användaren klickar in
     int report;
 } clientInput; 
 
-typedef struct { // Info vart alla är
+typedef struct {
     int active;
     int player_id;
-    int x;
-    int y;
-
+    float x;
+    float y;
     int isAlive;
     int isImpostor;
     int isDoingTask;
