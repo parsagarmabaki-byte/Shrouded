@@ -23,12 +23,16 @@ SERVER_SRC = server/src/server.c
 NETWORK_SRC = lib/src/network.c
 GAME_MAP_SRC = lib/src/game_map.c
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
+LOBBY_SRC = lib/src/lobby.c
+GAME_SRC = lib/src/game.c
 
 CLIENT_OBJ = $(OBJDIR)/client.o
 SERVER_OBJ = $(OBJDIR)/server.o
 NETWORK_OBJ = $(OBJDIR)/network.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
+LOBBY_OBJ = $(OBJDIR)/lobby.o
+GAME_OBJ = $(OBJDIR)/game.o
 
 PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
 
@@ -76,11 +80,17 @@ $(GAME_MAP_OBJ): $(GAME_MAP_SRC) | $(OBJDIR)
 $(PLAYER_MOVEMENT_OBJ): $(PLAYER_MOVEMENT_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) $(PLAYER_MOVEMENT_SRC) -o $(PLAYER_MOVEMENT_OBJ)
 
+$(LOBBY_OBJ): $(LOBBY_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) $(LOBBY_SRC) -o $(LOBBY_OBJ)
+
+$(GAME_OBJ): $(GAME_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) $(GAME_SRC) -o $(GAME_OBJ)
+
 $(PLAYER_MOVEMENT_TEST_OBJ): test_files/test_player_movement.c | $(OBJDIR)
 	$(CC) $(CFLAGS) test_files/test_player_movement.c -o $(PLAYER_MOVEMENT_TEST_OBJ)
 
-$(CLIENT_OUT): $(CLIENT_OBJ) $(NETWORK_OBJ) $(GAME_MAP_OBJ) $(PLAYER_MOVEMENT_OBJ)
-	$(CC) $(CLIENT_OBJ) $(NETWORK_OBJ) $(GAME_MAP_OBJ) $(PLAYER_MOVEMENT_OBJ) -o $(CLIENT_OUT) $(LDFLAGS)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(NETWORK_OBJ) $(GAME_MAP_OBJ) $(PLAYER_MOVEMENT_OBJ) $(LOBBY_OBJ) $(GAME_OBJ)
+	$(CC) $(CLIENT_OBJ) $(NETWORK_OBJ) $(GAME_MAP_OBJ) $(PLAYER_MOVEMENT_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) -o $(CLIENT_OUT) $(LDFLAGS)
 
 $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ)
 	$(CC) $(SERVER_OBJ) $(NETWORK_OBJ) -o $(SERVER_OUT) $(LDFLAGS)

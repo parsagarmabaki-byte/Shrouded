@@ -11,35 +11,60 @@ An Among Us-inspired multiplayer game built in C with SDL2, developed for CM1008
 ```
 shrouded/
 ├── assets/
-│   ├── sprites/
-│   └── maps/
+│   ├── fonts/
+│   ├── images/
+│   ├── lobbyscreen/
+│   └── sprites/
 ├── client/
-│   └── src/client.c          ← SDL2 loop, input, rendering
+│   └── src/client.c          ← lobby loop, connects to server
 ├── server/
-│   └── src/server.c          ← server loop, connections, tick logic
+│   └── src/server.c          ← game tick, player positions, broadcast
+├── test_files/
+│   └── test_player_movement.c ← standalone movement test (no network)
 └── lib/
     ├── include/
-    │   ├── player.h
-    │   ├── map.h
-    │   ├── task.h
-    │   ├── game.h
-    │   └── network.h        ← shared packet structs
+    │   ├── game.h            ← game loop, rendering
+    │   ├── game_map.h        ← map, camera
+    │   ├── lobby.h           ← lobby screen
+    │   ├── network.h         ← send/receive wrappers
+    │   ├── network_data.h    ← shared packet structs
+    │   └── player_movement.h ← player struct, animation, movement
     └── src/
-        ├── player.c
-        ├── map.c
-        ├── task.c
-        └── game.c
+        ├── game.c
+        ├── game_map.c
+        ├── lobby.c
+        ├── network.c
+        └── player_movement.c
 ```
 
-### Modules (ADTs)
+### Modules
 
 | File | Responsibility |
 |---|---|
-| `player.h/c` | Player data: position, role, state |
-| `map.h/c` | Map data, collision, rooms |
-| `task.h/c` | Task positions and completion status |
-| `game.h/c` | Game logic: win conditions, phases (lobby/game/vote) |
-| `network.h/c` | Packet structs and send/receive wrappers |
+| `game.h/c` | Game loop, input, rendering all players |
+| `game_map.h/c` | Map rendering, camera follow |
+| `lobby.h/c` | Lobby screen, waiting for players |
+| `network.h/c` | UDP send/receive wrappers |
+| `network_data.h` | Shared packet structs (clientInput, gameState, playerState) |
+| `player_movement.h/c` | Player struct, sprite animation, renderPlayer |
+
+---
+
+## Architecture
+
+Client-server over UDP (SDL_net). The server is authoritative — clients send input, the server updates all player positions and broadcasts the full game state to every client at 60fps.
+
+```
+Client                        Server
+──────                        ──────
+SDL_PollEvent()
+SDL_GetKeyboardState()
+send clientInput ──UDP──────► receive clientInput
+                              update player position
+receive gameState ◄──UDP───── broadcast gameState to all
+renderPlayer() for each
+camera_follow() local player
+```
 
 ---
 
@@ -48,13 +73,13 @@ shrouded/
 ### Mac (Apple Silicon)
 
 ```bash
-brew install sdl2 sdl2_image sdl2_net
+brew install sdl2 sdl2_image sdl2_net sdl2_ttf
 ```
 
 ### Windows (MSYS2/MinGW64)
 
 ```bash
-pacman -S mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_net
+pacman -S mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_net mingw64/mingw-w64-x86_64-SDL2_ttf
 ```
 
 ---
@@ -62,40 +87,38 @@ pacman -S mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image ming
 ## Build & Run
 
 ```bash
-make all      # build all files
-make clean    # remove build files
+make all                  # build server and client
+make clean                # remove build files
+make test_player_movement # run movement test without network
 ```
 
 ### Start the game
 
-**Step 1 — Host starts the server:**
 ```bash
-./build/server # Start the server
+./build/server   # terminal 1 — start server
+./build/client   # terminal 2 — start client
 ```
 
-**Step 2 — All players start the client:**
-```bash
-./build/client # Start one or more clients
-```
-**Step 3 — Multiplayer (LAN)**
-```bash
+When all players are connected, press **Space** to start the game.
 
-./build/client 127.0.0.1      # if you are the host
-./build/client 192.168.1.5    # other players (host's local IP)
+> **Note:** The client currently connects to `127.0.0.1` by default. LAN support with custom IP is coming soon.
 
-```
-Find the host's IP:
-```bash
-ifconfig   # Mac/Linux
-ipconfig   # Windows
-```
+---
+
+## Controls
+
+| Key | Action |
+|---|---|
+| `W A S D` | Move |
+| `Space` | Start game (in lobby) |
+| `Escape` | Quit |
 
 ---
 
 ## Tech Stack
 
 - **Language:** C
-- **Graphics:** SDL2 (v2.32.10)
+- **Graphics:** SDL2, SDL2_image, SDL2_ttf
 - **Networking:** SDL_net (UDP)
 - **Platforms:** Mac (Homebrew, Apple Silicon), Windows (MSYS2/MinGW64)
 - **Build system:** Makefile
