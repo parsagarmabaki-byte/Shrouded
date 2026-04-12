@@ -92,7 +92,9 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
             player->current_frame = 2; // reset to idle frame when not moving
         }
         
-        update_map(renderer,GameMap,player,player_sprite,window_width,window_height);
+        render_map(renderer,GameMap,window_width,window_height);
+        renderPlayer(renderer,player,player_sprite);
+        SDL_RenderPresent(renderer);
     }
 }
 
@@ -117,8 +119,11 @@ Player init_player(int window_width, int window_height)
 
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player ,SDL_Texture *player_sprite, int window_width, int window_height)
 {
-    render_map(renderer,Game_map,window_width,window_height);
-    renderPlayer(renderer, player, player_sprite);
+    render_map(renderer, Game_map, window_width, window_height);
+    for (int i=0; i < PLAYER_SLOTS; i++)
+    {
+        renderPlayer(renderer,player,player_sprite);
+    }
 }
 
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture)
@@ -139,6 +144,4 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture)
     dst.h = (int)player->Hitbox.h;
 
     SDL_RenderCopy(renderer, texture, &src, &dst);
-
-    SDL_RenderPresent(renderer);
 }

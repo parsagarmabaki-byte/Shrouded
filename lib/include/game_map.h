@@ -7,7 +7,7 @@
 #define GAME_MAP_WIDTH 1536
 #define GAME_MAP_HEIGHT 1024
 #define FRAME_SIZE 256
-#define PLAYER_SLOTS 3
+#define PLAYER_SLOTS 4
 
 typedef struct
 {
