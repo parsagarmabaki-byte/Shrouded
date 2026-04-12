@@ -6,13 +6,14 @@
 
 
 #define PLAYER_SPEED 140
+#define PLAYER_SIZE 70
 
 typedef enum player_state{IDLE,Playing}PlayerState;
 
 typedef enum {
-    DIR_DOWN,
     DIR_LEFT,
     DIR_RIGHT,
+    DIR_DOWN,
     DIR_UP
 } Direction;
 

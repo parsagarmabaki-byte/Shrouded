@@ -13,10 +13,9 @@ int main(void)
     window = SDL_CreateWindow("Test window", 0, 0, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
     renderer = SDL_CreateRenderer(window, -1, 0);
 
-    SDL_Texture* playerTexture = IMG_LoadTexture(renderer, "assets/sprites/charspritesv2.png");
-    SDL_Texture *background_texture = loading_img(renderer, "assets/images/Game_map.png");
+    GameAssets game_assets = load_assets(renderer);
 
-    if (!playerTexture) {
+    if (!game_assets.skins[0]) {
     printf("Failed to load texture: %s\n", SDL_GetError());
     }
 
@@ -24,7 +23,7 @@ int main(void)
     SDL_GetWindowSize(window, &window_width, &window_height);
     Player player = init_player(window_width, window_height);
 
-    movement(window, renderer, &player, window_width, window_height, playerTexture,background_texture);
+    movement(window, renderer, &player, window_width, window_height, game_assets.skins[2],game_assets.map_texture);
 
     // SDL_Quit();
 }

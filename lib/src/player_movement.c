@@ -81,7 +81,7 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
                 player->current_frame++;
                 player->animation_timer = 0;
 
-                if (player->current_frame >= 4)  // assume 4 frames
+                if (player->current_frame >= 10)  // we have ten frames
                 {
                     player->current_frame = 0;
                 }
@@ -108,7 +108,7 @@ void read_input(Player player,InputState *input)
 
 Player init_player(int window_width, int window_height)
 {
-    Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, 70, 70}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
+    Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, PLAYER_SIZE, PLAYER_SIZE}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
     player.direction = DIR_DOWN;
     player.current_frame = 0;
     player.animation_timer = 0.0f;
@@ -123,17 +123,14 @@ void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player ,S
 
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture)
 {
-    int frame_width = 128; 
-    int frame_height = 128;
-
     SDL_Rect src;
     SDL_Rect dst;
 
     // --- Pick frame from sprite sheet ---
-    src.x = player->current_frame * frame_width;
-    src.y = player->direction * frame_height;
-    src.w = frame_width;
-    src.h = frame_height;
+    src.x = player->current_frame * FRAME_SIZE;
+    src.y = player->direction * FRAME_SIZE;
+    src.w = FRAME_SIZE;
+    src.h = FRAME_SIZE;
 
     // --- Where to draw on screen ---
     dst.x = (int)player->Hitbox.x;

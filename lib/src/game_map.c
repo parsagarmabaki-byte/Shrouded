@@ -25,10 +25,21 @@ void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, int window_
 {
     SDL_Rect picturesize = {
         (window_width - GAME_MAP_WIDTH) / 2,
-        (window_height - Game_MAP_HEIGHT) / 2,
-        GAME_MAP_WIDTH, Game_MAP_HEIGHT};
+        (window_height - GAME_MAP_HEIGHT) / 2,
+        GAME_MAP_WIDTH, GAME_MAP_HEIGHT};
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, background_img, NULL, &picturesize);
 }
 
-
+GameAssets load_assets(SDL_Renderer *renderer)
+{
+    GameAssets asset;
+    asset.map_texture = loading_img(renderer,"assets/images/Game_map.png");
+    char path[64];
+    for (int i = 0; i < PLAYER_SLOTS; i++)
+    {
+        snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
+        asset.skins[i] = loading_img(renderer, path);
+    }
+    return asset;   
+}
