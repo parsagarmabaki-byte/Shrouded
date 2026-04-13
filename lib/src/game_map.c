@@ -75,10 +75,10 @@ void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
 {
     SDL_Texture *vignetteTexture;
     
-    SDL_Surface *surface = IMG_LOAD("assets/images/vignette.png");
+    SDL_Surface *surface = IMG_Load("assets/images/vignette.png");
     if (!surface)
     {
-        printf("IMG_LOAD error: %s\n", IMG_GetError());
+        printf("IMG_Load error: %s\n", IMG_GetError());
     } else
     
     vignetteTexture = SDL_CreateTextureFromSurface(renderer, surface);

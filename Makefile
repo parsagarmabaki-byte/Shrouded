@@ -111,6 +111,12 @@ $(GAME_MAP_OBJ): $(GAME_MAP_SRC) | $(OBJDIR)
 $(NETWORK_OBJ): $(NETWORK_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(LOBBY_OBJ): $(LOBBY_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(GAME_OBJ): $(GAME_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(PLAYER_MOVEMENT_TEST_OBJ): $(PLAYER_MOVEMENT_TEST_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -118,7 +124,7 @@ $(GAME_MAP_TEST_OBJ): $(GAME_MAP_TEST_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ)

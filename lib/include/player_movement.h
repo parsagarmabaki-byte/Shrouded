@@ -1,9 +1,12 @@
+#ifndef PLAYER_MOVEMENT_H
+#define PLAYER_MOVEMENT_H
+
 #include <SDL2/SDL.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL_image.h>
-
+#include "game_map.h"
 
 #define PLAYER_SPEED 140
 #define PLAYER_SIZE 70
@@ -59,3 +62,6 @@ Player init_player(int window_width,int window_height);
 void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture,SDL_Texture *background_texture);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam);
+void read_input(Player player,InputState *input);
+
+#endif

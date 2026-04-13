@@ -8,9 +8,6 @@
 #include <math.h>
 
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
-#define PLAYER_SPEED 200
-#define LOGICAL_W 1920
-#define LOGICAL_H 1080
 // Reads keyboard state and sends the local player's input to the server every frame.
 // The server uses this to update the authoritative player position.
 void sendInput(Client *client, gameState *state)
@@ -35,13 +32,12 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     // Use the actual window size as the logical render resolution
     int window_width, window_height;
     SDL_GetWindowSize(lobby->window, &window_width, &window_height);
-    SDL_RenderSetLogicalSize(renderer, LOGICAL_W, LOGICAL_H);
-
     // Load assets
+
     SDL_Texture *mapTexture = loading_img(renderer, "assets/images/Game_map.png");
     if (!mapTexture) { printf("Failed to load map\n"); return; }
 
-    SDL_Texture *playerTexture = IMG_LoadTexture(renderer, "assets/sprites/charspritesv2.png");
+    SDL_Texture *playerTexture = IMG_LoadTexture(renderer, "assets/sprites/skin0.png");
     if (!playerTexture) { printf("Failed to load player sprite\n"); return; }
 
     // Initialize the local player at the spawn position received from the server
