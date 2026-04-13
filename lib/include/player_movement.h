@@ -7,9 +7,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL_image.h>
 #include "game_map.h"
-
-#define PLAYER_SPEED 140
-#define PLAYER_SIZE 70
+#include "network_data.h"
 
 typedef enum player_state{IDLE,Playing}PlayerState;
 
@@ -63,5 +61,5 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam);
 void read_input(Player player,InputState *input);
-
+void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt);
 #endif

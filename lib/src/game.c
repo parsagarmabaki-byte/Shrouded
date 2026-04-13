@@ -86,17 +86,17 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // the server response. This removes the one-frame input delay.
         // The server remains authoritative — other players use server positions.
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
-        float dx = 0, dy = 0;
-        if (keys[SDL_SCANCODE_W]) { dy -= 1; player.direction = DIR_UP; }
-        if (keys[SDL_SCANCODE_S]) { dy += 1; player.direction = DIR_DOWN; }
-        if (keys[SDL_SCANCODE_A]) { dx -= 1; player.direction = DIR_LEFT; }
-        if (keys[SDL_SCANCODE_D]) { dx += 1; player.direction = DIR_RIGHT; }
+        int up    = keys[SDL_SCANCODE_W];
+        int down  = keys[SDL_SCANCODE_S];
+        int left  = keys[SDL_SCANCODE_A];
+        int right = keys[SDL_SCANCODE_D];
 
-        // Normalize diagonal movement so speed is consistent in all directions
-        if (dx != 0 && dy != 0) { dx *= 0.7071f; dy *= 0.7071f; }
+        if (up)    player.direction = DIR_UP;
+        if (down)  player.direction = DIR_DOWN;
+        if (left)  player.direction = DIR_LEFT;
+        if (right) player.direction = DIR_RIGHT;
 
-        player.Hitbox.x += dx * PLAYER_SPEED * dt;
-        player.Hitbox.y += dy * PLAYER_SPEED * dt;
+        apply_movement(&player.Hitbox.x, &player.Hitbox.y, player.Hitbox.w, player.Hitbox.h, up, down, left, right, dt);
 
         // --- Animation ---
         // Advance animation frames while moving, reset to idle frame when stopped

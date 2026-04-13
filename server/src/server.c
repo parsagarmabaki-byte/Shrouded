@@ -4,9 +4,9 @@
 #include <string.h>
 #include "network.h"
 #include "network_data.h"
-
+#include "player_movement.h"
 #define PACKET_SIZE 512
-#define PLAYER_SPEED 200
+
 
 UDPpacket *createPacket(int size)
 {
@@ -96,20 +96,8 @@ void handleInput(gameState *state, clientInput *input, float dt)
     if (id < 0 || id >= MAX_PLAYERS) return;
     if (!state->players[id].active) return;
 
-    float dx = 0, dy = 0;
-    if (input->up)    dy -= 1;
-    if (input->down)  dy += 1;
-    if (input->left)  dx -= 1;
-    if (input->right) dx += 1;
-
-    if (dx != 0 && dy != 0)
-    {
-        dx *= 0.7071f;
-        dy *= 0.7071f;
-    }
-
-    state->players[id].x += dx * PLAYER_SPEED * dt;
-    state->players[id].y += dy * PLAYER_SPEED * dt;
+    apply_movement(&state->players[id].x, &state->players[id].y, 
+        PLAYER_SIZE, PLAYER_SIZE, input->up, input->down, input->left, input->right, dt);
 }
 
 int main(void)

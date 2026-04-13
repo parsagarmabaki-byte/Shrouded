@@ -55,7 +55,7 @@ bool move_player(Player *player,InputState input,float dt)
     return moving;
 }
 
-void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *player_sprite, SDL_Texture *GameMap)
+/* void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *player_sprite, SDL_Texture *GameMap)
 {
     SDL_Event event;
     InputState input;
@@ -105,7 +105,30 @@ void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int wi
         update_map(renderer, GameMap, player, player_sprite, &cam);
     }
 }
+*/
 
+void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt)
+{
+    float dx = 0, dy = 0;
+    if (up)    dy -= 1;
+    if (down)  dy += 1;
+    if (left)  dx -= 1;
+    if (right) dx += 1;
+
+    if (dx != 0 || dy != 0) {
+        float len = sqrtf(dx * dx + dy * dy);
+        dx /= len;
+        dy /= len;
+    }
+
+    *x += dx * PLAYER_SPEED * dt;
+    *y += dy * PLAYER_SPEED * dt;
+
+    if (*x < 0) *x = 0;
+    if (*y < 0) *y = 0;
+    if (*x + w > GAME_MAP_WIDTH) *x = GAME_MAP_WIDTH - w;
+    if (*y + h > GAME_MAP_HEIGHT) *y = GAME_MAP_HEIGHT - h;
+}
 void read_input(Player player,InputState *input)
 {
     const Uint8 *key = SDL_GetKeyboardState(NULL);
