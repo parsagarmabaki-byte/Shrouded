@@ -1,38 +1,24 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
-#include <SDL2/SDL_ttf.h>
-#include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "network.h"
 #include "network_data.h"
-#include <SDL2/SDL_image.h>
-typedef struct
-{
-    UDPsocket socket;
-    IPaddress serverAddr;
-    UDPpacket *recievepacket;
-} Client;
-
-typedef struct
-{
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    TTF_Font *Font;
-    SDL_Texture *background;
-} waitForPlayers;
+#include "lobby.h"
+#include "game.h"
 
 int allocatePacket(UDPpacket **packet, int size)
 {
     *packet = SDLNet_AllocPacket(size);
     if (!*packet)
     {
-        printf("Failed to allocate packet: %s\n",SDLNet_GetError());
+        printf("Failed to allocate packet: %s\n", SDLNet_GetError());
         return 0;
     }
     return 1;
 }
+
 void cleanClient(Client *client)
 {
     if (client->recievepacket)
@@ -46,7 +32,6 @@ void cleanClient(Client *client)
         client->socket = NULL;
     }
     SDLNet_Quit();
-    
 }
 
 int initiate(waitForPlayers *pWait)
@@ -175,7 +160,7 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
         SDL_FreeSurface(surface);
         return;
     }
-
+    
     SDL_Rect dst;
     dst.w = surface->w;
     dst.h = surface->h;
@@ -208,32 +193,10 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
                 startRect.w = startSurface->w;
                 startRect.h = startSurface->h;
                 startRect.x = (windowWidth - startRect.w) / 2;
-                startRect.y = windowHeight - 240;
+                startRect.y = windowHeight - 180;
 
                 SDL_RenderCopy(pWait->renderer, startTexture, NULL, &startRect);
                 SDL_DestroyTexture(startTexture);
-
-                SDL_Surface *leaveSurface = TTF_RenderText_Blended(
-                    pWait->Font,
-                    "PRESS ESC TO LEAVE",
-                    white
-                );
-                if (leaveSurface)
-                {
-                    SDL_Texture *leaveTexture = SDL_CreateTextureFromSurface(pWait->renderer, leaveSurface);
-                    if (leaveTexture)
-                    {
-                        SDL_Rect leaveRect;
-                        leaveRect.w = leaveSurface->w;
-                        leaveRect.h = leaveSurface->h;
-                        leaveRect.x = (windowWidth - leaveRect.w) / 2;
-                        leaveRect.y = startRect.y + startRect.h + 10;
-
-                        SDL_RenderCopy(pWait->renderer, leaveTexture, NULL, &leaveRect);
-                        SDL_DestroyTexture(leaveTexture);
-                    }
-                    SDL_FreeSurface(leaveSurface);
-                }
             }
             SDL_FreeSurface(startSurface);
         }
@@ -249,23 +212,12 @@ int main()
     gameState state = {0};
     bool running = true;
 
+    if (!init_client(&client.socket, &client.serverAddr)) return 1;
+    if (!allocatePacket(&client.recievepacket, 512)) return 1;
+    if (!send_join(client.socket, client.serverAddr)) return 1;
+    if (!initiate(&lobby)) return 1;
 
-    if (!init_client(&client.socket, &client.serverAddr))
-    {
-        return 1;
-    }
-    if (!allocatePacket(&client.recievepacket, 512))
-    {
-        return 1;
-    }
-    if (!send_join(client.socket, client.serverAddr))
-    {
-        return 1;
-    }
-    if (!initiate(&lobby))
-    {
-        return 1;
-    }
+    // Lobby-loop
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -285,32 +237,24 @@ int main()
                 else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
                 {
                     if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
-                    {
                         send_start_game(client.socket, client.serverAddr);
-                    }
                 }
-                
             }
-            
         }
+
         receive_game_state(client.socket, client.recievepacket, &state);
+
         if (state.phase == GAME_RUNNING)
-        {
-            printf("Game is starting...\n");
             running = false;
-        } else
-        {
+        else
             renderWaitingScreen(&lobby, &state);
-        }
-
     }
-    TTF_CloseFont(lobby.Font);
-    SDL_DestroyTexture(lobby.background);
-    SDL_DestroyRenderer(lobby.renderer);
-    SDL_DestroyWindow(lobby.window);
-    TTF_Quit();
-    SDL_Quit();
 
+    // Game-loop
+    if (state.phase == GAME_RUNNING)
+        runGame(&client, &lobby, &state);
+
+    cleanLobby(&lobby);
     cleanClient(&client);
 
     return 0;
