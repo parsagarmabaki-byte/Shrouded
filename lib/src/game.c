@@ -57,6 +57,12 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     bool running = true;
     Uint64 last = SDL_GetPerformanceCounter();
 
+
+
+
+    //TEST för att få bort drift
+    float accumulator = 0.0f;
+
     while (running)
     {
         // Delta time — time since last frame in seconds
@@ -81,27 +87,45 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // Receive the latest game state from the server (non-blocking)
         receive_game_state(client->socket, client->recievepacket, state);
 
-        // --- Client-side prediction ---
-        // Move the local player immediately based on input without waiting for
-        // the server response. This removes the one-frame input delay.
-        // The server remains authoritative — other players use server positions.
-        const Uint8 *keys = SDL_GetKeyboardState(NULL);
-        int up    = keys[SDL_SCANCODE_W];
-        int down  = keys[SDL_SCANCODE_S];
-        int left  = keys[SDL_SCANCODE_A];
-        int right = keys[SDL_SCANCODE_D];
+        /*
+        När ett nytt serverpaket kommer, snäpp tillbaka den lokala
+        spelaren till serverns auktoritativa position. Det hindrar
+        prediction från att drifta över tid, men känns fortfarande
+        responsivt mellan paket (prediction kör fritt tills nästa korrigering).
+        */
+        if (receive_game_state(client->socket, client->recievepacket, state) == 0)
+        {
+            player.Hitbox.x = state->players[local_id].x;
+            player.Hitbox.y = state->players[local_id].y;
+        }
 
-        if (up)    player.direction = DIR_UP;
-        if (down)  player.direction = DIR_DOWN;
-        if (left)  player.direction = DIR_LEFT;
-        if (right) player.direction = DIR_RIGHT;
+        accumulator += dt;
 
-        apply_movement(&player.Hitbox.x, &player.Hitbox.y, player.Hitbox.w, player.Hitbox.h, up, down, left, right, dt);
+        int up = 0, down = 0, left = 0, right = 0;
 
-        // --- Animation ---
+        while (accumulator >= SERVER_TICK_INTERVAL) //SERVER TICK ÄR 0.016f
+        {
+            const Uint8 *keys = SDL_GetKeyboardState(NULL);
+            up    = keys[SDL_SCANCODE_W];
+            down  = keys[SDL_SCANCODE_S];
+            left  = keys[SDL_SCANCODE_A];
+            right = keys[SDL_SCANCODE_D];
+
+            if (up)    player.direction = DIR_UP;
+            if (down)  player.direction = DIR_DOWN;
+            if (left)  player.direction = DIR_LEFT;
+            if (right) player.direction = DIR_RIGHT;
+
+            apply_movement(&player.Hitbox.x, &player.Hitbox.y, player.Hitbox.w, player.Hitbox.h, up, down, left, right, SERVER_TICK_INTERVAL);
+
+            accumulator -= SERVER_TICK_INTERVAL;
+        }
+       
+
+        // --- Animation ---------- ---------
         // Advance animation frames while moving, reset to idle frame when stopped
-        bool moving = keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_S] ||
-                      keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_D];
+        bool moving = up || down || left || right;
+
         if (moving)
         {
             player.animation_timer += dt;

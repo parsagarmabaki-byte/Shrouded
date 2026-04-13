@@ -9,7 +9,7 @@
 #include "game_map.h"
 #include "network_data.h"
 
-typedef enum player_state{IDLE,Playing}PlayerState;
+// typedef enum player_state{IDLE,Playing}PlayerState; ANVÄNDS EJ
 
 typedef enum {
     DIR_LEFT,
@@ -17,13 +17,6 @@ typedef enum {
     DIR_DOWN,
     DIR_UP
 } Direction;
-
-typedef struct Controls{
-    SDL_Scancode up;
-    SDL_Scancode down;
-    SDL_Scancode right;
-    SDL_Scancode left;
-}Player_controls;
 
 typedef enum
 {
@@ -35,6 +28,15 @@ typedef enum
     PLAYER_BLACK
 } PlayerColor;
 
+/* ANVÄNDS EJ LÄNGRE
+
+typedef struct Controls{
+    SDL_Scancode up;
+    SDL_Scancode down;
+    SDL_Scancode right;
+    SDL_Scancode left;
+}Player_controls;
+
 typedef struct
 {
     bool up;
@@ -42,13 +44,13 @@ typedef struct
     bool left;
     bool right;
 } InputState;
-
+*/
 
 typedef struct player{
     SDL_FRect Hitbox;
-    PlayerState State;
+    // PlayerState State;
 
-    Player_controls controls;
+    // Player_controls controls; ANVÄNDS EJ LÄNGRE
     Direction direction;
 
     PlayerColor SkinColor;
@@ -60,6 +62,6 @@ Player init_player(int window_width,int window_height);
 void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *texture,SDL_Texture *background_texture);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam);
-void read_input(Player player,InputState *input);
+// void read_input(Player player,InputState *input); ANVÄNDS EJ
 void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt);
 #endif

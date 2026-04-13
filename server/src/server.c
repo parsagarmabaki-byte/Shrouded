@@ -182,7 +182,8 @@ int main(void)
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
-        if (broadcastDt >= 0.016f)
+        
+        if (broadcastDt >= SERVER_TICK_INTERVAL)
         {
             if (state.phase == GAME_RUNNING)
             {

@@ -4,6 +4,77 @@
 #include "game_map.h"
 #include <math.h>
 
+
+void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt)
+{
+    float dx = 0, dy = 0;
+    if (up)    dy -= 1;
+    if (down)  dy += 1;
+    if (left)  dx -= 1;
+    if (right) dx += 1;
+
+    if (dx != 0 || dy != 0) {
+        float len = sqrtf(dx * dx + dy * dy);
+        dx /= len;
+        dy /= len;
+    }
+
+    *x += dx * PLAYER_SPEED * dt;
+    *y += dy * PLAYER_SPEED * dt;
+
+    if (*x < 0) *x = 0;
+    if (*y < 0) *y = 0;
+    if (*x + w > GAME_MAP_WIDTH) *x = GAME_MAP_WIDTH - w;
+    if (*y + h > GAME_MAP_HEIGHT) *y = GAME_MAP_HEIGHT - h;
+}
+
+
+
+Player init_player(int window_width, int window_height)
+{
+    /*
+    Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, PLAYER_SIZE, PLAYER_SIZE}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
+    ANVÄNDS EJ LÄNGRE
+    */
+    Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, PLAYER_SIZE, PLAYER_SIZE}};
+    player.direction = DIR_DOWN;
+    player.current_frame = 0;
+    player.animation_timer = 0.0f;
+    return player;
+
+}
+
+void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam)
+{
+    render_map(renderer, Game_map, cam);
+    renderPlayer(renderer, player, player_sprite, cam);
+}
+
+void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam)
+{
+    SDL_Rect src;
+    SDL_Rect dst;
+
+    // --- Pick frame from sprite sheet ---
+    src.x = player->current_frame * FRAME_SIZE;
+    src.y = player->direction * FRAME_SIZE;
+    src.w = FRAME_SIZE;
+    src.h = FRAME_SIZE;
+
+    // --- Where to draw on screen ---
+    dst.x = (int)player->Hitbox.x;
+    dst.y = (int)player->Hitbox.y;
+
+    // Rita spelaren med camera-offset
+    dst.x = (int)(player->Hitbox.x - cam->x);
+    dst.y = (int)(player->Hitbox.y - cam->y);
+    dst.w = (int)player->Hitbox.w;
+    dst.h = (int)player->Hitbox.h;
+
+    SDL_RenderCopy(renderer, texture, &src, &dst);
+}
+
+/*
 bool move_player(Player *player,InputState input,float dt)
 {
     bool moving = false;
@@ -54,6 +125,7 @@ bool move_player(Player *player,InputState input,float dt)
 
     return moving;
 }
+*/
 
 /* void movement(SDL_Window *window, SDL_Renderer *renderer, Player *player, int window_width, int window_height, SDL_Texture *player_sprite, SDL_Texture *GameMap)
 {
@@ -107,29 +179,7 @@ bool move_player(Player *player,InputState input,float dt)
 }
 */
 
-void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt)
-{
-    float dx = 0, dy = 0;
-    if (up)    dy -= 1;
-    if (down)  dy += 1;
-    if (left)  dx -= 1;
-    if (right) dx += 1;
-
-    if (dx != 0 || dy != 0) {
-        float len = sqrtf(dx * dx + dy * dy);
-        dx /= len;
-        dy /= len;
-    }
-
-    *x += dx * PLAYER_SPEED * dt;
-    *y += dy * PLAYER_SPEED * dt;
-
-    if (*x < 0) *x = 0;
-    if (*y < 0) *y = 0;
-    if (*x + w > GAME_MAP_WIDTH) *x = GAME_MAP_WIDTH - w;
-    if (*y + h > GAME_MAP_HEIGHT) *y = GAME_MAP_HEIGHT - h;
-}
-void read_input(Player player,InputState *input)
+/*void read_input(Player player,InputState *input) ANVÄNDS INTE LÄNGRE
 {
     const Uint8 *key = SDL_GetKeyboardState(NULL);
 
@@ -138,43 +188,4 @@ void read_input(Player player,InputState *input)
     input->left = key[player.controls.left];
     input->right = key[player.controls.right];
 }
-
-Player init_player(int window_width, int window_height)
-{
-    Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, PLAYER_SIZE, PLAYER_SIZE}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
-    player.direction = DIR_DOWN;
-    player.current_frame = 0;
-    player.animation_timer = 0.0f;
-    return player;
-
-}
-
-void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam)
-{
-    render_map(renderer, Game_map, cam);
-    renderPlayer(renderer, player, player_sprite, cam);
-}
-
-void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam)
-{
-    SDL_Rect src;
-    SDL_Rect dst;
-
-    // --- Pick frame from sprite sheet ---
-    src.x = player->current_frame * FRAME_SIZE;
-    src.y = player->direction * FRAME_SIZE;
-    src.w = FRAME_SIZE;
-    src.h = FRAME_SIZE;
-
-    // --- Where to draw on screen ---
-    dst.x = (int)player->Hitbox.x;
-    dst.y = (int)player->Hitbox.y;
-
-    // Rita spelaren med camera-offset
-    dst.x = (int)(player->Hitbox.x - cam->x);
-    dst.y = (int)(player->Hitbox.y - cam->y);
-    dst.w = (int)player->Hitbox.w;
-    dst.h = (int)player->Hitbox.h;
-
-    SDL_RenderCopy(renderer, texture, &src, &dst);
-}
+*/
