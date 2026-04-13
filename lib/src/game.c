@@ -154,7 +154,6 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         }
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(16); // cap at ~60fps
     }
 
     SDL_DestroyTexture(mapTexture);

@@ -34,7 +34,10 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
-    pWait->renderer = SDL_CreateRenderer(pWait->window, -1, SDL_RENDERER_ACCELERATED);
+    pWait->renderer = SDL_CreateRenderer(
+        pWait->window,
+        -1,
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pWait->renderer)
     {
         printf("SDL_CreateRenderer: %s\n", SDL_GetError());
