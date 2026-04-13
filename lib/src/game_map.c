@@ -60,16 +60,14 @@ void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam
     SDL_RenderCopy(renderer, background_img, NULL, &picturesize);
 }
 void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
-{
-    SDL_Texture *vignetteTexture;
-    
+{    
     SDL_Surface *surface = IMG_Load("assets/images/vignette.png");
     if (!surface)
     {
         printf("IMG_LOAD error: %s\n", IMG_GetError());
     }
     
-    vignetteTexture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_Texture *vignetteTexture = SDL_CreateTextureFromSurface(renderer, surface);
     SDL_FreeSurface(surface);
 
     if (!vignetteTexture)
