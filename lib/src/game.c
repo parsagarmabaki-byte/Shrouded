@@ -60,7 +60,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
 
 
-    //TEST för att få bort drift
+    // för att få bort drift
     float accumulator = 0.0f;
 
     while (running)

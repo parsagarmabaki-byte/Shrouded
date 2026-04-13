@@ -8,24 +8,49 @@
 void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt)
 {
     float dx = 0, dy = 0;
-    if (up)    dy -= 1;
-    if (down)  dy += 1;
-    if (left)  dx -= 1;
-    if (right) dx += 1;
+    if (up)    
+    {
+        dy -= 1;
+    }
+    if (down)  
+    {
+        dy += 1;
+    }
+    if (left)  
+    {
+        dx -= 1;
+    }
+    if (right) 
+    {
+        dx += 1;
+    }
 
-    if (dx != 0 || dy != 0) {
+    if (dx != 0 || dy != 0) 
+    {
         float len = sqrtf(dx * dx + dy * dy);
         dx /= len;
         dy /= len;
     }
 
-    *x += dx * PLAYER_SPEED * dt;
+    *x += dx * PLAYER_SPEED * dt; // SERVER TICK RATE
     *y += dy * PLAYER_SPEED * dt;
 
-    if (*x < 0) *x = 0;
-    if (*y < 0) *y = 0;
-    if (*x + w > GAME_MAP_WIDTH) *x = GAME_MAP_WIDTH - w;
-    if (*y + h > GAME_MAP_HEIGHT) *y = GAME_MAP_HEIGHT - h;
+    if (*x < 0) 
+    {
+        *x = 0;
+    }
+    if (*y < 0) 
+    {
+        *y = 0;
+    }
+    if (*x + w > GAME_MAP_WIDTH) 
+    {
+        *x = GAME_MAP_WIDTH - w;
+    }
+    if (*y + h > GAME_MAP_HEIGHT) 
+    {
+        *y = GAME_MAP_HEIGHT - h;
+    }
 }
 
 
