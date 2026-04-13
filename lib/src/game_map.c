@@ -21,6 +21,18 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
     return texture;
 }
 
+GameAssets load_assets(SDL_Renderer *renderer)
+{
+    GameAssets asset;
+    asset.map_texture = loading_img(renderer,"assets/images/Game_map.png");
+    char path[64];
+    for (int i = 0; i < PLAYER_SLOTS; i++)
+    {
+        snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
+        asset.skins[i] = loading_img(renderer, path);
+    }
+    return asset;   
+}
 void camera_follow(Camera *cam, float player_x, float player_y, float player_w, float player_h)
 {
     cam->x = player_x + player_w / 2 - cam->screen_w / 2;
@@ -64,8 +76,8 @@ void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
     SDL_Surface *surface = IMG_Load("assets/images/vignette.png");
     if (!surface)
     {
-        printf("IMG_LOAD error: %s\n", IMG_GetError());
-    }
+        printf("IMG_Load error: %s\n", IMG_GetError());
+    } else
     
     SDL_Texture *vignetteTexture = SDL_CreateTextureFromSurface(renderer, surface);
     SDL_FreeSurface(surface);
@@ -77,5 +89,4 @@ void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
 
     SDL_SetTextureBlendMode(vignetteTexture, SDL_BLENDMODE_BLEND);
     SDL_RenderCopy(renderer, vignetteTexture, NULL, NULL);
-    SDL_DestroyTexture(vignetteTexture);
 }

@@ -20,6 +20,7 @@ int init_server(UDPsocket *socket)
     }
     return 1;
 }
+
 int init_client(UDPsocket *socket, IPaddress *server_addr)
 {
     if (SDLNet_Init() != 0)
