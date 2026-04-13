@@ -60,7 +60,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
 
 
-    // för att få bort drift
+    //TEST för att få bort drift
     float accumulator = 0.0f;
 
     while (running)
@@ -111,10 +111,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             left  = keys[SDL_SCANCODE_A];
             right = keys[SDL_SCANCODE_D];
 
-            if (up)    player.direction = DIR_UP;
-            if (down)  player.direction = DIR_DOWN;
-            if (left)  player.direction = DIR_LEFT;
-            if (right) player.direction = DIR_RIGHT;
+            if (up)    {player.direction = DIR_UP;}
+            if (down)  {player.direction = DIR_DOWN;}
+            if (left)  {player.direction = DIR_LEFT;}
+            if (right) {player.direction = DIR_RIGHT;}
 
             apply_movement(&player.Hitbox.x, &player.Hitbox.y, player.Hitbox.w, player.Hitbox.h, up, down, left, right, SERVER_TICK_INTERVAL);
 
