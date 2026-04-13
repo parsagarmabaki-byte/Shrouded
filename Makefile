@@ -32,11 +32,11 @@ NETWORK_OBJ = $(OBJDIR)/network.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 LOBBY_OBJ = $(OBJDIR)/lobby.o
-GAME_OBJ = $(OBJDIR)/game.o
+GAME_OBJ = $(OBJDIR)/game.of
 
 PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
 
-CFLAGS  = -g -c -Ilib/include
+CFLAGS = -g -c -Ilib/include -I/opt/homebrew/include
 LDFLAGS = -lSDL2main -lSDL2 -lSDL2_image -lSDL2_net -lm -lSDL2_ttf
 
 SERVER_OUT = build/server
