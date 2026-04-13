@@ -79,4 +79,5 @@ void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
 
     SDL_SetTextureBlendMode(vignetteTexture, SDL_BLENDMODE_BLEND);
     SDL_RenderCopy(renderer, vignetteTexture, NULL, NULL);
+    SDL_DestroyTexture(vignetteTexture);
 }
