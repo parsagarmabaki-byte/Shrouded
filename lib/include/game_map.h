@@ -15,7 +15,13 @@ typedef struct
     SDL_Texture *map_texture;
 } GameAssets;
 
-SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
-void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, int window_width, int window_height);
-GameAssets load_assets(SDL_Renderer *renderer);
+typedef struct {
+    float x, y;
+    int screen_w, screen_h;
+} Camera;
 
+GameAssets load_assets(SDL_Renderer *renderer);
+SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
+void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam);
+void camera_follow(Camera *cam, float player_x, float player_y, float player_w, float player_h);
+ 

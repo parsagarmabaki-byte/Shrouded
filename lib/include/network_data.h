@@ -9,10 +9,11 @@
 
 typedef enum{
     MSG_JOIN,
+    MSG_LEAVE,
+    MSG_START_GAME,
     MSG_CLIENT_INPUT,
     MSG_GAME_STATE,
     MSG_READY_STATUS,
-    MSG_LOBBY_SELECTION
 } MessageType;
 
 typedef struct { // Info som användaren klickar in
@@ -27,12 +28,11 @@ typedef struct { // Info som användaren klickar in
     int report;
 } clientInput; 
 
-typedef struct { // Info vart alla är
+typedef struct {
     int active;
     int player_id;
-    int x;
-    int y;
-
+    float x;
+    float y;
     int isAlive;
     int isImpostor;
     int isDoingTask;
@@ -54,5 +54,10 @@ typedef struct {
 typedef struct {
     MessageType type;
 } joinMessage;
-
+typedef struct{
+    MessageType type;
+} leaveMessage;
+typedef struct{
+    MessageType type;
+} startGameMessage;
 #endif

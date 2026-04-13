@@ -24,6 +24,11 @@ OBJDIR = build
 # ─── Source files ───────────────────────────────────────
 CLIENT_SRC = client/src/client.c
 SERVER_SRC = server/src/server.c
+NETWORK_SRC = lib/src/network.c
+GAME_MAP_SRC = lib/src/game_map.c
+PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
+LOBBY_SRC = lib/src/lobby.c
+GAME_SRC = lib/src/game.c
 
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 GAME_MAP_SRC = lib/src/game_map.c
@@ -35,6 +40,11 @@ GAME_MAP_TEST_SRC = test_files/test_game_map.c
 # ─── Object files ───────────────────────────────────────
 CLIENT_OBJ = $(OBJDIR)/client.o
 SERVER_OBJ = $(OBJDIR)/server.o
+NETWORK_OBJ = $(OBJDIR)/network.o
+GAME_MAP_OBJ = $(OBJDIR)/game_map.o
+PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
+LOBBY_OBJ = $(OBJDIR)/lobby.o
+GAME_OBJ = $(OBJDIR)/game.of
 
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o

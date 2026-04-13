@@ -1,90 +1,30 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
-#include <SDL2/SDL_ttf.h>
-#include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "network.h"
+#include "network_data.h"
+#include "lobby.h"
+#include "game.h"
 
-typedef struct
+int allocatePacket(UDPpacket **packet, int size)
 {
-    UDPsocket socket;
-    IPaddress serverAddr;
-    UDPpacket *sendpacket;
-} Client;
-
-typedef struct
-{
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    TTF_Font *Font;
-} waitForPlayers;
-
-int initNetworking()
-{
-    if (SDLNet_Init() < 0)
+    *packet = SDLNet_AllocPacket(size);
+    if (!*packet)
     {
-        printf("SDLNet_Init failed: %s\n", SDLNet_GetError());
+        printf("Failed to allocate packet: %s\n", SDLNet_GetError());
         return 0;
     }
     return 1;
 }
-int openClientSocket(Client *client)
-{
-    client->socket = SDLNet_UDP_Open(0);
-    if (!client->socket)
-    {
-        printf("Failed to open client socket: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        return 0;
-    }
-    return 1;
-}
-int resolveServerAdress(Client *client, const char *host)
-{
-    if (SDLNet_ResolveHost(&client->serverAddr, host, SERVER_PORT) < 0)
-    {
-        printf("Failed to resolve host: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-int allocateSendPacket(Client *client, int size)
-{
-    client->sendpacket = SDLNet_AllocPacket(size);
-    if (!client->sendpacket)
-    {
-        printf("Failed to allocate send packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-int sendMessage(Client *client)
-{
-    joinMessage join;
-    join.type = MSG_JOIN;
 
-    memcpy(client->sendpacket->data, &join, sizeof(joinMessage));
-    client->sendpacket->len = sizeof(joinMessage);
-    client->sendpacket->address = client->serverAddr;
-
-    if (SDLNet_UDP_Send(client->socket, -1, client->sendpacket) == 0)
-    {
-        printf("Failed to send join packet: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    else
-    {
-        printf("Join packet sent to server\n");
-        return 1;
-    }
-}
 void cleanClient(Client *client)
 {
-    if (client->sendpacket)
+    if (client->recievepacket)
     {
-        SDLNet_FreePacket(client->sendpacket);
-        client->sendpacket = NULL;
+        SDLNet_FreePacket(client->recievepacket);
+        client->recievepacket = NULL;
     }
     if (client->socket)
     {
@@ -94,145 +34,57 @@ void cleanClient(Client *client)
     SDLNet_Quit();
 }
 
-int initiate(waitForPlayers *pWait)
-{
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        printf("SDL_Init: %s\n", SDL_GetError());
-        return 0;
-    }
-    if (TTF_Init() < 0)
-    {
-        printf("TTF_Init: %s\n", TTF_GetError());
-        SDL_Quit();
-        return 0;
-    }
-
-    pWait->window = SDL_CreateWindow(
-        "Shrouded Lobby",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        800, 600, 0);
-
-    if (!pWait->window)
-    {
-        printf("SDL_CreateWindow: %s\n", SDL_GetError());
-        TTF_Quit();
-        SDL_Quit();
-        return 0;
-    }
-
-    pWait->renderer = SDL_CreateRenderer(pWait->window, -1, SDL_RENDERER_ACCELERATED);
-    if (!pWait->renderer)
-    {
-        printf("SDL_CreateRenderer: %s\n", SDL_GetError());
-        SDL_DestroyWindow(pWait->window);
-        TTF_Quit();
-        SDL_Quit();
-        return 0;
-    }
-
-    pWait->Font = TTF_OpenFont("assets/fonts/Roboto-Regular.ttf", 32);
-    if (!pWait->Font)
-    {
-        printf("TTF_OpenFont: %s\n", TTF_GetError());
-        SDL_DestroyRenderer(pWait->renderer);
-        SDL_DestroyWindow(pWait->window);
-        TTF_Quit();
-        SDL_Quit();
-        return 0;
-    }
-    return 1;
-}
-
-void renderWaitingScreen(waitForPlayers *pWait)
-{
-    SDL_Color white = {255, 255, 255, 255};
-
-    SDL_Surface *surface = TTF_RenderText_Blended(
-        pWait->Font,
-        "Waiting for players...",
-        white);
-    if (!surface)
-    {
-        printf("TTF_RenderText_Blended: %s\n", TTF_GetError());
-        return;
-    }
-
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(pWait->renderer, surface);
-    if (!texture)
-    {
-        printf("SDL_CreateTextureFromSurface: %s\n", SDL_GetError());
-        SDL_FreeSurface(surface);
-        return;
-    }
-
-    SDL_Rect dst;
-    dst.w = surface->w;
-    dst.h = surface->h;
-    dst.x = (800 - dst.w) / 2;
-    dst.y = (600 - dst.h) / 2;
-
-    SDL_FreeSurface(surface);
-
-    SDL_SetRenderDrawColor(pWait->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(pWait->renderer);
-
-    SDL_RenderCopy(pWait->renderer, texture, NULL, &dst);
-    SDL_RenderPresent(pWait->renderer);
-
-    SDL_DestroyTexture(texture);
-}
 int main()
 {
     Client client = {0};
-
-    if (!initNetworking())
-    {
-        return 1;
-    }
-    if (!openClientSocket(&client))
-    {
-        return 1;
-    }
-    if (!resolveServerAdress(&client, "127.0.0.1"))
-    {
-        return 1;
-    }
-    if (!allocateSendPacket(&client, 512))
-    {
-        return 1;
-    }
-    if (!sendMessage(&client))
-    {
-        return 1;
-    }
-
     waitForPlayers lobby = {0};
     SDL_Event event;
-    int running = 1;
+    gameState state = {0};
+    bool running = true;
 
-    if (!initiate(&lobby))
-    {
-        return 1;
-    }
+    if (!init_client(&client.socket, &client.serverAddr)) return 1;
+    if (!allocatePacket(&client.recievepacket, 512)) return 1;
+    if (!send_join(client.socket, client.serverAddr)) return 1;
+    if (!initiate(&lobby)) return 1;
+
+    // Lobby-loop
     while (running)
     {
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
             {
-                running = 0;
+                send_leave(client.socket, client.serverAddr);
+                running = false;
+            }
+            if (event.type == SDL_KEYDOWN)
+            {
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                {
+                    send_leave(client.socket, client.serverAddr);
+                    running = false;
+                }
+                else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+                {
+                    if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
+                        send_start_game(client.socket, client.serverAddr);
+                }
             }
         }
-        renderWaitingScreen(&lobby);
-    }
-    TTF_CloseFont(lobby.Font);
-    SDL_DestroyRenderer(lobby.renderer);
-    SDL_DestroyWindow(lobby.window);
-    TTF_Quit();
-    SDL_Quit();
 
+        receive_game_state(client.socket, client.recievepacket, &state);
+
+        if (state.phase == GAME_RUNNING)
+            running = false;
+        else
+            renderWaitingScreen(&lobby, &state);
+    }
+
+    // Game-loop
+    if (state.phase == GAME_RUNNING)
+        runGame(&client, &lobby, &state);
+
+    cleanLobby(&lobby);
     cleanClient(&client);
 
     return 0;

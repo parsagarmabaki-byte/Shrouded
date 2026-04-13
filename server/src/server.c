@@ -6,26 +6,9 @@
 #include "network_data.h"
 
 #define PACKET_SIZE 512
+#define PLAYER_SPEED 200
 
-int init_server_network(UDPsocket *server_socket)
-{
-    if (SDLNet_Init() < 0)
-    {
-        printf("SDLNet_Init failed: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    *server_socket = SDLNet_UDP_Open(SERVER_PORT);
-    if (!*server_socket)
-    {
-        printf("Failed to open server socket: %s\n", SDLNet_GetError());
-        SDLNet_Quit();
-        return 0;
-    }
-
-    return 1;
-}
-UDPpacket *create_packet(int size)
+UDPpacket *createPacket(int size)
 {
     UDPpacket *packet = SDLNet_AllocPacket(size);
     if (!packet)
@@ -35,108 +18,200 @@ UDPpacket *create_packet(int size)
     return packet;
 }
 
-int receive_join_message(UDPsocket server_socket, UDPpacket *receive_packet, joinMessage *join)
+void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket *send_packet)
 {
-    if (!SDLNet_UDP_Recv(server_socket, receive_packet))
-    {
-        return 0;
-    }
-
-    if (receive_packet->len < (int)sizeof(joinMessage))
-    {
-        printf("Received packet too small for joinMessage\n");
-        return 0;
-    }
-
-    memcpy(join, receive_packet->data, sizeof(joinMessage));
-    return 1;
-}
-
-void cleanup_server(UDPsocket server_socket, UDPpacket *receive_packet)
-{
-    if (receive_packet)
-    {
-        SDLNet_FreePacket(receive_packet);
-    }
-
-    if (server_socket)
-    {
-        SDLNet_UDP_Close(server_socket);
-    }
-
+    if (receive_packet) SDLNet_FreePacket(receive_packet);
+    if (send_packet)    SDLNet_FreePacket(send_packet);
+    if (server_socket)  SDLNet_UDP_Close(server_socket);
     SDLNet_Quit();
 }
 
-int count_active_players(gameState *state)
-{
-    int count = 0;
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        if (state->players[i].active)
-        {
-            count++;
-        }
-    }
-    return count;
-}
-int add_to_lobby(gameState *state)
+int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (!state->players[i].active)
+        if (clientUsed[i] &&
+            clientAddresses[i].host == addr.host &&
+            clientAddresses[i].port == addr.port)
         {
-            state->players[i].active = 1;
-            state->players[i].player_id = i;
             return i;
         }
     }
     return -1;
 }
+
+int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
+{
+    float spawnX[MAX_PLAYERS] = {400, 500, 600, 700, 800, 900};
+    float spawnY[MAX_PLAYERS] = {300, 300, 300, 300, 300, 300};
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (!clientUsed[i])
+        {
+            clientUsed[i] = 1;
+            clientAddresses[i] = addr;
+
+            state->players[i].active = 1;
+            state->players[i].player_id = i;
+            state->players[i].x = spawnX[i];
+            state->players[i].y = spawnY[i];
+            return i;
+        }
+    }
+    return -1;
+}
+
+void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (clientUsed[i])
+        {
+            state->local_player_id = i;
+            if (!send_game_state(socket, packet, clientAddresses[i], state))
+            {
+                printf("Failed to send game state to player %d\n", i);
+            }
+        }
+    }
+}
+
+int removeFromLobby(gameState *state, IPaddress *clientAddress, int *clientUsed, IPaddress addr)
+{
+    int player = findClientByAddress(clientAddress, clientUsed, addr);
+    if (player >= 0)
+    {
+        clientUsed[player] = 0;
+        state->players[player].active = 0;
+        state->players[player].player_id = -1;
+        return player;
+    }
+    return -1;
+}
+
+void handleInput(gameState *state, clientInput *input, float dt)
+{
+    int id = input->player_id;
+    if (id < 0 || id >= MAX_PLAYERS) return;
+    if (!state->players[id].active) return;
+
+    float dx = 0, dy = 0;
+    if (input->up)    dy -= 1;
+    if (input->down)  dy += 1;
+    if (input->left)  dx -= 1;
+    if (input->right) dx += 1;
+
+    if (dx != 0 && dy != 0)
+    {
+        dx *= 0.7071f;
+        dy *= 0.7071f;
+    }
+
+    state->players[id].x += dx * PLAYER_SPEED * dt;
+    state->players[id].y += dy * PLAYER_SPEED * dt;
+}
+
 int main(void)
 {
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
+    UDPpacket *send_packet = NULL;
 
     gameState state = {0};
     state.type = MSG_GAME_STATE;
     state.phase = GAME_LOBBY;
 
-    if (!init_server_network(&server_socket))
-    {
-        return 1;
-    }
+    IPaddress clientAddresses[MAX_PLAYERS];
+    int clientUsed[MAX_PLAYERS] = {0};
 
-    receive_packet = create_packet(PACKET_SIZE);
-    if (!receive_packet)
-    {
-        cleanup_server(server_socket, NULL);
-        return 1;
-    }
+    // Spara senaste input per spelare
+    clientInput lastInput[MAX_PLAYERS] = {0};
+
+    if (!init_server(&server_socket)) return 1;
+
+    receive_packet = createPacket(PACKET_SIZE);
+    if (!receive_packet) { cleanupServer(server_socket, NULL, NULL); return 1; }
+
+    send_packet = createPacket(PACKET_SIZE);
+    if (!send_packet) { cleanupServer(server_socket, receive_packet, NULL); return 1; }
 
     printf("Server listening on port %d...\n", SERVER_PORT);
-    printf("Waiting for clients... %d/%d\n", count_active_players(&state), MAX_PLAYERS);
+
+    Uint64 lastBroadcast = SDL_GetPerformanceCounter();
 
     while (1)
     {
-        joinMessage join;
-
-        if (receive_join_message(server_socket, receive_packet, &join))
+        if (SDLNet_UDP_Recv(server_socket, receive_packet))
         {
-            if (join.type == MSG_JOIN)
+            MessageType type;
+            memcpy(&type, receive_packet->data, sizeof(MessageType));
+
+            if (type == MSG_JOIN)
             {
-                int player_id = add_to_lobby(&state);
-                if (player_id >= 0)
+                int existing = findClientByAddress(clientAddresses, clientUsed, receive_packet->address);
+                if (existing < 0)
                 {
-                    printf("Client joined as player %d\n", player_id);
-                    printf("Waiting for clients... %d/%d\n", count_active_players(&state), MAX_PLAYERS);
+                    int newPlayer = addToLobby(&state, clientAddresses, clientUsed, receive_packet->address);
+                    if (newPlayer >= 0)
+                    {
+                        printf("Player %d joined\n", newPlayer);
+                        broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                    }
                 }
-                else
+            }
+            else if (type == MSG_LEAVE)
+            {
+                int removed = removeFromLobby(&state, clientAddresses, clientUsed, receive_packet->address);
+                if (removed >= 0)
                 {
-                    printf("Lobby full.\n");
+                    printf("Player %d left\n", removed);
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
+            else if (type == MSG_START_GAME)
+            {
+                if (state.phase == GAME_LOBBY)
+                {
+                    state.phase = GAME_RUNNING;
+                    printf("Game is now GAME_RUNNING\n");
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
+            else if (type == MSG_CLIENT_INPUT)
+            {
+                if (state.phase == GAME_RUNNING)
+                {
+                    clientInput input;
+                    memcpy(&input, receive_packet->data, sizeof(clientInput));
+                    int id = input.player_id;
+                    if (id >= 0 && id < MAX_PLAYERS)
+                        lastInput[id] = input;
                 }
             }
         }
+
+        // Applicera input och broadcasta på fast 60fps
+        Uint64 now = SDL_GetPerformanceCounter();
+        float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
+        if (broadcastDt >= 0.016f)
+        {
+            if (state.phase == GAME_RUNNING)
+            {
+                for (int i = 0; i < MAX_PLAYERS; i++)
+                {
+                    handleInput(&state, &lastInput[i], 0.016f);
+                    lastInput[i].up = 0;
+                    lastInput[i].down = 0;
+                    lastInput[i].left = 0;
+                    lastInput[i].right = 0;
+                }
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            lastBroadcast = now;
+        }
     }
-    cleanup_server(server_socket, receive_packet);
+
+    cleanupServer(server_socket, receive_packet, send_packet);
     return 0;
 }
