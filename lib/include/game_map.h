@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <SDL2/SDL_image.h>
  
-#define GAME_MAP_WIDTH 3072
-#define GAME_MAP_HEIGHT 2048
+#define GAME_MAP_WIDTH 6144
+#define GAME_MAP_HEIGHT 4076
  
 typedef struct {
     float x, y;
