@@ -102,9 +102,6 @@ $(PLAYER_MOVEMENT_TEST_OUT): $(PLAYER_MOVEMENT_TEST_OBJ) $(PLAYER_MOVEMENT_OBJ) 
 run: $(CLIENT_OUT)
 	./$(CLIENT_OUT)
 
-test_player_movement: $(PLAYER_MOVEMENT_TEST_OUT)
-	./$(PLAYER_MOVEMENT_TEST_OUT)
-
 # ─── Städa ───────────────────────────────────────────────
 clean:
 ifeq ($(PLATFORM),windows)
