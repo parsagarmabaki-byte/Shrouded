@@ -63,11 +63,11 @@ void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
 {
     SDL_Texture *vignetteTexture;
     
-    SDL_Surface *surface = IMG_LOAD("assets/images/vignette.png");
+    SDL_Surface *surface = IMG_Load("assets/images/vignette.png");
     if (!surface)
     {
         printf("IMG_LOAD error: %s\n", IMG_GetError());
-    } else
+    }
     
     vignetteTexture = SDL_CreateTextureFromSurface(renderer, surface);
     SDL_FreeSurface(surface);
@@ -76,7 +76,7 @@ void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette_img)
     {
         printf("CreateTexture error: %s\n", SDL_GetError());
     }
-    
+
     SDL_SetTextureBlendMode(vignetteTexture, SDL_BLENDMODE_BLEND);
     SDL_RenderCopy(renderer, vignetteTexture, NULL, NULL);
 }
