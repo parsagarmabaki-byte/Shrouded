@@ -29,10 +29,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 {
     SDL_Renderer *renderer = lobby->renderer;
 
-    // Use the actual window size as the logical render resolution
-    int window_width, window_height;
-    SDL_GetWindowSize(lobby->window, &window_width, &window_height);
-    // Load assets
+    SDL_RenderSetLogicalSize(renderer, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
 
     SDL_Texture *mapTexture = loading_img(renderer, "assets/images/Game_map.png");
     if (!mapTexture) { printf("Failed to load map\n"); return; }
@@ -42,12 +39,12 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     // Initialize the local player at the spawn position received from the server
     int local_id = state->local_player_id;
-    Player player = init_player(window_width, window_height);
+    Player player = init_player(LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
     player.Hitbox.x = state->players[local_id].x;
     player.Hitbox.y = state->players[local_id].y;
 
     // Camera starts at origin — camera_follow() centers it on the player each frame
-    Camera cam = {0, 0, window_width, window_height};
+    Camera cam = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
 
     // Ensure the game window has focus so keyboard input is captured
     SDL_RaiseWindow(lobby->window);
