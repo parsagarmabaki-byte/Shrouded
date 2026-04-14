@@ -16,10 +16,10 @@ void sendInput(Client *client, gameState *state)
     clientInput input = {0};
     input.type      = MSG_CLIENT_INPUT;
     input.player_id = state->local_player_id;
-    input.up        = keys[SDL_SCANCODE_W];
-    input.down      = keys[SDL_SCANCODE_S];
-    input.left      = keys[SDL_SCANCODE_A];
-    input.right     = keys[SDL_SCANCODE_D];
+    input.up        = keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP];
+    input.down      = keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN];
+    input.left      = keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT];
+    input.right     = keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT];
     send_client_input(client->socket, client->serverAddr, &input);
 }
 
