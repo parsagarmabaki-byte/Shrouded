@@ -31,11 +31,9 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     SDL_RenderSetLogicalSize(renderer, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
 
-    SDL_Texture *mapTexture = loading_img(renderer, "assets/images/Game_map.png");
-    if (!mapTexture) { printf("Failed to load map\n"); return; }
-
-    SDL_Texture *playerTexture = IMG_LoadTexture(renderer, "assets/sprites/skin0.png");
-    if (!playerTexture) { printf("Failed to load player sprite\n"); return; }
+    GameAssets assets = load_assets(renderer);
+    if (!assets.map_texture) { printf("Failed to load map\n"); return; }
+    if (!assets.skins[0]) { printf("Failed to load player sprite\n"); return; }
 
     // Initialize the local player at the spawn position received from the server
     int local_id = state->local_player_id;
@@ -141,7 +139,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, player.Hitbox.w, player.Hitbox.h);
 
         // Draw the map with the camera offset
-        render_map(renderer, mapTexture, &cam);
+        render_map(renderer, assets.map_texture, &cam);
 
         // Draw all active players
         for (int i = 0; i < MAX_PLAYERS; i++)
@@ -167,13 +165,18 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                     p.direction    = DIR_DOWN;
                 }
 
-                renderPlayer(renderer, &p, playerTexture, &cam);
+                renderPlayer(renderer, &p, assets.skins[0], &cam);
             }
         }
+
+        if (assets.vignette_img)
+            SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
         SDL_RenderPresent(renderer);
     }
 
-    SDL_DestroyTexture(mapTexture);
-    SDL_DestroyTexture(playerTexture);
+    SDL_DestroyTexture(assets.map_texture);
+    SDL_DestroyTexture(assets.vignette_img);
+    for (int i = 0; i < PLAYER_SLOTS; i++)
+        SDL_DestroyTexture(assets.skins[i]);
 }
