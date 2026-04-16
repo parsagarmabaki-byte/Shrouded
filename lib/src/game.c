@@ -154,17 +154,6 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             }
         }
 
-        // Send this frame's input to the server
-
-        // Receive the latest game state from the server (non-blocking)
-
-        /*
-        När ett nytt serverpaket kommer, snäpp tillbaka den lokala
-        spelaren till serverns auktoritativa position. Det hindrar
-        prediction från att drifta över tid, men känns fortfarande
-        responsivt mellan paket (prediction kör fritt tills nästa korrigering).
-        */
-
         accumulator += dt;
         clientInput user_input = read_input();
 

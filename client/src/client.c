@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "network.h"
-#include "network_data.h"
 #include "lobby.h"
 #include "game.h"
 

@@ -1,6 +1,7 @@
 #ifndef NETWORK_DATA_H
 #define NETWORK_DATA_H
 
+
 #define MAX_PLAYERS 6
 #define SERVER_PORT 2000
 
@@ -27,12 +28,6 @@ typedef enum{
     MSG_READY_STATUS,
 } MessageType;
 
-typedef enum {
-    DIR_LEFT,
-    DIR_RIGHT,
-    DIR_DOWN,
-    DIR_UP
-} Direction;
 
 typedef struct { // Info som användaren klickar in
     MessageType type;
@@ -45,10 +40,7 @@ typedef struct { // Info som användaren klickar in
     int kill;
     int report;
     int current_frame;
-<<<<<<< HEAD
     Direction direction;
-=======
->>>>>>> 9f7b99b535e4cd9152ce8fcf2961e37b03032f3b
 } clientInput; 
 
 
@@ -62,10 +54,6 @@ typedef struct {
     int isImpostor;
     int isDoingTask;
     int current_frame;
-<<<<<<< HEAD
-=======
-    float animation_timer;
->>>>>>> 9f7b99b535e4cd9152ce8fcf2961e37b03032f3b
     Direction direction;
 } playerState;
 

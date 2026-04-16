@@ -59,7 +59,6 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].x = spawnX[i];
             state->players[i].y = spawnY[i];
             state->players[i].current_frame = 2;
-            state->players[i].animation_timer = 0;
             state->players[i].direction = DIR_DOWN;
             return i;
         }
