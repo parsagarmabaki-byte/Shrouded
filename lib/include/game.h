@@ -19,6 +19,9 @@ typedef struct player{
     float animation_timer;
 }Player;
 
+// Forward declare Player to break circular dependency
+typedef struct player Player;
+
 typedef struct
 {
     UDPsocket socket;

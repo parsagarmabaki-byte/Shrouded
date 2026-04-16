@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include "player_movement.h"
 #include "game_map.h"
+#include "network_data.h"
 #include <math.h>
 
 void apply_movement(float *x, float *y, clientInput input, float dt)

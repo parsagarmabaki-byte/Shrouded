@@ -117,7 +117,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         return;
     }
 
-    // Initialize the local player at the spawn position received from the server
+    // Initialize local player from server spawn position
     int local_id = state->local_player_id;
     Player player = init_player(*state, local_id);
 

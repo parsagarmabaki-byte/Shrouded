@@ -44,8 +44,8 @@ int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress a
 
 int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
-    float spawnX[MAX_PLAYERS] = {400, 500, 600, 700, 800, 900};
-    float spawnY[MAX_PLAYERS] = {300, 300, 300, 300, 300, 300};
+    float spawnX[MAX_PLAYERS] = {1290, 1150, 1420, 1000, 1290, 1150};
+    float spawnY[MAX_PLAYERS] = {665, 665, 850, 850, 1000, 1000};
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
