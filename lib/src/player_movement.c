@@ -2,58 +2,43 @@
 #include <SDL2/SDL_image.h>
 #include "player_movement.h"
 #include "game_map.h"
+#include "network_data.h"
 #include <math.h>
 
-
-void apply_movement(float *x, float *y, float w, float h, int up, int down, int left, int right, float dt)
+void apply_movement(gameState *state,clientInput input, float dt)
 {
     float dx = 0, dy = 0;
-    if (up)    
+    if (input.up)
     {
         dy -= 1;
+        state->players[state->local_player_id].direction = DIR_UP;
     }
-    if (down)  
+    if (input.down)
     {
         dy += 1;
+        state->players[state->local_player_id].direction = DIR_DOWN;
     }
-    if (left)  
+    if (input.left)
     {
         dx -= 1;
+        state->players[state->local_player_id].direction = DIR_LEFT;
     }
-    if (right) 
+    if (input.right)
     {
         dx += 1;
+        state->players[state->local_player_id].direction = DIR_RIGHT;
     }
 
-    if (dx != 0 || dy != 0) 
+    if (dx != 0 || dy != 0)
     {
         float len = sqrtf(dx * dx + dy * dy);
         dx /= len;
         dy /= len;
     }
 
-    *x += dx * PLAYER_SPEED * dt; // SERVER TICK RATE
-    *y += dy * PLAYER_SPEED * dt;
-
-    if (*x < 0) 
-    {
-        *x = 0;
-    }
-    if (*y < 0) 
-    {
-        *y = 0;
-    }
-    if (*x + w > GAME_MAP_WIDTH) 
-    {
-        *x = GAME_MAP_WIDTH - w;
-    }
-    if (*y + h > GAME_MAP_HEIGHT) 
-    {
-        *y = GAME_MAP_HEIGHT - h;
-    }
+    state->players[state->local_player_id].x += dx * PLAYER_SPEED * dt; // SERVER TICK RATE
+    state->players[state->local_player_id].y += dy * PLAYER_SPEED * dt;
 }
-
-
 
 Player init_player(int window_width, int window_height)
 {
@@ -61,12 +46,11 @@ Player init_player(int window_width, int window_height)
     Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, PLAYER_SIZE, PLAYER_SIZE}, Playing, {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_A}};
     ANVÄNDS EJ LÄNGRE
     */
-    Player player = {{window_width / 2 - 45/2, window_height / 2 - 70/2, PLAYER_SIZE, PLAYER_SIZE}};
+    Player player = {{window_width / 2 - 45 / 2, window_height / 2 - 70 / 2, PLAYER_SIZE, PLAYER_SIZE}};
     player.direction = DIR_DOWN;
     player.current_frame = 0;
     player.animation_timer = 0.0f;
     return player;
-
 }
 
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam)
@@ -178,7 +162,7 @@ bool move_player(Player *player,InputState input,float dt)
 
         read_input(*player,&input);
         bool moving = move_player(player,input,dt);
-        
+
         if(moving)
         {
             player->animation_timer += dt;
@@ -197,20 +181,9 @@ bool move_player(Player *player,InputState input,float dt)
         {
             player->current_frame = 2; // reset to idle frame when not moving
         }
-        
+
         camera_follow(&cam, player->Hitbox.x, player->Hitbox.y, player->Hitbox.w, player->Hitbox.h);
         update_map(renderer, GameMap, player, player_sprite, &cam);
     }
-}
-*/
-
-/*void read_input(Player player,InputState *input) ANVÄNDS INTE LÄNGRE
-{
-    const Uint8 *key = SDL_GetKeyboardState(NULL);
-
-    input->up = key[player.controls.up];
-    input->down = key[player.controls.down];
-    input->left = key[player.controls.left];
-    input->right = key[player.controls.right];
 }
 */

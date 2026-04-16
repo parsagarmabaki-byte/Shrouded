@@ -42,8 +42,8 @@ int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress a
 
 int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
-    float spawnX[MAX_PLAYERS] = {400, 500, 600, 700, 800, 900};
-    float spawnY[MAX_PLAYERS] = {300, 300, 300, 300, 300, 300};
+    float spawnX[MAX_PLAYERS] = {1290, 1150, 1420, 1000, 1290, 1150};
+    float spawnY[MAX_PLAYERS] = {665, 665, 850, 850, 1000, 1000};
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
@@ -56,6 +56,9 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].player_id = i;
             state->players[i].x = spawnX[i];
             state->players[i].y = spawnY[i];
+            state->players[i].current_frame = 2;  // Idle frame
+            state->players[i].animation_timer = 0.0f;
+            state->players[i].direction = DIR_DOWN;
             return i;
         }
     }
@@ -96,8 +99,9 @@ void handleInput(gameState *state, clientInput *input, float dt)
     if (id < 0 || id >= MAX_PLAYERS) return;
     if (!state->players[id].active) return;
 
-    apply_movement(&state->players[id].x, &state->players[id].y, 
-        PLAYER_SIZE, PLAYER_SIZE, input->up, input->down, input->left, input->right, dt);
+    // Update animation frame from client
+    state->players[id].current_frame = input->current_frame;
+    apply_movement(state, (*input), dt);
 }
 
 int main(void)

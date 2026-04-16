@@ -21,6 +21,13 @@ typedef enum{
     MSG_READY_STATUS,
 } MessageType;
 
+typedef enum {
+    DIR_LEFT,
+    DIR_RIGHT,
+    DIR_DOWN,
+    DIR_UP
+} Direction;
+
 typedef struct { // Info som användaren klickar in
     MessageType type;
     int player_id;
@@ -31,6 +38,7 @@ typedef struct { // Info som användaren klickar in
     int interact;
     int kill;
     int report;
+    int current_frame;
 } clientInput; 
 
 typedef struct {
@@ -41,6 +49,9 @@ typedef struct {
     int isAlive;
     int isImpostor;
     int isDoingTask;
+    int current_frame;
+    float animation_timer;
+    Direction direction;
 } playerState;
 
 typedef enum{
