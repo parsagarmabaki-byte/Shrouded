@@ -1,16 +1,10 @@
 #include "game.h"
-#include "network.h"
-#include "game_map.h"
-#include "player_movement.h"
-#include <SDL2/SDL_image.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <math.h>
+
 
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
 // Reads keyboard state and sends the local player's input to the server every frame.
 // The server uses this to update the authoritative player position.
-void sendInput(Client *client, gameState *state)
+void sendInput(Client *client, gameState *state, Player *player)
 {
     const Uint8 *keys = SDL_GetKeyboardState(NULL);
     clientInput input = {0};
@@ -20,9 +14,89 @@ void sendInput(Client *client, gameState *state)
     input.down = keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN];
     input.left = keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT];
     input.right = keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT];
+    input.current_frame = player->current_frame;
+    input.direction = player->direction;
+
     send_client_input(client->socket, client->serverAddr, &input);
 }
 
+void collect_client_data(Client *client ,gameState *state,Player *player, int local_id)
+{
+    int got_state = -1;
+    while (receive_game_state(client->socket, client->recievepacket, state) == 0)
+    {
+        got_state = 0;
+    }
+
+    if (got_state == 0)
+    {
+        float dx = state->players[local_id].x - player->Hitbox.x;
+        float dy = state->players[local_id].y - player->Hitbox.y;
+
+        if (fabsf(dx) > 6.0f)
+            player->Hitbox.x = state->players[local_id].x;
+        if (fabsf(dy) > 6.0f)
+            player->Hitbox.y = state->players[local_id].y;
+    }
+}
+clientInput read_input(void)
+{
+    clientInput input = {0};
+    const Uint8 *key = SDL_GetKeyboardState(NULL);
+    input.up = key[SDL_SCANCODE_W];
+    input.down = key[SDL_SCANCODE_S];
+    input.left = key[SDL_SCANCODE_A];
+    input.right = key[SDL_SCANCODE_D];
+    input.kill = key[SDL_SCANCODE_K];
+    return input;
+}
+void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt)
+{
+    bool moving = input.up || input.down || input.left || input.right;
+    if (moving)
+    {
+        (*animation_timer) += dt;
+        if ((*animation_timer) > 0.1f)
+        {
+            (*current_frame)++;
+            
+            if ((*current_frame) >= 10)
+                (*current_frame) = 0;
+
+            (*animation_timer) = 0.0f;
+        }
+    }
+    else
+    {
+        (*current_frame) = 2;
+    }
+}
+void render_all_players(gameState *state,Player player,GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (state->players[i].active)
+        {
+            Player p = player;
+            if (i == local_id)
+            {
+                p.Hitbox.x = player.Hitbox.x;
+                p.Hitbox.y = player.Hitbox.y;
+                p.current_frame = player.current_frame;
+                p.direction = player.direction;
+            }
+            else
+            {
+                p.Hitbox.x = state->players[i].x;
+                p.Hitbox.y = state->players[i].y;
+                p.current_frame = state->players[i].current_frame;
+                p.direction = state->players[i].direction;
+            }
+
+            renderPlayer(renderer, &p, assets.skins[i], cam);
+        }
+    }
+}
 // Main game loop. Runs after the lobby phase when the server signals GAME_RUNNING.
 // Handles input, client-side prediction, receiving server state, and rendering.
 void runGame(Client *client, waitForPlayers *lobby, gameState *state)
@@ -45,9 +119,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     // Initialize the local player at the spawn position received from the server
     int local_id = state->local_player_id;
-    Player player = init_player(LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
-    player.Hitbox.x = state->players[local_id].x;
-    player.Hitbox.y = state->players[local_id].y;
+    Player player = init_player(*state, local_id);
 
     // Camera starts at origin — camera_follow() centers it on the player each frame
     Camera cam = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
@@ -83,7 +155,6 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         }
 
         // Send this frame's input to the server
-        sendInput(client, state);
 
         // Receive the latest game state from the server (non-blocking)
 
@@ -93,113 +164,40 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         prediction från att drifta över tid, men känns fortfarande
         responsivt mellan paket (prediction kör fritt tills nästa korrigering).
         */
-        int got_state = -1;
-        while (receive_game_state(client->socket, client->recievepacket, state) == 0)
-        {
-            got_state = 0;
-        }
 
-        if (got_state == 0)
-        {
-            float dx = state->players[local_id].x - player.Hitbox.x;
-            float dy = state->players[local_id].y - player.Hitbox.y;
-
-            if (fabsf(dx) > 4.0f)
-                player.Hitbox.x = state->players[local_id].x;
-            if (fabsf(dy) > 4.0f)
-                player.Hitbox.y = state->players[local_id].y;
-        }
-    
         accumulator += dt;
-
-        int up = 0, down = 0, left = 0, right = 0;
-
-        const Uint8 *keys = SDL_GetKeyboardState(NULL);
-        up = keys[SDL_SCANCODE_W];
-        down = keys[SDL_SCANCODE_S];
-        left = keys[SDL_SCANCODE_A];
-        right = keys[SDL_SCANCODE_D];
+        clientInput user_input = read_input();
 
         while (accumulator >= SERVER_TICK_INTERVAL) // SERVER TICK ÄR 0.016f
         {
-            if (up)
-            {
+            if (user_input.up)
                 player.direction = DIR_UP;
-            }
-            if (down)
-            {
+            if (user_input.down)
                 player.direction = DIR_DOWN;
-            }
-            if (left)
-            {
+            if (user_input.left)
                 player.direction = DIR_LEFT;
-            }
-            if (right)
-            {
+            if (user_input.right)
                 player.direction = DIR_RIGHT;
-            }
 
-            apply_movement(&player.Hitbox.x, &player.Hitbox.y, player.Hitbox.w, player.Hitbox.h, up, down, left, right, SERVER_TICK_INTERVAL);
-
+            apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
             accumulator -= SERVER_TICK_INTERVAL;
         }
 
-        // --- Animation ---------- ---------
-        // Advance animation frames while moving, reset to idle frame when stopped
-        bool moving = up || down || left || right;
-
-        if (moving)
-        {
-            player.animation_timer += dt;
-            if (player.animation_timer > 0.1f)
-            {
-                player.current_frame = (player.current_frame + 1);
-                if (player.current_frame >= 10)
-                    player.current_frame = 0; // Loop through frames 0-3
-                player.animation_timer = 0;
-            }
-        }
-        else
-        {
-            player.current_frame = 2; // idle frame
-        }
+        run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
+        sendInput(client, state, &player);
+        collect_client_data(client ,state, &player, local_id);
 
         // Move the camera to keep the local player centered on screen
-        camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, player.Hitbox.w, player.Hitbox.h);
+        camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
 
         // Draw the map with the camera offset
         render_map(renderer, assets.map_texture, &cam);
 
         // Draw all active players
-        for (int i = 0; i < MAX_PLAYERS; i++)
-        {
-            if (state->players[i].active)
-            {
-                Player p = player;
+        render_all_players(state,player, assets, &cam, renderer,local_id);
 
-                if (i == local_id)
-                {
-                    // Local player — use predicted position and animation
-                    p.Hitbox.x = player.Hitbox.x;
-                    p.Hitbox.y = player.Hitbox.y;
-                    p.current_frame = player.current_frame;
-                    p.direction = player.direction;
-                }
-                else
-                {
-                    // Other players — use authoritative server position, idle animation
-                    p.Hitbox.x = state->players[i].x;
-                    p.Hitbox.y = state->players[i].y;
-                    p.current_frame = 2;
-                    p.direction = DIR_DOWN;
-                }
-
-                renderPlayer(renderer, &p, assets.skins[3], &cam);
-            }
-        }
-
-        if (assets.vignette_img)
-            SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
+            if (assets.vignette_img)
+                SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
         SDL_RenderPresent(renderer);
     }

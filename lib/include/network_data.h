@@ -11,6 +11,12 @@
 
 // BARA RÖRELSER OCH ROLLER IMPLEMENTERADE
 // MER SKA LÄGGAS TILL
+typedef enum {
+    DIR_LEFT,
+    DIR_RIGHT,
+    DIR_DOWN,
+    DIR_UP
+} Direction;
 
 typedef enum{
     MSG_JOIN,
@@ -31,7 +37,11 @@ typedef struct { // Info som användaren klickar in
     int interact;
     int kill;
     int report;
+    int current_frame;
+    Direction direction;
 } clientInput; 
+
+
 
 typedef struct {
     int active;
@@ -41,6 +51,8 @@ typedef struct {
     int isAlive;
     int isImpostor;
     int isDoingTask;
+    int current_frame;
+    Direction direction;
 } playerState;
 
 typedef enum{

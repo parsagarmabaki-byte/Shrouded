@@ -38,7 +38,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
 
     return asset;   
 }
-void camera_follow(Camera *cam, float player_x, float player_y, float player_w, float player_h)
+void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)
 {
     cam->x = player_x + player_w / 2 - cam->screen_w / 2;
     cam->y = player_y + player_h / 2 - cam->screen_h / 2;

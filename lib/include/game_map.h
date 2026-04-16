@@ -29,6 +29,6 @@ typedef struct {
 GameAssets load_assets(SDL_Renderer *renderer);
 SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
 void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam);
-void camera_follow(Camera *cam, float player_x, float player_y, float player_w, float player_h);
+void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h);
 #endif
  

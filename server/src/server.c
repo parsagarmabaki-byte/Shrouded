@@ -7,7 +7,6 @@
 #include "player_movement.h"
 #define PACKET_SIZE 512
 
-
 UDPpacket *createPacket(int size)
 {
     UDPpacket *packet = SDLNet_AllocPacket(size);
@@ -20,9 +19,12 @@ UDPpacket *createPacket(int size)
 
 void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket *send_packet)
 {
-    if (receive_packet) SDLNet_FreePacket(receive_packet);
-    if (send_packet)    SDLNet_FreePacket(send_packet);
-    if (server_socket)  SDLNet_UDP_Close(server_socket);
+    if (receive_packet)
+        SDLNet_FreePacket(receive_packet);
+    if (send_packet)
+        SDLNet_FreePacket(send_packet);
+    if (server_socket)
+        SDLNet_UDP_Close(server_socket);
     SDLNet_Quit();
 }
 
@@ -56,6 +58,9 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].player_id = i;
             state->players[i].x = spawnX[i];
             state->players[i].y = spawnY[i];
+            state->players[i].current_frame = 2;
+            state->players[i].animation_timer = 0;
+            state->players[i].direction = DIR_DOWN;
             return i;
         }
     }
@@ -93,11 +98,17 @@ int removeFromLobby(gameState *state, IPaddress *clientAddress, int *clientUsed,
 void handleInput(gameState *state, clientInput *input, float dt)
 {
     int id = input->player_id;
-    if (id < 0 || id >= MAX_PLAYERS) return;
-    if (!state->players[id].active) return;
+    if (id < 0 || id >= MAX_PLAYERS)
+        return;
+    if (!state->players[id].active)
+        return;
+    if (input->player_id == -1)
+        return;
 
-    apply_movement(&state->players[id].x, &state->players[id].y, 
-        PLAYER_SIZE, PLAYER_SIZE, input->up, input->down, input->left, input->right, dt);
+    state->players[id].current_frame = input->current_frame;
+    state->players[id].direction = input->direction;
+
+    apply_movement(&state->players[id].x, &state->players[id].y, *input, dt);
 }
 
 int main(void)
@@ -114,15 +125,28 @@ int main(void)
     int clientUsed[MAX_PLAYERS] = {0};
 
     // Spara senaste input per spelare
-    clientInput lastInput[MAX_PLAYERS] = {0};
+    clientInput lastInput[MAX_PLAYERS];
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        lastInput[i].player_id = -1;
+    }
 
-    if (!init_server(&server_socket)) return 1;
+    if (!init_server(&server_socket))
+        return 1;
 
     receive_packet = createPacket(PACKET_SIZE);
-    if (!receive_packet) { cleanupServer(server_socket, NULL, NULL); return 1; }
+    if (!receive_packet)
+    {
+        cleanupServer(server_socket, NULL, NULL);
+        return 1;
+    }
 
     send_packet = createPacket(PACKET_SIZE);
-    if (!send_packet) { cleanupServer(server_socket, receive_packet, NULL); return 1; }
+    if (!send_packet)
+    {
+        cleanupServer(server_socket, receive_packet, NULL);
+        return 1;
+    }
 
     printf("Server listening on port %d...\n", SERVER_PORT);
 
@@ -182,7 +206,7 @@ int main(void)
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
-        
+
         if (broadcastDt >= SERVER_TICK_INTERVAL)
         {
             if (state.phase == GAME_RUNNING)
@@ -190,10 +214,14 @@ int main(void)
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
                     handleInput(&state, &lastInput[i], 0.016f);
+
+                    lastInput[i].player_id = -1;
                     lastInput[i].up = 0;
                     lastInput[i].down = 0;
                     lastInput[i].left = 0;
                     lastInput[i].right = 0;
+                    lastInput[i].current_frame = 0;
+                    lastInput[i].direction = DIR_DOWN;
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
