@@ -1,6 +1,5 @@
 #include "game.h"
 
-
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
 // Reads keyboard state and sends the local player's input to the server every frame.
 // The server uses this to update the authoritative player position.
@@ -20,7 +19,7 @@ void sendInput(Client *client, gameState *state, Player *player)
     send_client_input(client->socket, client->serverAddr, &input);
 }
 
-void collect_client_data(Client *client ,gameState *state,Player *player, int local_id)
+void collect_client_data(Client *client, gameState *state, Player *player, int local_id)
 {
     int got_state = -1;
     while (receive_game_state(client->socket, client->recievepacket, state) == 0)
@@ -39,15 +38,22 @@ void collect_client_data(Client *client ,gameState *state,Player *player, int lo
             player->Hitbox.y = state->players[local_id].y;
     }
 }
-clientInput read_input(void)
+clientInput read_input(bool tasks_active)
 {
     clientInput input = {0};
     const Uint8 *key = SDL_GetKeyboardState(NULL);
-    input.up = key[SDL_SCANCODE_W];
-    input.down = key[SDL_SCANCODE_S];
-    input.left = key[SDL_SCANCODE_A];
-    input.right = key[SDL_SCANCODE_D];
-    input.kill = key[SDL_SCANCODE_K];
+    if (!tasks_active)
+    {
+        input.up = key[SDL_SCANCODE_W];
+        input.down = key[SDL_SCANCODE_S];
+        input.left = key[SDL_SCANCODE_A];
+        input.right = key[SDL_SCANCODE_D];
+        input.kill = key[SDL_SCANCODE_K];
+    }
+    else
+    {
+        input.up, input.down, input.left, input.right = 0;
+    }
     return input;
 }
 void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt)
@@ -59,7 +65,7 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
         if ((*animation_timer) > 0.1f)
         {
             (*current_frame)++;
-            
+
             if ((*current_frame) >= 10)
                 (*current_frame) = 0;
 
@@ -71,7 +77,7 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
         (*current_frame) = 2;
     }
 }
-void render_all_players(gameState *state,Player player,GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id)
+void render_all_players(gameState *state, Player player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
@@ -121,6 +127,11 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     int local_id = state->local_player_id;
     Player player = init_player(*state, local_id);
 
+    // initialize in-game tasks
+    Task task;
+    init_task(&task);
+    int score = 0;
+
     // Camera starts at origin — camera_follow() centers it on the player each frame
     Camera cam = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
 
@@ -147,15 +158,29 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         {
             if (event.type == SDL_QUIT)
                 running = false;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+            if (event.type == SDL_KEYDOWN)
             {
-                send_leave(client->socket, client->serverAddr);
-                running = false;
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                {
+                    send_leave(client->socket, client->serverAddr);
+                    running = false;
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_E)
+                {
+                    start_timer_task(&task, 10.0f);
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_Q)
+                {
+                    if (task.active)
+                    {
+                        cancel_task(&task);
+                    }
+                }
             }
         }
 
         accumulator += dt;
-        clientInput user_input = read_input();
+        clientInput user_input = read_input(task.active);
 
         while (accumulator >= SERVER_TICK_INTERVAL) // SERVER TICK ÄR 0.016f
         {
@@ -173,8 +198,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         }
 
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
-        sendInput(client, state, &player);
-        collect_client_data(client ,state, &player, local_id);
+        if (!task.active)
+        {
+            sendInput(client, state, &player);
+        }
+        collect_client_data(client, state, &player, local_id);
+
+        update_task(&task, dt);
 
         // Move the camera to keep the local player centered on screen
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
@@ -183,11 +213,12 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         render_map(renderer, assets.map_texture, &cam);
 
         // Draw all active players
-        render_all_players(state,player, assets, &cam, renderer,local_id);
+        render_all_players(state, player, assets, &cam, renderer, local_id);
 
-            if (assets.vignette_img)
-                SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
+        if (assets.vignette_img)
+            SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
+        render_task(renderer, &task);
         SDL_RenderPresent(renderer);
     }
 
