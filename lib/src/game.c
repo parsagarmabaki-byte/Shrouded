@@ -2,6 +2,7 @@
 #include "network.h"
 #include "game_map.h"
 #include "player_movement.h"
+#include "task.h"
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -49,6 +50,11 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     player.Hitbox.x = state->players[local_id].x;
     player.Hitbox.y = state->players[local_id].y;
 
+    // initialize in-game tasks
+    Task task;
+    init_task(&task);
+    int score = 0;
+
     // Camera starts at origin — camera_follow() centers it on the player each frame
     Camera cam = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
 
@@ -75,15 +81,31 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         {
             if (event.type == SDL_QUIT)
                 running = false;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+            if (event.type == SDL_KEYDOWN)
             {
-                send_leave(client->socket, client->serverAddr);
-                running = false;
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                {
+                    send_leave(client->socket, client->serverAddr);
+                    running = false;
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_E)
+                {
+                    start_timer_task(&task, 10.0f);
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_Q)
+                {
+                    if (task.active)
+                    {
+                        cancel_task(&task);
+                    }
+                }
             }
         }
 
         // Send this frame's input to the server
-        sendInput(client, state);
+        if (!task.active) {
+            sendInput(client, state);
+        }
 
         // Receive the latest game state from the server (non-blocking)
 
@@ -115,10 +137,18 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         int up = 0, down = 0, left = 0, right = 0;
 
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
-        up = keys[SDL_SCANCODE_W];
-        down = keys[SDL_SCANCODE_S];
-        left = keys[SDL_SCANCODE_A];
-        right = keys[SDL_SCANCODE_D];
+
+        if (!task.active)
+        {
+            up = keys[SDL_SCANCODE_W];
+            down = keys[SDL_SCANCODE_S];
+            left = keys[SDL_SCANCODE_A];
+            right = keys[SDL_SCANCODE_D];
+        }
+        else
+        {
+            up = down = left = right = 0;
+        }
 
         while (accumulator >= SERVER_TICK_INTERVAL) // SERVER TICK ÄR 0.016f
         {
@@ -138,7 +168,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             {
                 player.direction = DIR_RIGHT;
             }
-
+            
             apply_movement(&player.Hitbox.x, &player.Hitbox.y, player.Hitbox.w, player.Hitbox.h, up, down, left, right, SERVER_TICK_INTERVAL);
 
             accumulator -= SERVER_TICK_INTERVAL;
@@ -163,6 +193,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         {
             player.current_frame = 2; // idle frame
         }
+
+        update_task(&task, dt);
 
         // Move the camera to keep the local player centered on screen
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, player.Hitbox.w, player.Hitbox.h);
@@ -201,6 +233,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (assets.vignette_img)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
+        render_task(renderer, &task);
         SDL_RenderPresent(renderer);
     }
 
