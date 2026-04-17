@@ -10,7 +10,7 @@
 #include "network_data.h"
 
 
-typedef struct player{
+typedef struct{
     SDL_FRect Hitbox;
     Direction direction;
     int current_frame;

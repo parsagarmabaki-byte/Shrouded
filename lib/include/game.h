@@ -13,16 +13,6 @@
 #include <math.h>
 #include "task.h"
 
-typedef struct player{
-    SDL_FRect Hitbox;
-    Direction direction;
-    int current_frame;
-    float animation_timer;
-}Player;
-
-// Forward declare Player to break circular dependency
-typedef struct player Player;
-
 typedef struct
 {
     UDPsocket socket;

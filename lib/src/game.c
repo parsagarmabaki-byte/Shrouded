@@ -52,7 +52,7 @@ clientInput read_input(bool tasks_active)
     }
     else
     {
-        input.up, input.down, input.left, input.right = 0;
+        input.up = 0, input.down = 0, input.left = 0, input.right = 0;
     }
     return input;
 }
