@@ -1,6 +1,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL_net.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <string.h>
 #include "network.h"
 #include "network_data.h"
@@ -66,6 +68,50 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
     return -1;
 }
 
+int countActivePlayers(gameState *state)
+{
+    int active_players = 0;
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (state->players[i].active)
+            active_players++;
+    }
+
+    return active_players;
+}
+
+void designateImpostor(gameState *state)
+{
+    int active_player_count = countActivePlayers(state);
+    int chosen_active_player = 0;
+    int active_player_index = 0;
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        state->players[i].isImpostor = 0;
+    }
+
+    if (active_player_count <= 0)
+        return;
+
+    chosen_active_player = rand() % active_player_count;
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (!state->players[i].active)
+            continue;
+
+        if (active_player_index == chosen_active_player)
+        {
+            state->players[i].isImpostor = 1;
+            return;
+        }
+
+        active_player_index++;
+    }
+}
+
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -112,6 +158,7 @@ void handleInput(gameState *state, clientInput *input, float dt)
 
 int main(void)
 {
+    srand(time(NULL));
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
     UDPpacket *send_packet = NULL;
@@ -184,6 +231,7 @@ int main(void)
             {
                 if (state.phase == GAME_LOBBY)
                 {
+                    designateImpostor(&state);
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);

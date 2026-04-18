@@ -107,6 +107,7 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
 // Handles input, client-side prediction, receiving server state, and rendering.
 void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 {
+    bool local_player_is_impostor = false;
     SDL_Renderer *renderer = lobby->renderer;
 
     SDL_RenderSetLogicalSize(renderer, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
@@ -179,6 +180,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             }
         }
 
+        local_player_is_impostor = state->players[local_id].isImpostor != 0;
+
         accumulator += dt;
         clientInput user_input = read_input(task.active);
 
@@ -215,7 +218,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // Draw all active players
         render_all_players(state, player, assets, &cam, renderer, local_id);
 
-        if (assets.vignette_img)
+        if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
         render_task(renderer, &task);
