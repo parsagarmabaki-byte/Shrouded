@@ -19,6 +19,8 @@ typedef struct
     SDL_Texture *skins[PLAYER_SLOTS];
     SDL_Texture *map_texture;
     SDL_Texture *vignette_img;
+    SDL_Texture *killer_img;
+    SDL_Texture *innocent_img;
 } GameAssets;
 
 typedef struct {

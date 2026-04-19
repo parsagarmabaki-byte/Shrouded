@@ -62,6 +62,7 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].y = spawnY[i];
             state->players[i].current_frame = 2;
             state->players[i].direction = DIR_DOWN;
+            state->players[i].isImpostor = 0;
             return i;
         }
     }
@@ -83,26 +84,26 @@ int countActivePlayers(gameState *state)
 
 int designateImpostor(gameState *state)
 {
-    int activePlayers[MAX_PLAYERS];
-    int activeCount = 0;
+    int active_player_count = countActivePlayers(state);
+    int chosen_active_player = 0;
+    int active_player_index = 0;
+
+    chosen_active_player = rand() % active_player_count;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        state->players[i].isImpostor = 0;
-        if (state->players[i].active)
+        if (!state->players[i].active)
+            continue;
+
+        if (active_player_index == chosen_active_player)
         {
-            activePlayers[activeCount++] = i;
+            state->players[i].isImpostor = 1;
+            return chosen_active_player;
         }
-    }
 
-    if (activeCount == 0)
-    {
-        return -1;
+        active_player_index++;
     }
-
-    int impostor = activePlayers[rand() % activeCount];
-    state->players[impostor].isImpostor = 1;
-    return impostor;
+    return -1;   // alla aktiva spelare gicks igenom utan match (borde inte hända)
 }
 
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
@@ -152,6 +153,8 @@ void handleInput(gameState *state, clientInput *input, float dt)
 int main(void)
 {
     srand(time(NULL));
+    
+
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
     UDPpacket *send_packet = NULL;
@@ -190,6 +193,7 @@ int main(void)
     printf("Server listening on port %d...\n", SERVER_PORT);
 
     Uint64 lastBroadcast = SDL_GetPerformanceCounter();
+    Uint64 state_start_time = 0;
 
     while (1)
     {
@@ -224,10 +228,13 @@ int main(void)
             {
                 if (state.phase == GAME_LOBBY)
                 {
-                    int impostor = designateImpostor(&state);
-                    printf("Player %d is impostor\n", impostor);
-                    state.phase = GAME_RUNNING;
-                    printf("Game is now GAME_RUNNING\n");
+                    int active_chosen_player = designateImpostor(&state);
+                    printf("Player %d is impostor\n", active_chosen_player);
+                    state.phase = GAME_SHOW_ROLE;
+                    printf("Game is now GAME_SHOW_ROLE\n");
+
+                    state_start_time = SDL_GetTicks64(); // TIDSSTÄMPEL
+
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
@@ -243,14 +250,23 @@ int main(void)
                 }
             }
         }
-
+        
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
 
         if (broadcastDt >= SERVER_TICK_INTERVAL)
         {
-            if (state.phase == GAME_RUNNING)
+            if (state.phase == GAME_SHOW_ROLE)
+            {
+                if (SDL_GetTicks64() - state_start_time >= 3000) //NÄR 3 SEKUNDER GÅTT
+                {
+                    state.phase = GAME_RUNNING;
+                    printf("Game is now GAME_RUNNING\n");
+                }
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            else if (state.phase == GAME_RUNNING)
             {
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
@@ -261,7 +277,7 @@ int main(void)
                     lastInput[i].down = 0;
                     lastInput[i].left = 0;
                     lastInput[i].right = 0;
-                    lastInput[i].current_frame = 0;
+                    lastInput[i].current_frame = 0;                        
                     lastInput[i].direction = DIR_DOWN;
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);

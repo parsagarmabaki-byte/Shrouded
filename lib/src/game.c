@@ -149,6 +149,27 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     while (running)
     {
+        if (state->phase == GAME_SHOW_ROLE)
+        {
+            SDL_Texture *role_img;
+            collect_client_data(client, state, &player, local_id);
+
+            SDL_RenderClear(renderer);
+
+            if(state->players[local_id].isImpostor)
+            {
+                role_img = assets.killer_img;
+            }
+            else
+            {
+                role_img = assets.innocent_img;
+            }
+
+            SDL_RenderCopy(renderer, role_img, NULL, NULL);
+            SDL_RenderPresent(renderer);
+            continue;   // hoppa till nästa loop-iteration
+        }
+
         // Delta time — time since last frame in seconds
         Uint64 now = SDL_GetPerformanceCounter();
         float dt = (float)(now - last) / (float)SDL_GetPerformanceFrequency();
@@ -227,6 +248,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     SDL_DestroyTexture(assets.map_texture);
     SDL_DestroyTexture(assets.vignette_img);
+    SDL_DestroyTexture(assets.innocent_img);  
+    SDL_DestroyTexture(assets.killer_img);
     for (int i = 0; i < PLAYER_SLOTS; i++)
         SDL_DestroyTexture(assets.skins[i]);
 }

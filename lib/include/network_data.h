@@ -60,6 +60,7 @@ typedef struct {
 typedef enum{
     GAME_LOBBY,
     GAME_RUNNING,
+    GAME_SHOW_ROLE,
     GAME_MEETING
 } gamePhase;
 
