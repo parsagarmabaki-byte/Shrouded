@@ -83,33 +83,26 @@ int countActivePlayers(gameState *state)
 
 int designateImpostor(gameState *state)
 {
-    int active_player_count = countActivePlayers(state);
-    int chosen_active_player = 0;
-    int active_player_index = 0;
+    int activePlayers[MAX_PLAYERS];
+    int activeCount = 0;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         state->players[i].isImpostor = 0;
-    }
-
-    if (active_player_count <= 0)
-        return -1;
-
-    chosen_active_player = rand() % active_player_count;
-
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        if (!state->players[i].active)
-            continue;
-
-        if (active_player_index == chosen_active_player)
+        if (state->players[i].active)
         {
-            state->players[i].isImpostor = 1;
-            return chosen_active_player;
+            activePlayers[activeCount++] = i;
         }
-
-        active_player_index++;
     }
+
+    if (activeCount == 0)
+    {
+        return -1;
+    }
+
+    int impostor = activePlayers[rand() % activeCount];
+    state->players[impostor].isImpostor = 1;
+    return impostor;
 }
 
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
@@ -231,8 +224,8 @@ int main(void)
             {
                 if (state.phase == GAME_LOBBY)
                 {
-                    int active_chosen_player = designateImpostor(&state);
-                    printf("Player %d is impostor\n", active_chosen_player);
+                    int impostor = designateImpostor(&state);
+                    printf("Player %d is impostor\n", impostor);
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
