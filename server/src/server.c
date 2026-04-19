@@ -81,7 +81,7 @@ int countActivePlayers(gameState *state)
     return active_players;
 }
 
-void designateImpostor(gameState *state)
+int designateImpostor(gameState *state)
 {
     int active_player_count = countActivePlayers(state);
     int chosen_active_player = 0;
@@ -93,7 +93,7 @@ void designateImpostor(gameState *state)
     }
 
     if (active_player_count <= 0)
-        return;
+        return -1;
 
     chosen_active_player = rand() % active_player_count;
 
@@ -105,7 +105,7 @@ void designateImpostor(gameState *state)
         if (active_player_index == chosen_active_player)
         {
             state->players[i].isImpostor = 1;
-            return;
+            return chosen_active_player;
         }
 
         active_player_index++;
@@ -231,7 +231,8 @@ int main(void)
             {
                 if (state.phase == GAME_LOBBY)
                 {
-                    designateImpostor(&state);
+                    int active_chosen_player = designateImpostor(&state);
+                    printf("Player %d is impostor\n", active_chosen_player);
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
