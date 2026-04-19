@@ -106,6 +106,7 @@ int designateImpostor(gameState *state)
 
         active_player_index++;
     }
+    return -1;   // alla aktiva spelare gicks igenom utan match (borde inte hända)
 }
 
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
@@ -155,6 +156,8 @@ void handleInput(gameState *state, clientInput *input, float dt)
 int main(void)
 {
     srand(time(NULL));
+    
+
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
     UDPpacket *send_packet = NULL;
@@ -193,6 +196,7 @@ int main(void)
     printf("Server listening on port %d...\n", SERVER_PORT);
 
     Uint64 lastBroadcast = SDL_GetPerformanceCounter();
+    Uint64 state_start_time = 0;
 
     while (1)
     {
@@ -229,8 +233,11 @@ int main(void)
                 {
                     int active_chosen_player = designateImpostor(&state);
                     printf("Player %d is impostor\n", active_chosen_player);
-                    state.phase = GAME_RUNNING;
-                    printf("Game is now GAME_RUNNING\n");
+                    state.phase = GAME_SHOW_ROLE;
+                    printf("Game is now GAME_SHOW_ROLE\n");
+
+                    state_start_time = SDL_GetTicks64(); // TIDSSTÄMPEL
+
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
@@ -246,14 +253,23 @@ int main(void)
                 }
             }
         }
-
+        
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
 
         if (broadcastDt >= SERVER_TICK_INTERVAL)
         {
-            if (state.phase == GAME_RUNNING)
+            if (state.phase == GAME_SHOW_ROLE)
+            {
+                if (SDL_GetTicks64() - state_start_time >= 3000) //NÄR 3 SEKUNDER GÅTT
+                {
+                    state.phase = GAME_RUNNING;
+                    printf("Game is now GAME_RUNNING\n");
+                }
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            else if (state.phase == GAME_RUNNING)
             {
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
@@ -264,7 +280,7 @@ int main(void)
                     lastInput[i].down = 0;
                     lastInput[i].left = 0;
                     lastInput[i].right = 0;
-                    lastInput[i].current_frame = 0;
+                    lastInput[i].current_frame = 0;                        
                     lastInput[i].direction = DIR_DOWN;
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);

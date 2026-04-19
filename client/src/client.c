@@ -73,14 +73,14 @@ int main()
 
         receive_game_state(client.socket, client.recievepacket, &state);
 
-        if (state.phase == GAME_RUNNING)
+        if (state.phase != GAME_LOBBY)
             running = false;
         else
             renderWaitingScreen(&lobby, &state);
     }
 
     // Game-loop
-    if (state.phase == GAME_RUNNING)
+    if (state.phase != GAME_LOBBY)
         runGame(&client, &lobby, &state);
 
     cleanLobby(&lobby);
