@@ -62,6 +62,7 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].y = spawnY[i];
             state->players[i].current_frame = 2;
             state->players[i].direction = DIR_DOWN;
+            state->players[i].isImpostor = 0;
             return i;
         }
     }
@@ -86,11 +87,6 @@ int designateImpostor(gameState *state)
     int active_player_count = countActivePlayers(state);
     int chosen_active_player = 0;
     int active_player_index = 0;
-
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        state->players[i].isImpostor = 0;
-    }
 
     if (active_player_count <= 0)
         return -1;
