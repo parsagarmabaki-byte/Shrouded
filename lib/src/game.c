@@ -153,8 +153,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         {
             SDL_Texture *role_img;
             collect_client_data(client, state, &player, local_id);
-
             SDL_RenderClear(renderer);
+
+            SDL_RenderCopy(renderer, assets.role_art_img, NULL, NULL); //Bakgrunden
+
 
             if(state->players[local_id].isImpostor)
             {
@@ -165,7 +167,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 role_img = assets.innocent_img;
             }
 
-            SDL_RenderCopy(renderer, role_img, NULL, NULL);
+            SDL_Rect role_rect;
+            role_rect.w = 400;                                       // bredd i logiska pixlar
+            role_rect.h = 200;                                       // höjd i logiska pixlar
+            role_rect.x = (LOGICAL_SCREEN_WIDTH  - role_rect.w) / 2; // centrera horisontellt
+            role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4; // centrera vertikalt
+
+            SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
             SDL_RenderPresent(renderer);
             continue;   // hoppa till nästa loop-iteration
         }
@@ -250,6 +258,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     SDL_DestroyTexture(assets.vignette_img);
     SDL_DestroyTexture(assets.innocent_img);  
     SDL_DestroyTexture(assets.killer_img);
+    SDL_DestroyTexture(assets.role_art_img);
     for (int i = 0; i < PLAYER_SLOTS; i++)
         SDL_DestroyTexture(assets.skins[i]);
 }
