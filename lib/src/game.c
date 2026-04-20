@@ -15,6 +15,14 @@ void sendInput(Client *client, gameState *state, Player *player)
     send_client_input(client->socket, client->serverAddr, &input);
 }
 
+void request_kill(Client *client, gameState *state)
+{
+    clientInput input = {0};
+    input.type= MSG_KILL_REQUEST;
+    input.player_id= state->local_player_id;
+    send_client_input(client->socket, client->serverAddr, &input);
+}
+
 void collect_client_data(Client *client, gameState *state, Player *player, int local_id)
 {
     int got_state = -1;
@@ -201,7 +209,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_K && !kill_cooldown && local_player_is_impostor)
                 {
-                    // request_kill(client,state);
+                    request_kill(client,state);
                 }
             }
         }
@@ -244,7 +252,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
         if (local_player_is_impostor)
         {
-            render_imposter_ability(renderer,assets.kill_button_img);
+            // Sync kill cooldown from server state
+            player.kill_cooldown_active = state->players[local_id].kill_cooldown_active;
+            // printf("\n%d\n",player.kill_cooldown_active);
+            render_imposter_ability(renderer, assets.kill_button_img, player.kill_cooldown_active);
         }
         if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);

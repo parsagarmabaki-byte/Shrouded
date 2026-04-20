@@ -4,23 +4,29 @@
 #include "network_data.h"
 #include "game.h"
 
-void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_img)
+void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_img, bool kill_cooldown)
 {
     SDL_Rect kill_button = {1400, 800, 442, 181};
 
-    bool hovering = is_hovering(renderer, kill_button);
-    if (hovering)
+    SDL_SetTextureColorMod(kill_button_img, 255, 255, 255);
+    SDL_SetTextureAlphaMod(kill_button_img, 255);
+
+    if (!kill_cooldown)
     {
-        SDL_SetTextureColorMod(kill_button_img, 255, 220, 220); // lite röd ton
+        bool hovering = is_hovering(renderer, kill_button);
+
+        if (hovering)
+        {
+            SDL_SetTextureColorMod(kill_button_img, 255, 220, 220);
+        }
     }
     else
     {
-        SDL_SetTextureColorMod(kill_button_img, 255, 255, 255);
+        SDL_SetTextureAlphaMod(kill_button_img, 150);
     }
 
     SDL_RenderCopy(renderer, kill_button_img, NULL, &kill_button);
 }
-
 bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
 {
     int mx, my;
@@ -34,12 +40,25 @@ bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
             ly <= rect.y + rect.h);
 }
 
-void request_kill(Client *client, gameState *state)
+void handle_kill_request(gameState *state, int killer_id)
 {
-
+    if (!state->players[killer_id].kill_cooldown_active)
+    {
+        printf("kill cooldown started\n");
+        activate_kill_cooldown(state, killer_id);
+    }
 }
 
-// bool is_kill_on_cooldown(const gameState *state, int local_id)
-// {
-//     return false;
-// }
+void activate_kill_cooldown(gameState *state, int local_id)
+{
+    state->players[local_id].kill_cooldown_start = SDL_GetTicks64();
+    state->players[local_id].kill_cooldown_active = true;
+}
+
+bool update_kill_cooldown(gameState state, int local_id)
+{
+    Uint64 now = SDL_GetTicks64();
+    if (now - state.players[local_id].kill_cooldown_start >= COOLDOWN)
+        return false;
+    return true;
+}

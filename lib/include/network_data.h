@@ -1,6 +1,7 @@
 #ifndef NETWORK_DATA_H
 #define NETWORK_DATA_H
 
+#include <stdbool.h>
 
 #define MAX_PLAYERS 6
 #define SERVER_PORT 2000
@@ -26,6 +27,7 @@ typedef enum{
     MSG_CLIENT_INPUT,
     MSG_GAME_STATE,
     MSG_READY_STATUS,
+    MSG_KILL_REQUEST
 } MessageType;
 
 
@@ -48,11 +50,18 @@ typedef struct { // Info som användaren klickar in
 typedef struct {
     int active;
     int player_id;
+    
     float x;
     float y;
+
     int isAlive;
     int isImpostor;
     int isDoingTask;
+
+    bool kill_cooldown_active;
+    Uint32 kill_cooldown_start;
+
+
     int current_frame;
     Direction direction;
 } playerState;

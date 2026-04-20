@@ -45,7 +45,6 @@ int main()
     if (!allocatePacket(&client.recievepacket, 512)) return 1;
     if (!send_join(client.socket, client.serverAddr)) return 1;
     if (!initiate(&lobby)) return 1;
-
     // Lobby-loop
     while (running)
     {

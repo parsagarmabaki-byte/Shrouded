@@ -2,11 +2,13 @@
 #include <SDL2/SDL_net.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <string.h>
 #include "network.h"
 #include "network_data.h"
 #include "player_movement.h"
+#include "imposter_ability.h"
 #define PACKET_SIZE 512
 
 UDPpacket *createPacket(int size)
@@ -63,6 +65,8 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].current_frame = 2;
             state->players[i].direction = DIR_DOWN;
             state->players[i].isImpostor = 0;
+            state->players[i].kill_cooldown_start = 0;
+            state->players[i].kill_cooldown_active = false;
             return i;
         }
     }
@@ -106,7 +110,7 @@ int designateImpostor(gameState *state)
 
         active_player_index++;
     }
-    return -1;   // alla aktiva spelare gicks igenom utan match (borde inte hända)
+    return -1; // alla aktiva spelare gicks igenom utan match (borde inte hända)
 }
 
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
@@ -156,7 +160,6 @@ void handleInput(gameState *state, clientInput *input, float dt)
 int main(void)
 {
     srand(time(NULL));
-    
 
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
@@ -252,8 +255,21 @@ int main(void)
                         lastInput[id] = input;
                 }
             }
+            else if (type == MSG_KILL_REQUEST)
+            {
+                clientInput input;
+                memcpy(&input, receive_packet->data, sizeof(clientInput));
+                int id = input.player_id;
+                if (id >= 0 && id < MAX_PLAYERS)
+                {
+                    handle_kill_request(&state,id);
+                    printf("\n%d\n", state.players[id].kill_cooldown_active);
+                    // broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
         }
-        
+
+     
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
@@ -262,7 +278,7 @@ int main(void)
         {
             if (state.phase == GAME_SHOW_ROLE)
             {
-                if (SDL_GetTicks64() - state_start_time >= 3000) //NÄR 3 SEKUNDER GÅTT
+                if (SDL_GetTicks64() - state_start_time >= 3000) // NÄR 3 SEKUNDER GÅTT
                 {
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
@@ -274,13 +290,16 @@ int main(void)
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
                     handleInput(&state, &lastInput[i], 0.016f);
-
+                    if (state.players[i].kill_cooldown_active)
+                    {
+                        state.players[i].kill_cooldown_active = update_kill_cooldown(state,i);
+                    }
                     lastInput[i].player_id = -1;
                     lastInput[i].up = 0;
                     lastInput[i].down = 0;
                     lastInput[i].left = 0;
                     lastInput[i].right = 0;
-                    lastInput[i].current_frame = 0;                        
+                    lastInput[i].current_frame = 0;
                     lastInput[i].direction = DIR_DOWN;
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
