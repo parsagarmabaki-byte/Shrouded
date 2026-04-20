@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "task.h"
+#include "imposter_ability.h"
 
 typedef struct
 {

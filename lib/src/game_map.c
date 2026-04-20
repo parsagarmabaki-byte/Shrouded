@@ -30,7 +30,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
         SDL_SetTextureBlendMode(asset.vignette_img, SDL_BLENDMODE_BLEND);
 
     asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");  
-    asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
+    asset.kill_button_img = loading_img(renderer, "assets/images/Kill_button.png");
 
     char path[64];
     for (int i = 0; i < PLAYER_SLOTS; i++)

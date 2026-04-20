@@ -21,6 +21,7 @@ typedef struct
     SDL_Texture *vignette_img;
     SDL_Texture *killer_img;
     SDL_Texture *innocent_img;
+    SDL_Texture *kill_button_img;
 } GameAssets;
 
 typedef struct {
