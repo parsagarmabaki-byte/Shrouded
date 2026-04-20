@@ -40,13 +40,40 @@ bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
             ly <= rect.y + rect.h);
 }
 
-void handle_kill_request(gameState *state, int killer_id)
+bool handle_kill_request(gameState *state, int killer_id)
 {
-    if (!state->players[killer_id].kill_cooldown_active)
+    playerState imposter = state->players[killer_id];
+    if (imposter.kill_cooldown_active)
     {
-        printf("kill cooldown started\n");
-        activate_kill_cooldown(state, killer_id);
+        return false;
     }
+    activate_kill_cooldown(state, killer_id);
+    for (int i=0; i<MAX_PLAYERS; i++)
+    {
+        if (killer_id == i)
+        {
+            continue;
+        }
+        if (state->players[i].isAlive && state->players[i].active)
+        {
+            float fy,fx = 0;
+            get_forward_vector(imposter.direction,&fx,&fy);
+            
+
+        }
+    }
+    
+}
+
+void get_forward_vector(Direction direction, float *fx, float *fy)
+{
+    *fx = 0.0f;
+    *fy = 0.0f;
+
+    if (direction == DIR_UP)    *fy = -1.0f;
+    if (direction == DIR_DOWN)  *fy =  1.0f;
+    if (direction == DIR_LEFT)  *fx = -1.0f;
+    if (direction == DIR_RIGHT) *fx =  1.0f;
 }
 
 void activate_kill_cooldown(gameState *state, int local_id)

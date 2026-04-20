@@ -212,6 +212,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                     request_kill(client,state);
                 }
             }
+            if (event.type == SDL_Mosu)
         }
 
         accumulator += dt;

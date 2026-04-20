@@ -263,8 +263,6 @@ int main(void)
                 if (id >= 0 && id < MAX_PLAYERS)
                 {
                     handle_kill_request(&state,id);
-                    printf("\n%d\n", state.players[id].kill_cooldown_active);
-                    // broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
         }
