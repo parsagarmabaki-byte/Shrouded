@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "task.h"
+#include "imposter_ability.h"
 
 typedef struct
 {
@@ -20,14 +21,10 @@ typedef struct
     UDPpacket *recievepacket;
 } Client;
 
-void sendInput(Client *client, gameState *state, Player *player);
 void runGame(Client *client, waitForPlayers *lobby, gameState *state);
-void collect_client_data(Client *client ,gameState *state,Player *player, int local_id);
 clientInput read_input(bool tasks_active);
 void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt);
 void render_all_players(gameState *state,Player player,GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id);
-
-
 
 
 #endif

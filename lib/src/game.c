@@ -1,43 +1,10 @@
 #include "game.h"
+#include "client_network.h"
 
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
 // Reads keyboard state and sends the local player's input to the server every frame.
 // The server uses this to update the authoritative player position.
-void sendInput(Client *client, gameState *state, Player *player)
-{
-    const Uint8 *keys = SDL_GetKeyboardState(NULL);
-    clientInput input = {0};
-    input.type = MSG_CLIENT_INPUT;
-    input.player_id = state->local_player_id;
-    input.up = keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP];
-    input.down = keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN];
-    input.left = keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT];
-    input.right = keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT];
-    input.current_frame = player->current_frame;
-    input.direction = player->direction;
 
-    send_client_input(client->socket, client->serverAddr, &input);
-}
-
-void collect_client_data(Client *client, gameState *state, Player *player, int local_id)
-{
-    int got_state = -1;
-    while (receive_game_state(client->socket, client->recievepacket, state) == 0)
-    {
-        got_state = 0;
-    }
-
-    if (got_state == 0)
-    {
-        float dx = state->players[local_id].x - player->Hitbox.x;
-        float dy = state->players[local_id].y - player->Hitbox.y;
-
-        if (fabsf(dx) > 6.0f)
-            player->Hitbox.x = state->players[local_id].x;
-        if (fabsf(dy) > 6.0f)
-            player->Hitbox.y = state->players[local_id].y;
-    }
-}
 clientInput read_input(bool tasks_active)
 {
     clientInput input = {0};
@@ -56,6 +23,7 @@ clientInput read_input(bool tasks_active)
     }
     return input;
 }
+
 void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt)
 {
     bool moving = input.up || input.down || input.left || input.right;
@@ -77,6 +45,7 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
         (*current_frame) = 2;
     }
 }
+
 void render_all_players(gameState *state, Player player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -126,11 +95,14 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     // Initialize local player from server spawn position
     int local_id = state->local_player_id;
+    local_player_is_impostor = state->players[local_id].isImpostor != 0;
+    bool kill_cooldown = false;
+    SDL_Rect kill_button = {1400, 800, 442, 181};
     Player player = init_player(*state, local_id);
 
     // initialize in-game tasks
     Task task;
-    init_task(&task);
+    init_task(&task, renderer);
     int score = 0;
 
     // Camera starts at origin — camera_follow() centers it on the player each frame
@@ -152,13 +124,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_SHOW_ROLE)
         {
             SDL_Texture *role_img;
-            collect_client_data(client, state, &player, local_id);
+            collect_packets(client,state);
             SDL_RenderClear(renderer);
-
-            SDL_RenderCopy(renderer, assets.role_art_img, NULL, NULL); //Bakgrunden
-
-
-            if(state->players[local_id].isImpostor)
+            SDL_RenderCopy(renderer,assets.role_art_img,NULL,NULL);
+            if (state->players[local_id].isImpostor)
             {
                 role_img = assets.killer_img;
             }
@@ -175,7 +144,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
             SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
             SDL_RenderPresent(renderer);
-            continue;   // hoppa till nästa loop-iteration
+            continue; // hoppa till nästa loop-iteration
         }
 
         // Delta time — time since last frame in seconds
@@ -192,12 +161,20 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 {
-                    send_leave(client->socket, client->serverAddr);
+                    send_leave_message(client->socket, client->serverAddr);
                     running = false;
                 }
-                if (event.key.keysym.scancode == SDL_SCANCODE_E)
+                if (event.key.keysym.scancode == SDL_SCANCODE_1)
                 {
-                    start_timer_task(&task, 10.0f);
+                    start_timer_task(&task, renderer, 10.0f);
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_2)
+                {
+                    start_click_task(&task, renderer, 25);
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_3)
+                {
+                    start_type_task(&task, renderer);
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {
@@ -206,10 +183,47 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                         cancel_task(&task);
                     }
                 }
+                if (event.key.keysym.scancode == SDL_SCANCODE_K && !kill_cooldown && local_player_is_impostor)
+                {
+                    request_kill(client, state);
+                }
+            }
+            if (event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                if (is_hovering(renderer, kill_button) && event.button.button == SDL_BUTTON_LEFT && !kill_cooldown && local_player_is_impostor)
+                {
+                    request_kill(client, state);
+                }
+            }
+
+            if (task.active && task.type == TASK_TYPE)
+            {
+                if (event.type == SDL_KEYDOWN)
+                {
+                    char expected = task.target_string[task.current_index];
+
+                    SDL_Keycode key = event.key.keysym.sym;
+                    char pressed = (char)SDL_toupper(key);
+
+                    if (pressed == expected)
+                    {
+                        task.current_index++;
+                    }
+                    else
+                    {
+                        task.current_index = 0;
+                    }
+                }
+            }
+
+            if (task.active && task.type == TASK_CLICK)
+            {
+                if (event.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    task.click_count++;
+                }
             }
         }
-
-        local_player_is_impostor = state->players[local_id].isImpostor != 0;
 
         accumulator += dt;
         clientInput user_input = read_input(task.active);
@@ -228,14 +242,17 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
             accumulator -= SERVER_TICK_INTERVAL;
         }
-
+        // KillEventMsg msg = {0};
+        // collect_kill_msg(client,&msg);
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
         if (!task.active)
         {
-            sendInput(client, state, &player);
+            send_input(client, state, &player);
         }
-        collect_client_data(client, state, &player, local_id);
+        // collect_client_data(client, state, &player, local_id);
+        collect_packets(client, state);
 
+        //update active task
         update_task(&task, dt);
 
         // Move the camera to keep the local player centered on screen
@@ -247,18 +264,28 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // Draw all active players
         render_all_players(state, player, assets, &cam, renderer, local_id);
 
+        if (local_player_is_impostor)
+        {
+            // Sync kill cooldown from server state
+            player.kill_cooldown_active = state->players[local_id].kill_cooldown_active;
+            // printf("\n%d\n",player.kill_cooldown_active);
+            render_imposter_ability(renderer, assets.kill_button_img, player.kill_cooldown_active);
+        }
         if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
+        TTF_Init();
         render_task(renderer, &task);
         SDL_RenderPresent(renderer);
     }
 
+    destroy_task(&task);
     SDL_DestroyTexture(assets.map_texture);
     SDL_DestroyTexture(assets.vignette_img);
-    SDL_DestroyTexture(assets.innocent_img);  
+    SDL_DestroyTexture(assets.innocent_img);
     SDL_DestroyTexture(assets.killer_img);
     SDL_DestroyTexture(assets.role_art_img);
     for (int i = 0; i < PLAYER_SLOTS; i++)
         SDL_DestroyTexture(assets.skins[i]);
+    TTF_Quit();
 }

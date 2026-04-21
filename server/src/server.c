@@ -2,31 +2,44 @@
 #include <SDL2/SDL_net.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <string.h>
 #include "network.h"
 #include "network_data.h"
 #include "player_movement.h"
+#include "imposter_ability.h"
 #define PACKET_SIZE 512
 
-UDPpacket *createPacket(int size)
+static int init_server(UDPsocket *socket)
 {
-    UDPpacket *packet = SDLNet_AllocPacket(size);
-    if (!packet)
-    {
-        printf("Failed to allocate packet: %s\n", SDLNet_GetError());
-    }
-    return packet;
+    return init_network_socket(socket, SERVER_PORT);
+}
+
+static int send_game_state(UDPsocket socket, UDPpacket *packet, IPaddress addr, gameState *state)
+{
+    return send_packet_data(socket, packet, addr, state, sizeof(*state));
+}
+
+static int send_kill_msg(UDPsocket socket, UDPpacket *packet, IPaddress address, KillEventMsg *msg)
+{
+    return send_packet_data(socket, packet, address, msg, sizeof(*msg));
 }
 
 void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket *send_packet)
 {
     if (receive_packet)
+    {
         SDLNet_FreePacket(receive_packet);
+    }
     if (send_packet)
+    {
         SDLNet_FreePacket(send_packet);
+    }
     if (server_socket)
+    {
         SDLNet_UDP_Close(server_socket);
+    }
     SDLNet_Quit();
 }
 
@@ -57,12 +70,15 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             clientAddresses[i] = addr;
 
             state->players[i].active = 1;
+            state->players[i].isAlive = 1;
             state->players[i].player_id = i;
             state->players[i].x = spawnX[i];
             state->players[i].y = spawnY[i];
             state->players[i].current_frame = 2;
             state->players[i].direction = DIR_DOWN;
             state->players[i].isImpostor = 0;
+            state->players[i].kill_cooldown_start = 0;
+            state->players[i].kill_cooldown_active = false;
             return i;
         }
     }
@@ -103,7 +119,7 @@ int designateImpostor(gameState *state)
 
         active_player_index++;
     }
-    return -1;   // alla aktiva spelare gicks igenom utan match (borde inte hända)
+    return -1; // alla aktiva spelare gicks igenom utan match (borde inte hända)
 }
 
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
@@ -114,6 +130,20 @@ void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, I
         {
             state->local_player_id = i;
             if (!send_game_state(socket, packet, clientAddresses[i], state))
+            {
+                printf("Failed to send game state to player %d\n", i);
+            }
+        }
+    }
+}
+
+void broadcast_Kill_msg(UDPsocket socket, UDPpacket *packet, KillEventMsg *msg, IPaddress *clientAddresses, int *clientUsed)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (clientUsed[i])
+        {
+            if (!send_kill_msg(socket, packet ,clientAddresses[i], msg))
             {
                 printf("Failed to send game state to player %d\n", i);
             }
@@ -153,7 +183,6 @@ void handleInput(gameState *state, clientInput *input, float dt)
 int main(void)
 {
     srand(time(NULL));
-    
 
     UDPsocket server_socket = NULL;
     UDPpacket *receive_packet = NULL;
@@ -176,14 +205,14 @@ int main(void)
     if (!init_server(&server_socket))
         return 1;
 
-    receive_packet = createPacket(PACKET_SIZE);
+    receive_packet = create_packet(PACKET_SIZE);
     if (!receive_packet)
     {
         cleanupServer(server_socket, NULL, NULL);
         return 1;
     }
 
-    send_packet = createPacket(PACKET_SIZE);
+    send_packet = create_packet(PACKET_SIZE);
     if (!send_packet)
     {
         cleanupServer(server_socket, receive_packet, NULL);
@@ -249,8 +278,29 @@ int main(void)
                         lastInput[id] = input;
                 }
             }
+            else if (type == MSG_KILL_REQUEST)
+            {
+                clientInput input;
+                memcpy(&input, receive_packet->data, sizeof(clientInput));
+                int killer_id = input.player_id;
+                if (killer_id >= 0 && killer_id < MAX_PLAYERS)
+                {
+                    int target_id = handle_kill_request(&state, killer_id);
+                    if (target_id != -1)
+                    {
+                        state.players[target_id].isAlive = 0;
+                        KillEventMsg msg = {0};
+                        msg.type = MSG_KILL_EVENT;
+                        msg.killer_id = killer_id;
+                        msg.victim_id = target_id;
+                        msg.x = state.players[killer_id].x;
+                        msg.y = state.players[killer_id].y;
+                        broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
+                    }
+                }
+            }
         }
-        
+
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
@@ -259,7 +309,7 @@ int main(void)
         {
             if (state.phase == GAME_SHOW_ROLE)
             {
-                if (SDL_GetTicks64() - state_start_time >= 3000) //NÄR 3 SEKUNDER GÅTT
+                if (SDL_GetTicks64() - state_start_time >= 3000) // NÄR 3 SEKUNDER GÅTT
                 {
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
@@ -271,13 +321,16 @@ int main(void)
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
                     handleInput(&state, &lastInput[i], 0.016f);
-
+                    if (state.players[i].kill_cooldown_active)
+                    {
+                        state.players[i].kill_cooldown_active = update_kill_cooldown(state, i);
+                    }
                     lastInput[i].player_id = -1;
                     lastInput[i].up = 0;
                     lastInput[i].down = 0;
                     lastInput[i].left = 0;
                     lastInput[i].right = 0;
-                    lastInput[i].current_frame = 0;                        
+                    lastInput[i].current_frame = 0;
                     lastInput[i].direction = DIR_DOWN;
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);

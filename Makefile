@@ -3,6 +3,8 @@
 # SDL2 + SDL2_image + SDL2_net + SDL2_ttf
 # =========================
 
+.DEFAULT_GOAL := all
+
 # ─── Detect OS ───────────────────────────────────────────
 ifeq ($(OS),Windows_NT)
     PLATFORM = windows
@@ -30,11 +32,17 @@ PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 LOBBY_SRC = lib/src/lobby.c
 TASK_SRC = lib/src/task.c
 GAME_SRC = lib/src/game.c
+<<<<<<< HEAD
 WALL_DATA_SRC = lib/src/wall_data.c
+=======
+IMPOSTER_ABILITY_SRC = lib/src/imposter_ability.c
+SFX_SRC = lib/src/SFX.c
+>>>>>>> 90df54d03112c4203762584baa7be0e0814bdba7
 
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 GAME_MAP_SRC = lib/src/game_map.c
 NETWORK_SRC = lib/src/network.c
+CLIENT_NETWORK_SRC = client/src/client_network.c
 
 PLAYER_MOVEMENT_TEST_SRC = test_files/test_player_movement.c
 GAME_MAP_TEST_SRC = test_files/test_game_map.c
@@ -48,11 +56,17 @@ PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 LOBBY_OBJ = $(OBJDIR)/lobby.o
 TASK_OBJ = $(OBJDIR)/task.o
 GAME_OBJ = $(OBJDIR)/game.o
+<<<<<<< HEAD
 WALL_DATA_OBJ = $(OBJDIR)/wall_data.o
+=======
+IMPOSTER_ABILITY_OBJ = $(OBJDIR)/imposter_ability.o
+SFX_OBJ = $(OBJDIR)/sfx.o
+>>>>>>> 90df54d03112c4203762584baa7be0e0814bdba7
 
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o
 NETWORK_OBJ = $(OBJDIR)/network.o
+CLIENT_NETWORK_OBJ = $(OBJDIR)/client_network.o
 
 PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
 GAME_MAP_TEST_OBJ = $(OBJDIR)/test_game_map.o
@@ -73,19 +87,19 @@ LDFLAGS = -lm
 ifeq ($(PLATFORM),mac)
     CC = clang
     CFLAGS += -I/opt/homebrew/include -I/usr/local/include
-    LDFLAGS += -L/opt/homebrew/lib -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf
+    LDFLAGS += -L/opt/homebrew/lib -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf -lSDL2_mixer -lm
 endif
 
 ifeq ($(PLATFORM),windows)
     CC = gcc
     CFLAGS += -I/mingw64/include
-    LDFLAGS += -L/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf
+    LDFLAGS += -L/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf -lSDL2_mixer -lm
 endif
 
 ifeq ($(PLATFORM),linux)
     CC = gcc
     CFLAGS += -I/usr/include
-    LDFLAGS += -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf
+    LDFLAGS += -lSDL2 -lSDL2_image -lSDL2_net -lSDL2_ttf -lSDL2_mixer -lm
 endif
 
 # ─── Build folder ───────────────────────────────────────
@@ -115,6 +129,9 @@ $(GAME_MAP_OBJ): $(GAME_MAP_SRC) | $(OBJDIR)
 $(NETWORK_OBJ): $(NETWORK_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(CLIENT_NETWORK_OBJ): $(CLIENT_NETWORK_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(LOBBY_OBJ): $(LOBBY_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -130,6 +147,7 @@ $(GAME_MAP_TEST_OBJ): $(GAME_MAP_TEST_SRC) | $(OBJDIR)
 $(TASK_OBJ): $(TASK_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+<<<<<<< HEAD
 $(WALL_DATA_OBJ): $(WALL_DATA_SRC) | $(OBJDIR)
 
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -139,6 +157,19 @@ $(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OB
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(WALL_DATA_OBJ)
+=======
+$(IMPOSTER_ABILITY_OBJ): $(IMPOSTER_ABILITY_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(SFX_OBJ): $(SFX_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# ─── Link rules ─────────────────────────────────────────
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ)
+>>>>>>> 90df54d03112c4203762584baa7be0e0814bdba7
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(PLAYER_MOVEMENT_TEST_OUT): $(PLAYER_MOVEMENT_TEST_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ)

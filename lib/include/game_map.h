@@ -9,8 +9,8 @@
 
 #define GAME_MAP_WIDTH 2536
 #define GAME_MAP_HEIGHT 2024
-#define LOGICAL_SCREEN_WIDTH 1920
-#define LOGICAL_SCREEN_HEIGHT 1080
+#define LOGICAL_SCREEN_WIDTH 1280
+#define LOGICAL_SCREEN_HEIGHT 720
 #define FRAME_SIZE 256
 #define PLAYER_SLOTS 6
 
@@ -21,6 +21,7 @@ typedef struct
     SDL_Texture *vignette_img;
     SDL_Texture *killer_img;
     SDL_Texture *innocent_img;
+    SDL_Texture *kill_button_img;
     SDL_Texture *role_art_img;
 } GameAssets;
 
