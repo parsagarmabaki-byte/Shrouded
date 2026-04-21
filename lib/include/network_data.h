@@ -43,8 +43,6 @@ typedef struct { // Info som användaren klickar in
     Direction direction;
 } clientInput; 
 
-
-
 typedef struct {
     int active;
     int player_id;
