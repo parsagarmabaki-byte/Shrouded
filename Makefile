@@ -38,6 +38,7 @@ SFX_SRC = lib/src/SFX.c
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 GAME_MAP_SRC = lib/src/game_map.c
 NETWORK_SRC = lib/src/network.c
+CLIENT_NETWORK_SRC = client/src/client_network.c
 
 PLAYER_MOVEMENT_TEST_SRC = test_files/test_player_movement.c
 GAME_MAP_TEST_SRC = test_files/test_game_map.c
@@ -57,6 +58,7 @@ SFX_OBJ = $(OBJDIR)/sfx.o
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o
 NETWORK_OBJ = $(OBJDIR)/network.o
+CLIENT_NETWORK_OBJ = $(OBJDIR)/client_network.o
 
 PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
 GAME_MAP_TEST_OBJ = $(OBJDIR)/test_game_map.o
@@ -119,6 +121,9 @@ $(GAME_MAP_OBJ): $(GAME_MAP_SRC) | $(OBJDIR)
 $(NETWORK_OBJ): $(NETWORK_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(CLIENT_NETWORK_OBJ): $(CLIENT_NETWORK_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(LOBBY_OBJ): $(LOBBY_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -137,13 +142,11 @@ $(TASK_OBJ): $(TASK_SRC) | $(OBJDIR)
 $(IMPOSTER_ABILITY_OBJ): $(IMPOSTER_ABILITY_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(IMPOSTER_ABILITY_OBJ)
 $(SFX_OBJ): $(SFX_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(SFX_OBJ)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ)

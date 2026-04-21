@@ -2,9 +2,8 @@
 #include <string.h>
 #include <SDL2/SDL_net.h>
 #include "network.h"
-#include "network_data.h"
 
-int init_server(UDPsocket *socket)
+int init_network_socket(UDPsocket *socket, Uint16 port)
 {
     if (SDLNet_Init() != 0)
     {
@@ -12,184 +11,38 @@ int init_server(UDPsocket *socket)
         return 0;
     }
 
-    *socket = SDLNet_UDP_Open(SERVER_PORT); // Server fast port för att klienter ska hitta
+    *socket = SDLNet_UDP_Open(port);
     if (!*socket)
     {
-        printf("SDLNet_UDP_Open server error: %s\n", SDLNet_GetError());
+        printf("SDLNet_UDP_Open error: %s\n", SDLNet_GetError());
         return 0;
     }
+
     return 1;
 }
 
-int init_client(UDPsocket *socket, IPaddress *server_addr)
+UDPpacket *create_packet(int size)
 {
-    if (SDLNet_Init() != 0)
-    {
-        printf("SDLNet_Init error: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    *socket = SDLNet_UDP_Open(0); // Hitta slumpmässig ledig
-    if (!*socket)
-    {
-        printf("SDLNet_UDP_Open client error: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    if (SDLNet_ResolveHost(server_addr, "127.0.0.1", SERVER_PORT) != 0)
-    {
-        printf("SDLNet_ResolveHost error: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-
-int send_join(UDPsocket socket, IPaddress server_addr)
-{
-    UDPpacket *packet = SDLNet_AllocPacket(512);
+    UDPpacket *packet = SDLNet_AllocPacket(size);
     if (!packet)
     {
-        printf("SDLNet_AllockPacket error: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    joinMessage join = {0};
-    join.type = MSG_JOIN;
-
-    memcpy(packet->data, &join, sizeof(joinMessage));
-    packet->len = sizeof(joinMessage);
-    packet->address = server_addr;
-
-    if (!SDLNet_UDP_Send(socket, -1, packet))
-    {
-        printf("SDLNet_UDP_Send join error: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(packet);
-        return 0;
+        printf("Failed to allocate packet: %s\n", SDLNet_GetError());
     }
 
-    SDLNet_FreePacket(packet);
-    return 1;
-}
-int send_start_game(UDPsocket socket, IPaddress server_addr)
-{
-    UDPpacket *packet = SDLNet_AllocPacket(512);
-    if (!packet)
-    {
-        printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    startGameMessage start = {0};
-    start.type = MSG_START_GAME;
-
-    memcpy(packet->data, &start, sizeof(startGameMessage));
-    packet->len = sizeof(startGameMessage);
-    packet->address = server_addr;
-
-    if (!SDLNet_UDP_Send(socket, -1, packet))
-    {
-        printf("SDLNet_UDP_Send start error: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(packet);
-        return 0;
-    }
-    SDLNet_FreePacket(packet);
-    return 1;
-    
-    
+    return packet;
 }
 
-
-int send_client_input(UDPsocket socket, IPaddress server_addr, clientInput *input)
+int send_packet_data(UDPsocket socket, UDPpacket *packet, IPaddress address, const void *data, int size)
 {
-    UDPpacket *packet = SDLNet_AllocPacket(512);
-    if (!packet)
-    {
-        printf("SDLNet_AllocPacket error: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    memcpy(packet->data, input, sizeof(clientInput));
-    packet->len = sizeof(clientInput);
-    packet->address = server_addr;
-
-    if (!SDLNet_UDP_Send(socket, -1, packet))
-    {
-        printf("SDLNet_UDP_Send input error: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(packet);
-        return 0;
-    }
-    SDLNet_FreePacket(packet);
-    return 1;
-}
-
-bool send_kill_msg(UDPsocket socket, UDPpacket *packet, IPaddress address, KillEventMsg *msg)
-{
+    memcpy(packet->data, data, size);
+    packet->len = size;
     packet->address = address;
-    memcpy(packet->data, msg, sizeof(KillEventMsg));
-    packet->len = sizeof(KillEventMsg);
-
-    return SDLNet_UDP_Send(socket, -1, packet) != 0;
-}
-
-int receive_client_input(UDPsocket socket, UDPpacket *packet, clientInput *input)
-{
-    if (SDLNet_UDP_Recv(socket, packet))
-    {
-        memcpy(input, packet->data, sizeof(clientInput));
-        return 0;
-    }
-    return 1;
-}
-
-int receive_game_state(UDPsocket socket, UDPpacket *packet, gameState *state){
-    if (SDLNet_UDP_Recv(socket, packet)){
-        memcpy(state, packet->data, sizeof(gameState));
-        return 0;
-    }
-    return 1;
-}
-
-int receive_kill_msg(UDPsocket socket, UDPpacket *packet, KillEventMsg *msg)
-{
-    if (SDLNet_UDP_Recv(socket, packet))
-    {
-        memcpy(msg, packet->data, sizeof(KillEventMsg));
-        return 1;
-    }
-    return 0;
-}
-
-int send_game_state(UDPsocket socket, UDPpacket *packet, IPaddress addr, gameState *state){
-    memcpy(packet->data, state, sizeof(gameState));
-    packet->len = sizeof(gameState);
-    packet->address = addr;
-
-    if (!SDLNet_UDP_Send(socket, -1, packet)){
-        printf("SDLNet_UDP_Send: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    return 1;
-}
-int send_leave(UDPsocket socket, IPaddress server_addr)
-{
-    UDPpacket *packet = SDLNet_AllocPacket(512);
-    if (!packet)
-    {
-        printf("SDLNet_AllockPacket leave error: %s\n", SDLNet_GetError());
-        return 0;
-    }
-    leaveMessage leave = {0};
-    leave.type = MSG_LEAVE;
-
-    memcpy(packet->data, &leave, sizeof(leaveMessage));
-    packet->len = sizeof(leaveMessage);
-    packet->address = server_addr;
 
     if (!SDLNet_UDP_Send(socket, -1, packet))
     {
-        printf("SDLNet_UDP_Send leave error: %s\n", SDLNet_GetError());
-        SDLNet_FreePacket(packet);
+        printf("SDLNet_UDP_Send error: %s\n", SDLNet_GetError());
         return 0;
     }
 
-    SDLNet_FreePacket(packet);
     return 1;
 }

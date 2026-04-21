@@ -11,24 +11,35 @@
 #include "imposter_ability.h"
 #define PACKET_SIZE 512
 
-UDPpacket *createPacket(int size)
+static int init_server(UDPsocket *socket)
 {
-    UDPpacket *packet = SDLNet_AllocPacket(size);
-    if (!packet)
-    {
-        printf("Failed to allocate packet: %s\n", SDLNet_GetError());
-    }
-    return packet;
+    return init_network_socket(socket, SERVER_PORT);
+}
+
+static int send_game_state(UDPsocket socket, UDPpacket *packet, IPaddress addr, gameState *state)
+{
+    return send_packet_data(socket, packet, addr, state, sizeof(*state));
+}
+
+static int send_kill_msg(UDPsocket socket, UDPpacket *packet, IPaddress address, KillEventMsg *msg)
+{
+    return send_packet_data(socket, packet, address, msg, sizeof(*msg));
 }
 
 void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket *send_packet)
 {
     if (receive_packet)
+    {
         SDLNet_FreePacket(receive_packet);
+    }
     if (send_packet)
+    {
         SDLNet_FreePacket(send_packet);
+    }
     if (server_socket)
+    {
         SDLNet_UDP_Close(server_socket);
+    }
     SDLNet_Quit();
 }
 
@@ -194,14 +205,14 @@ int main(void)
     if (!init_server(&server_socket))
         return 1;
 
-    receive_packet = createPacket(PACKET_SIZE);
+    receive_packet = create_packet(PACKET_SIZE);
     if (!receive_packet)
     {
         cleanupServer(server_socket, NULL, NULL);
         return 1;
     }
 
-    send_packet = createPacket(PACKET_SIZE);
+    send_packet = create_packet(PACKET_SIZE);
     if (!send_packet)
     {
         cleanupServer(server_socket, receive_packet, NULL);
