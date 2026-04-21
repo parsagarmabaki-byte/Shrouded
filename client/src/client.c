@@ -6,6 +6,7 @@
 #include "network.h"
 #include "lobby.h"
 #include "game.h"
+#include "SFX.h"
 
 int allocatePacket(UDPpacket **packet, int size)
 {
@@ -39,12 +40,18 @@ int main()
     waitForPlayers lobby = {0};
     SDL_Event event;
     gameState state = {0};
+    AudioAssets audio;
     bool running = true;
 
     if (!init_client(&client.socket, &client.serverAddr)) return 1;
     if (!allocatePacket(&client.recievepacket, 512)) return 1;
     if (!send_join(client.socket, client.serverAddr)) return 1;
     if (!initiate(&lobby)) return 1;
+    if (!init_audio()) return 1;
+    if (!load_audio(&audio)){cleanup_audio(&audio);return 1;}
+
+    play_lobby_music(audio.lobby_music, -1);
+
     // Lobby-loop
     while (running)
     {
@@ -69,7 +76,7 @@ int main()
                 }
             }
         }
-
+        
         receive_game_state(client.socket, client.recievepacket, &state);
 
         if (state.phase != GAME_LOBBY)
@@ -80,8 +87,12 @@ int main()
 
     // Game-loop
     if (state.phase != GAME_LOBBY)
+    {
+        stop_music();
         runGame(&client, &lobby, &state);
+    }
 
+    cleanup_audio(&audio);
     cleanLobby(&lobby);
     cleanClient(&client);
 

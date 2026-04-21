@@ -31,6 +31,8 @@ GameAssets load_assets(SDL_Renderer *renderer)
 
     asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");  
     asset.kill_button_img = loading_img(renderer, "assets/images/Kill_button.png");
+    asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
+    asset.role_art_img = loading_img(renderer, "assets/images/show_role.png");
 
     char path[64];
     for (int i = 0; i < PLAYER_SLOTS; i++)

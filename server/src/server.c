@@ -93,9 +93,6 @@ int designateImpostor(gameState *state)
     int chosen_active_player = 0;
     int active_player_index = 0;
 
-    if (active_player_count <= 0)
-        return -1;
-
     chosen_active_player = rand() % active_player_count;
 
     for (int i = 0; i < MAX_PLAYERS; i++)

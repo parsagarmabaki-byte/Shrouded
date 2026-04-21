@@ -142,7 +142,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     // initialize in-game tasks
     Task task;
-    init_task(&task);
+    init_task(&task, renderer);
     int score = 0;
 
     // Camera starts at origin — camera_follow() centers it on the player each frame
@@ -164,8 +164,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_SHOW_ROLE)
         {
             SDL_Texture *role_img;
-            SDL_RenderClear(renderer);
             collect_packets(client,state);
+            SDL_RenderClear(renderer);
             if (state->players[local_id].isImpostor)
             {
                 role_img = assets.killer_img;
@@ -175,7 +175,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 role_img = assets.innocent_img;
             }
 
-            SDL_RenderCopy(renderer, role_img, NULL, NULL);
+            SDL_Rect role_rect;
+            role_rect.w = 400;                                       // bredd i logiska pixlar
+            role_rect.h = 200;                                       // höjd i logiska pixlar
+            role_rect.x = (LOGICAL_SCREEN_WIDTH  - role_rect.w) / 2; // centrera horisontellt
+            role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4; //  vertikalt
+
+            SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
             SDL_RenderPresent(renderer);
             continue; // hoppa till nästa loop-iteration
         }
@@ -197,9 +203,17 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                     send_leave(client->socket, client->serverAddr);
                     running = false;
                 }
-                if (event.key.keysym.scancode == SDL_SCANCODE_E)
+                if (event.key.keysym.scancode == SDL_SCANCODE_1)
                 {
-                    start_timer_task(&task, 10.0f);
+                    start_timer_task(&task, renderer, 10.0f);
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_2)
+                {
+                    start_click_task(&task, renderer, 25);
+                }
+                if (event.key.keysym.scancode == SDL_SCANCODE_3)
+                {
+                    start_type_task(&task, renderer);
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {
@@ -218,6 +232,34 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 if (is_hovering(renderer, kill_button) && event.button.button == SDL_BUTTON_LEFT && !kill_cooldown && local_player_is_impostor)
                 {
                     request_kill(client, state);
+                }
+            }
+
+            if (task.active && task.type == TASK_TYPE)
+            {
+                if (event.type == SDL_KEYDOWN)
+                {
+                    char expected = task.target_string[task.current_index];
+
+                    SDL_Keycode key = event.key.keysym.sym;
+                    char pressed = (char)SDL_toupper(key);
+
+                    if (pressed == expected)
+                    {
+                        task.current_index++;
+                    }
+                    else
+                    {
+                        task.current_index = 0;
+                    }
+                }
+            }
+
+            if (task.active && task.type == TASK_CLICK)
+            {
+                if (event.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    task.click_count++;
                 }
             }
         }
@@ -249,6 +291,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // collect_client_data(client, state, &player, local_id);
         collect_packets(client, state);
 
+        //update active task
         update_task(&task, dt);
 
         // Move the camera to keep the local player centered on screen
@@ -270,14 +313,18 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
+        TTF_Init();
         render_task(renderer, &task);
         SDL_RenderPresent(renderer);
     }
 
+    destroy_task(&task);
     SDL_DestroyTexture(assets.map_texture);
     SDL_DestroyTexture(assets.vignette_img);
     SDL_DestroyTexture(assets.innocent_img);
     SDL_DestroyTexture(assets.killer_img);
+    SDL_DestroyTexture(assets.role_art_img);
     for (int i = 0; i < PLAYER_SLOTS; i++)
         SDL_DestroyTexture(assets.skins[i]);
+    TTF_Quit();
 }
