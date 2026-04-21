@@ -166,6 +166,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             SDL_Texture *role_img;
             collect_packets(client,state);
             SDL_RenderClear(renderer);
+            SDL_RenderCopy(renderer,assets.role_art_img,NULL,NULL);
             if (state->players[local_id].isImpostor)
             {
                 role_img = assets.killer_img;
