@@ -57,13 +57,6 @@ static int send_start_game(UDPsocket socket, IPaddress server_addr)
     return send_client_message(socket, server_addr, start.type);
 }
 
-static int send_leave(UDPsocket socket, IPaddress server_addr)
-{
-    leaveMessage leave = {0};
-    leave.type = MSG_LEAVE;
-    return send_client_message(socket, server_addr, leave.type);
-}
-
 static void clean_client(Client *client)
 {
     if (client->recievepacket)
@@ -105,14 +98,14 @@ int main()
         {
             if (event.type == SDL_QUIT)
             {
-                send_leave(client.socket, client.serverAddr);
+                send_leave_message(client.socket, client.serverAddr);
                 running = false;
             }
             if (event.type == SDL_KEYDOWN)
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 {
-                    send_leave(client.socket, client.serverAddr);
+                    send_leave_message(client.socket, client.serverAddr);
                     running = false;
                 }
                 else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
