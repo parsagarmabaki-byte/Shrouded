@@ -76,7 +76,7 @@ int main()
                 }
             }
         }
-
+        
         receive_game_state(client.socket, client.recievepacket, &state);
 
         if (state.phase != GAME_LOBBY)
