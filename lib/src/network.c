@@ -120,6 +120,15 @@ int send_client_input(UDPsocket socket, IPaddress server_addr, clientInput *inpu
     return 1;
 }
 
+bool send_kill_msg(UDPsocket socket, UDPpacket *packet, IPaddress address, KillEventMsg *msg)
+{
+    packet->address = address;
+    memcpy(packet->data, msg, sizeof(KillEventMsg));
+    packet->len = sizeof(KillEventMsg);
+
+    return SDLNet_UDP_Send(socket, -1, packet) != 0;
+}
+
 int receive_client_input(UDPsocket socket, UDPpacket *packet, clientInput *input)
 {
     if (SDLNet_UDP_Recv(socket, packet))
@@ -136,6 +145,16 @@ int receive_game_state(UDPsocket socket, UDPpacket *packet, gameState *state){
         return 0;
     }
     return 1;
+}
+
+int receive_kill_msg(UDPsocket socket, UDPpacket *packet, KillEventMsg *msg)
+{
+    if (SDLNet_UDP_Recv(socket, packet))
+    {
+        memcpy(msg, packet->data, sizeof(KillEventMsg));
+        return 1;
+    }
+    return 0;
 }
 
 int send_game_state(UDPsocket socket, UDPpacket *packet, IPaddress addr, gameState *state){

@@ -40,42 +40,6 @@ bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
             ly <= rect.y + rect.h);
 }
 
-bool handle_kill_request(gameState *state, int killer_id)
-{
-    playerState imposter = state->players[killer_id];
-    if (imposter.kill_cooldown_active)
-    {
-        return false;
-    }
-    activate_kill_cooldown(state, killer_id);
-    for (int i=0; i<MAX_PLAYERS; i++)
-    {
-        if (killer_id == i)
-        {
-            continue;
-        }
-        if (state->players[i].isAlive && state->players[i].active)
-        {
-            float fy,fx = 0;
-            get_forward_vector(imposter.direction,&fx,&fy);
-            
-
-        }
-    }
-    
-}
-
-void get_forward_vector(Direction direction, float *fx, float *fy)
-{
-    *fx = 0.0f;
-    *fy = 0.0f;
-
-    if (direction == DIR_UP)    *fy = -1.0f;
-    if (direction == DIR_DOWN)  *fy =  1.0f;
-    if (direction == DIR_LEFT)  *fx = -1.0f;
-    if (direction == DIR_RIGHT) *fx =  1.0f;
-}
-
 void activate_kill_cooldown(gameState *state, int local_id)
 {
     state->players[local_id].kill_cooldown_start = SDL_GetTicks64();
@@ -89,3 +53,81 @@ bool update_kill_cooldown(gameState state, int local_id)
         return false;
     return true;
 }
+
+int handle_kill_request(gameState *state, int killer_id)
+{
+    playerState imposter = state->players[killer_id];
+    float best_distance = KILL_RADIUS * KILL_RADIUS;
+    int target_id = -1;
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (killer_id == i)
+        {
+            continue;
+        }
+
+        if (state->players[i].isAlive && state->players[i].active)
+        {
+            float distance = find_kill_target(imposter,state->players[i]);
+            if (distance > 0 && distance < best_distance)
+            {
+                target_id = i;
+                best_distance = distance;
+            }
+        }
+    }
+    if (target_id != -1 && !imposter.kill_cooldown_active)
+    {
+        activate_kill_cooldown(state, killer_id);
+        return target_id;
+    }
+    return -1;
+}
+
+float find_kill_target(playerState imposter, playerState innocent)
+{
+    float fy, fx = 0;
+    get_forward_vector(imposter.direction, &fx, &fy);
+    float dx = innocent.x - imposter.x;
+    float dy = innocent.y - imposter.y;
+    float dist_sq = dx * dx + dy * dy;
+    // printf("\n[TARGET %d] dx=%.2f dy=%.2f dist_sq=%.2f\n", innocent.player_id ,dx, dy, dist_sq);
+
+    if (dist_sq > KILL_RADIUS * KILL_RADIUS)
+    {
+        // printf(" -> too far\n");
+        return -1;
+    }
+    float len = sqrtf(dist_sq);
+    float vx = dx / len;
+    float vy = dy / len;
+
+    float dot = fx * vx + fy * vy;
+    // printf(" -> dot=%.2f (fx=%.2f fy=%.2f)\n", dot, fx, fy);
+
+    if (dot < 0.5f)
+    {
+        // printf(" -> not in front\n");
+        return -1;
+    }
+    // printf(" -> VALID target\n");
+
+    return dist_sq;
+}
+
+void get_forward_vector(Direction direction, float *fx, float *fy)
+{
+    *fx = 0.0f;
+    *fy = 0.0f;
+
+    if (direction == DIR_UP)
+        *fy = -1.0f;
+    if (direction == DIR_DOWN)
+        *fy = 1.0f;
+    if (direction == DIR_LEFT)
+        *fx = -1.0f;
+    if (direction == DIR_RIGHT)
+        *fx = 1.0f;
+}
+

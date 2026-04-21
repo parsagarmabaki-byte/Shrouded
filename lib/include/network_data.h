@@ -27,7 +27,8 @@ typedef enum{
     MSG_CLIENT_INPUT,
     MSG_GAME_STATE,
     MSG_READY_STATUS,
-    MSG_KILL_REQUEST
+    MSG_KILL_REQUEST,
+    MSG_KILL_EVENT
 } MessageType;
 
 
@@ -45,7 +46,14 @@ typedef struct { // Info som användaren klickar in
     Direction direction;
 } clientInput; 
 
-
+typedef struct
+{
+    MessageType type;
+    int killer_id;
+    int victim_id;
+    float x;
+    float y;
+} KillEventMsg;
 
 typedef struct {
     int active;

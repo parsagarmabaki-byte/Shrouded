@@ -18,31 +18,33 @@ void sendInput(Client *client, gameState *state, Player *player)
 void request_kill(Client *client, gameState *state)
 {
     clientInput input = {0};
-    input.type= MSG_KILL_REQUEST;
-    input.player_id= state->local_player_id;
+    input.type = MSG_KILL_REQUEST;
+    input.player_id = state->local_player_id;
     send_client_input(client->socket, client->serverAddr, &input);
 }
 
-void collect_client_data(Client *client, gameState *state, Player *player, int local_id)
+void collect_packets(Client *client, gameState *state)
 {
-    int got_state = -1;
-    while (receive_game_state(client->socket, client->recievepacket, state) == 0)
+    while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
-        got_state = 0;
-    }
+        uint8_t type = client->recievepacket->data[0];
 
-    if (got_state == 0)
-    {
-        float dx = state->players[local_id].x - player->Hitbox.x;
-        float dy = state->players[local_id].y - player->Hitbox.y;
+        if (type == MSG_GAME_STATE)
+        {
+            memcpy(state, client->recievepacket->data, sizeof(gameState));
+        }
+        else if (type == MSG_KILL_EVENT)
+        {
+            KillEventMsg msg;
+            memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
 
-        if (fabsf(dx) > 6.0f)
-            player->Hitbox.x = state->players[local_id].x;
-        if (fabsf(dy) > 6.0f)
-            player->Hitbox.y = state->players[local_id].y;
+            printf("Kill received: killer=%d victim=%d\n",
+                   msg.killer_id, msg.victim_id);
+
+            // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
+        }
     }
 }
-
 clientInput read_input(bool tasks_active)
 {
     clientInput input = {0};
@@ -135,6 +137,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     int local_id = state->local_player_id;
     local_player_is_impostor = state->players[local_id].isImpostor != 0;
     bool kill_cooldown = false;
+    SDL_Rect kill_button = {1400, 800, 442, 181};
     Player player = init_player(*state, local_id);
 
     // initialize in-game tasks
@@ -161,10 +164,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_SHOW_ROLE)
         {
             SDL_Texture *role_img;
-            collect_client_data(client, state, &player, local_id);
-
             SDL_RenderClear(renderer);
-
+            collect_packets(client,state);
             if (state->players[local_id].isImpostor)
             {
                 role_img = assets.killer_img;
@@ -209,10 +210,16 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_K && !kill_cooldown && local_player_is_impostor)
                 {
-                    request_kill(client,state);
+                    request_kill(client, state);
                 }
             }
-            if (event.type == SDL_Mosu)
+            if (event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                if (is_hovering(renderer, kill_button) && event.button.button == SDL_BUTTON_LEFT && !kill_cooldown && local_player_is_impostor)
+                {
+                    request_kill(client, state);
+                }
+            }
         }
 
         accumulator += dt;
@@ -232,13 +239,15 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
             accumulator -= SERVER_TICK_INTERVAL;
         }
-
+        // KillEventMsg msg = {0};
+        // collect_kill_msg(client,&msg);
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
         if (!task.active)
         {
             sendInput(client, state, &player);
         }
-        collect_client_data(client, state, &player, local_id);
+        // collect_client_data(client, state, &player, local_id);
+        collect_packets(client, state);
 
         update_task(&task, dt);
 

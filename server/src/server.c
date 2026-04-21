@@ -59,6 +59,7 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             clientAddresses[i] = addr;
 
             state->players[i].active = 1;
+            state->players[i].isAlive = 1;
             state->players[i].player_id = i;
             state->players[i].x = spawnX[i];
             state->players[i].y = spawnY[i];
@@ -121,6 +122,20 @@ void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, I
         {
             state->local_player_id = i;
             if (!send_game_state(socket, packet, clientAddresses[i], state))
+            {
+                printf("Failed to send game state to player %d\n", i);
+            }
+        }
+    }
+}
+
+void broadcast_Kill_msg(UDPsocket socket, UDPpacket *packet, KillEventMsg *msg, IPaddress *clientAddresses, int *clientUsed)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (clientUsed[i])
+        {
+            if (!send_kill_msg(socket, packet ,clientAddresses[i], msg))
             {
                 printf("Failed to send game state to player %d\n", i);
             }
@@ -259,15 +274,25 @@ int main(void)
             {
                 clientInput input;
                 memcpy(&input, receive_packet->data, sizeof(clientInput));
-                int id = input.player_id;
-                if (id >= 0 && id < MAX_PLAYERS)
+                int killer_id = input.player_id;
+                if (killer_id >= 0 && killer_id < MAX_PLAYERS)
                 {
-                    handle_kill_request(&state,id);
+                    int target_id = handle_kill_request(&state, killer_id);
+                    if (target_id != -1)
+                    {
+                        state.players[target_id].isAlive = 0;
+                        KillEventMsg msg = {0};
+                        msg.type = MSG_KILL_EVENT;
+                        msg.killer_id = killer_id;
+                        msg.victim_id = target_id;
+                        msg.x = state.players[killer_id].x;
+                        msg.y = state.players[killer_id].y;
+                        broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
+                    }
                 }
             }
         }
 
-     
         // Applicera input och broadcasta på fast 60fps
         Uint64 now = SDL_GetPerformanceCounter();
         float broadcastDt = (float)(now - lastBroadcast) / (float)SDL_GetPerformanceFrequency();
@@ -290,7 +315,7 @@ int main(void)
                     handleInput(&state, &lastInput[i], 0.016f);
                     if (state.players[i].kill_cooldown_active)
                     {
-                        state.players[i].kill_cooldown_active = update_kill_cooldown(state,i);
+                        state.players[i].kill_cooldown_active = update_kill_cooldown(state, i);
                     }
                     lastInput[i].player_id = -1;
                     lastInput[i].up = 0;
