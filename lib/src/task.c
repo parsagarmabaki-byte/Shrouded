@@ -60,6 +60,7 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
 
     task->timer = duration;
     task->timer_duration = duration;
+
     task->task_image = IMG_LoadTexture(renderer, "assets/images/mannequin.png");
     if (!task->task_image)
     {
@@ -86,6 +87,7 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
 
     task->click_count = 0;
     task->click_target = target;
+
     task->task_image = IMG_LoadTexture(renderer, "assets/images/crystal.png");
     if (!task->task_image)
     {
@@ -112,8 +114,6 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
 
     const char *letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int len = 10;
-
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/desk.png");
     task->length = len;
     task->current_index = 0;
 
@@ -123,13 +123,53 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
     }
     task->target_string[len] = '\0';
 
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/desk.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load type task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+    }
+
     if (!task->font)
     {
         printf("Font not loaded, cannot create text\n");
     }
     else
     {
-    task->task_text_texture = create_text_texture(renderer, task->font, "WRITE LETTER", WHITE, &task->task_text_w, &task->task_text_h);
+        task->task_text_texture = create_text_texture(renderer, task->font, "WRITE LETTER", WHITE, &task->task_text_w, &task->task_text_h);
+    }
+}
+
+void start_reflex_task(Task *task, SDL_Renderer *renderer)
+{
+    cleanup_task(task);
+    task->type = TASK_REFLEX;
+    task->active = true;
+
+    task->cursor_pos = 0.0f;
+    task->cursor_speed = 0.8f;
+    task->direction = 1;
+    task->success_min = 0.4f;
+    task->success_max = 0.6f;
+    task->success_count = 0;
+    task->success_target = 5;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/fireplace.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+    }
+
+    if (!task->font)
+    {
+        printf("Font not loaded, cannot create text\n");
+    }
+    else
+    {
+        task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE", WHITE, &task->task_text_w, &task->task_text_h);
     }
 }
 
@@ -158,7 +198,25 @@ void update_task(Task *task, float dt)
                 complete_task(task);
             }
             break;
+        case TASK_REFLEX:
+        {
+            // move cursor
+            task->cursor_pos += task->direction * task->cursor_speed * dt;
 
+            // bounce at edges
+            if (task->cursor_pos >= 1.0f)
+            {
+                task->cursor_pos = 1.0f;
+                task->direction = -1;
+            }
+            else if (task->cursor_pos <= 0.0f)
+            {
+                task->cursor_pos = 0.0f;
+                task->direction = 1;
+            }
+            break;
+
+        }
         default:
             break;
     }
@@ -348,6 +406,12 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 SDL_RenderCopy(renderer, task->task_text_texture, NULL, &t);
             }
 
+            break;
+        }
+
+        case TASK_REFLEX:
+        {
+            
             break;
         }
 

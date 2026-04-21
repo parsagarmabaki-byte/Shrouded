@@ -207,6 +207,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 {
                     start_type_task(&task, renderer);
                 }
+                if (event.key.keysym.scancode == SDL_SCANCODE_4)
+                {
+                    start_reflex_task(&task, renderer);
+                }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {
                     if (task.active)
@@ -243,6 +247,35 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                     task.click_count++;
                 }
             }
+
+            if (task.active && task.type == TASK_REFLEX)
+
+            {
+                if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+                {
+                    if (task.cursor_pos >= task.success_min && task.cursor_pos <= task.success_max)
+                    {
+                        task.success_count++;
+
+                    if (task.success_count >= task.success_target)
+                    {
+                        complete_task(&task);
+                    }
+                    else
+                    {
+                        // reset cursor
+                        task.cursor_pos = 0.0f;
+                        task.direction = 1;
+                    }
+                }
+                else
+                {
+                    task.success_count = 0;
+                    task.cursor_pos = 0.0f;
+                    task.direction = 1;
+                }
+            }
+
         }
 
         local_player_is_impostor = state->players[local_id].isImpostor != 0;

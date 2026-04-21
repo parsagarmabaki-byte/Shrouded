@@ -11,7 +11,8 @@ typedef enum {
     TASK_NONE,
     TASK_TIMER,
     TASK_CLICK,
-    TASK_TYPE
+    TASK_TYPE,
+    TASK_REFLEX
 } TaskType;
 
 typedef struct {
@@ -38,9 +39,18 @@ typedef struct {
     int click_target;
 
     // TASK_TYPE specific
-    char target_string[16];
+    char target_string[16]; 
     int current_index;
     int length;
+
+    // TASK_REFLEX specific
+    float cursor_pos;     // 0.0 → 1.0
+    float cursor_speed;
+    int direction;        // 1 or -1
+    float success_min;    // cursor range for success
+    float success_max;    
+    int success_count;    
+    int success_target;   // number of wins to complete task
 
 } Task;
 
@@ -49,6 +59,7 @@ void init_task(Task *task, SDL_Renderer *renderer);
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
 void start_click_task(Task *task, SDL_Renderer *renderer, int target);
 void start_type_task(Task *task, SDL_Renderer *renderer);
+void start_reflex_task(Task *task, SDL_Renderer *renderer);
 void update_task(Task *task, float dt);
 void complete_task(Task *task);
 void cleanup_task(Task *task);
