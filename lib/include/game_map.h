@@ -21,11 +21,8 @@ typedef struct
     SDL_Texture *vignette_img;
     SDL_Texture *killer_img;
     SDL_Texture *innocent_img;
-<<<<<<< HEAD
     SDL_Texture *kill_button_img;
-=======
     SDL_Texture *role_art_img;
->>>>>>> main
 } GameAssets;
 
 typedef struct {

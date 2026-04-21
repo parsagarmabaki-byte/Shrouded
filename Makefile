@@ -32,11 +32,8 @@ PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 LOBBY_SRC = lib/src/lobby.c
 TASK_SRC = lib/src/task.c
 GAME_SRC = lib/src/game.c
-<<<<<<< HEAD
 IMPOSTER_ABILITY_SRC = lib/src/imposter_ability.c
-=======
 SFX_SRC = lib/src/SFX.c
->>>>>>> main
 
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 GAME_MAP_SRC = lib/src/game_map.c
@@ -54,11 +51,8 @@ PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 LOBBY_OBJ = $(OBJDIR)/lobby.o
 TASK_OBJ = $(OBJDIR)/task.o
 GAME_OBJ = $(OBJDIR)/game.o
-<<<<<<< HEAD
 IMPOSTER_ABILITY_OBJ = $(OBJDIR)/imposter_ability.o
-=======
 SFX_OBJ = $(OBJDIR)/sfx.o
->>>>>>> main
 
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o

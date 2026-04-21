@@ -6,7 +6,7 @@
 
 void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_img, bool kill_cooldown)
 {
-    SDL_Rect kill_button = {1400, 800, 442, 181};
+    SDL_Rect kill_button = {1000, 580, 230, 100};
 
     SDL_SetTextureColorMod(kill_button_img, 255, 255, 255);
     SDL_SetTextureAlphaMod(kill_button_img, 255);
