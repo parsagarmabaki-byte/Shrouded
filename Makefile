@@ -30,6 +30,7 @@ PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 LOBBY_SRC = lib/src/lobby.c
 TASK_SRC = lib/src/task.c
 GAME_SRC = lib/src/game.c
+WALL_DATA_SRC = lib/src/wall_data.c
 
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 GAME_MAP_SRC = lib/src/game_map.c
@@ -47,6 +48,7 @@ PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 LOBBY_OBJ = $(OBJDIR)/lobby.o
 TASK_OBJ = $(OBJDIR)/task.o
 GAME_OBJ = $(OBJDIR)/game.o
+WALL_DATA_OBJ = $(OBJDIR)/wall_data.o
 
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o
@@ -128,11 +130,15 @@ $(GAME_MAP_TEST_OBJ): $(GAME_MAP_TEST_SRC) | $(OBJDIR)
 $(TASK_OBJ): $(TASK_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(WALL_DATA_OBJ): $(WALL_DATA_SRC) | $(OBJDIR)
+
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(WALL_DATA_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ)
+$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(WALL_DATA_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(PLAYER_MOVEMENT_TEST_OUT): $(PLAYER_MOVEMENT_TEST_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ)
