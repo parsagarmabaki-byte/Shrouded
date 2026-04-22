@@ -59,7 +59,6 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
         {
             if (!state->players[i].isAlive)
                 alpha = 155;
-
             p.Hitbox.x = player.Hitbox.x;
             p.Hitbox.y = player.Hitbox.y;
             p.current_frame = player.current_frame;
@@ -238,19 +237,17 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
         while (accumulator >= SERVER_TICK_INTERVAL)
         {
-            if (state->players[local_id].isAlive)
-            {
-                if (user_input.up)
-                    player.direction = DIR_UP;
-                if (user_input.down)
-                    player.direction = DIR_DOWN;
-                if (user_input.left)
-                    player.direction = DIR_LEFT;
-                if (user_input.right)
-                    player.direction = DIR_RIGHT;
+            if (user_input.up)
+                player.direction = DIR_UP;
+            if (user_input.down)
+                player.direction = DIR_DOWN;
+            if (user_input.left)
+                player.direction = DIR_LEFT;
+            if (user_input.right)
+                player.direction = DIR_RIGHT;
 
-                apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
-            }
+            apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
+
             accumulator -= SERVER_TICK_INTERVAL;
         }
         // KillEventMsg msg = {0};
@@ -265,8 +262,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
         // update active task
         update_task(&task, dt);
-        // for (int i = 0; i < MAX_PLAYERS; i++)
-        //     update_kill_animation(&bodies[i], dt);
+        for (int i = 0; i < MAX_PLAYERS; i++)
+            update_kill_animation(&bodies[i], dt);
 
         // Move the camera to keep the local player centered on screen
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
@@ -278,7 +275,6 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         render_all_players(state, player, assets, &cam, renderer, local_id);
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
-            update_kill_animation(&bodies[i], dt);
             render_kill_animation(renderer, &bodies[i], assets, &cam);
         }
         if (local_player_is_impostor)
@@ -305,51 +301,4 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     for (int i = 0; i < PLAYER_SLOTS; i++)
         SDL_DestroyTexture(assets.skins[i]);
     TTF_Quit();
-}
-
-void start_kill_animation(KillAnimation *anim, int killer_id, int victim_id, float x, float y)
-{
-    anim->active = true;
-    anim->killer_id = killer_id;
-    anim->victim_id = victim_id;
-    anim->x = x;
-    anim->y = y;
-    anim->current_frame = 0;
-    anim->animation_timer = 0.0f;
-}
-
-void update_kill_animation(KillAnimation *anim, float dt)
-{
-    if (!anim->active)
-        return;
-
-    anim->animation_timer += dt;
-    if (anim->animation_timer > 0.05f) // snabb animation
-    {
-        if (anim->current_frame < 24)
-        {
-            anim->current_frame++;
-            anim->animation_timer = 0.0f;
-        }
-    }
-}
-
-void render_kill_animation(SDL_Renderer *renderer, KillAnimation *anim, GameAssets assets, Camera *cam)
-{
-    if (!anim->active)
-        return;
-
-    SDL_Rect src = {
-        (anim->current_frame % 5) * FRAME_SIZE,
-        (anim->current_frame / 5) * FRAME_SIZE,
-        FRAME_SIZE,
-        FRAME_SIZE};
-
-    SDL_Rect dst = {
-        (int)(anim->x - cam->x),
-        (int)(anim->y - cam->y),
-        PLAYER_SIZE,
-        PLAYER_SIZE};
-
-    SDL_RenderCopy(renderer, assets.dead_skins[anim->victim_id], &src, &dst);
 }

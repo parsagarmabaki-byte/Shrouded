@@ -27,6 +27,7 @@ void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_im
 
     SDL_RenderCopy(renderer, kill_button_img, NULL, &kill_button);
 }
+
 bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
 {
     int mx, my;
@@ -131,3 +132,49 @@ void get_forward_vector(Direction direction, float *fx, float *fy)
         *fx = 1.0f;
 }
 
+void start_kill_animation(KillAnimation *anim, int killer_id, int victim_id, float x, float y)
+{
+    anim->active = true;
+    anim->killer_id = killer_id;
+    anim->victim_id = victim_id;
+    anim->x = x;
+    anim->y = y;
+    anim->current_frame = 0;
+    anim->animation_timer = 0.0f;
+}
+
+void update_kill_animation(KillAnimation *anim, float dt)
+{
+    if (!anim->active)
+        return;
+
+    anim->animation_timer += dt;
+    if (anim->animation_timer > 0.05f) // snabb animation
+    {
+        if (anim->current_frame < 24)
+        {
+            anim->current_frame++;
+            anim->animation_timer = 0.0f;
+        }
+    }
+}
+
+void render_kill_animation(SDL_Renderer *renderer, KillAnimation *anim, GameAssets assets, Camera *cam)
+{
+    if (!anim->active)
+        return;
+
+    SDL_Rect src = {
+        (anim->current_frame % 5) * FRAME_SIZE,
+        (anim->current_frame / 5) * FRAME_SIZE,
+        FRAME_SIZE,
+        FRAME_SIZE};
+
+    SDL_Rect dst = {
+        (int)(anim->x - cam->x),
+        (int)(anim->y - cam->y),
+        PLAYER_SIZE,
+        PLAYER_SIZE};
+
+    SDL_RenderCopy(renderer, assets.dead_skins[anim->victim_id], &src, &dst);
+}

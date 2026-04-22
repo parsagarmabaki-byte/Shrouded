@@ -116,7 +116,7 @@ int main()
             }
         }
         
-        collect_packets(&client, &state);
+        collect_packets(&client, &state, NULL);
 
         if (state.phase != GAME_LOBBY)
             running = false;
