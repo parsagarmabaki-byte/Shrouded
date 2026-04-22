@@ -275,7 +275,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
 {
     if (!task->active) return;
 
-    SDL_Rect box = {500, 250, 900, 500};
+    SDL_Rect box = {225, 150, 900, 500}; // adjust for screen size later for both text and image
 
     if (task->task_image)
     {

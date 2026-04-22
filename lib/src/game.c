@@ -229,14 +229,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             }
 
             if (task.active && task.type == TASK_REFLEX)
-
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
                 {
                     if (task.cursor_pos >= task.success_min && task.cursor_pos <= task.success_max)
                     {
                         task.success_count++;
-
+                    }
                     if (task.success_count >= task.success_target)
                     {
                         complete_task(&task);
