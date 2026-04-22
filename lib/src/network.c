@@ -34,15 +34,21 @@ UDPpacket *create_packet(int size)
 
 int send_packet_data(UDPsocket socket, UDPpacket *packet, IPaddress address, const void *data, int size)
 {
-    memcpy(packet->data, data, size);
-    packet->len = size;
-    packet->address = address;
-
-    if (!SDLNet_UDP_Send(socket, -1, packet))
+    if (packet->maxlen < size)
     {
-        printf("SDLNet_UDP_Send error: %s\n", SDLNet_GetError());
+        printf("ERROR: Send packet too small/big\n");
         return 0;
-    }
+    } else
+    {
+        memcpy(packet->data, data, size);
+        packet->len = size;
+        packet->address = address;
 
+        if (!SDLNet_UDP_Send(socket, -1, packet))
+        {
+            printf("SDLNet_UDP_Send error: %s\n", SDLNet_GetError());
+            return 0;
+        }
+    }
     return 1;
 }
