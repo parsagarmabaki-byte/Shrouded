@@ -42,7 +42,7 @@ void init_task(Task *task, SDL_Renderer *renderer)
     }
     if (task->font)
     {
-        task->global_text_texture = create_text_texture(renderer, task->font, "PRESS Q TO CLOSE TASK", WHITE, &task->global_text_w, &task->global_text_h);
+        task->global_text_texture = create_text_texture(renderer, task->font, "PRESS Q TO CLOSE ASSIGNMENT", WHITE, &task->global_text_w, &task->global_text_h);
     }
     else
     {
@@ -112,14 +112,14 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
     task->type = TASK_TYPE;
     task->active = true;
 
-    const char *letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char *letters = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
     int len = 10;
     task->length = len;
     task->current_index = 0;
 
     for (int i = 0; i < len; i++)
     {
-        task->target_string[i] = letters[rand() % 26];
+        task->target_string[i] = letters[rand() % 25];
     }
     task->target_string[len] = '\0';
 
