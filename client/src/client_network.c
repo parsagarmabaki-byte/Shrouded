@@ -53,7 +53,7 @@ void send_input(Client *client, gameState *state, Player *player)
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
 void request_kill(Client *client, gameState *state)
-{s
+{
     clientInput input = {0};
     input.type = MSG_KILL_REQUEST;
     input.player_id = state->local_player_id;
