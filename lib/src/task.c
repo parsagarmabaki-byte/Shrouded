@@ -4,7 +4,7 @@ static const SDL_Color WHITE = {255,255,255,255};
 
 SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h)
 {
-    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
+    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color); // render text to surface
 
     if (!surface)
     {
@@ -12,7 +12,7 @@ SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const c
         return NULL;
     }
 
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface); // convert surface to texture
 
     if (!texture)
     {
@@ -21,10 +21,11 @@ SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const c
         return NULL;
     }
 
+    // store the width and height of the rendered text back in the caller’s variables
     *w = surface->w;
     *h = surface->h;
 
-    SDL_FreeSurface(surface);
+    SDL_FreeSurface(surface); // free the surface after creating texture
     return texture;
 }
 
@@ -117,6 +118,7 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
     task->length = len;
     task->current_index = 0;
 
+    // create random string of "len" letters
     for (int i = 0; i < len; i++)
     {
         task->target_string[i] = letters[rand() % 25];
@@ -173,7 +175,7 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     }
 }
 
-void update_task(Task *task, float dt)
+void update_task(Task *task, float dt) // updates task logic every frame
 {
     if (!task->active) return;
 
@@ -215,7 +217,6 @@ void update_task(Task *task, float dt)
                 task->direction = 1;
             }
             break;
-
         }
         default:
             break;
@@ -234,9 +235,9 @@ void cancel_task(Task *task)
 {
     if (!task->active) return;
 
-    cleanup_task(task);
     task->active = false;
     task->type = TASK_NONE;
+    cleanup_task(task);
 }
 
 void cleanup_task(Task *task) // cleans non specific things
@@ -293,8 +294,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
     {
         case TASK_TIMER:
         {
-            
-            // progress bar
+            // progress bar calculation
             float progress = 0.0f;
             if (task->timer_duration > 0.0f)
             {
@@ -322,11 +322,11 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
         case TASK_CLICK:
         {
-            // click count
+            // click counter dynamic text
             char buffer[32];
-            snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target);
+            snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target); // write string into the buffer
 
-            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
+            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE); // render text in buffer to surface
             if (!surface) break;
 
             SDL_Texture *textTex = SDL_CreateTextureFromSurface(renderer, surface);
@@ -360,7 +360,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             // show progress
             for (int i = 0; i < task->length; i++)
             {
-                if (i < task->current_index)
+                if (i < task->current_index)                // everything before current index is shown, rest is hidden
                     buffer[i] = task->target_string[i];
                 else
                     buffer[i] = '_';
@@ -379,7 +379,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             // show target string
             char current[2];
 
-            if (task->current_index < task->length)
+            if (task->current_index < task->length)        // if within defined text length, show next letter
             {
                 current[0] = task->target_string[task->current_index];
             }
