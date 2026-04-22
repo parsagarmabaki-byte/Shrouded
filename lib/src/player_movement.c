@@ -61,6 +61,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
 {
     SDL_Rect src;
     SDL_Rect dst;
+    Uint8 old_r, old_g, old_b, old_a;
 
     // --- Pick frame from sprite sheet ---
     src.x = player->current_frame * FRAME_SIZE;
@@ -79,4 +80,9 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
     dst.h = (int)player->Hitbox.h;
 
     SDL_RenderCopy(renderer, texture, &src, &dst);
+
+    SDL_GetRenderDrawColor(renderer, &old_r, &old_g, &old_b, &old_a);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_RenderDrawRect(renderer, &dst);
+    SDL_SetRenderDrawColor(renderer, old_r, old_g, old_b, old_a);
 }
