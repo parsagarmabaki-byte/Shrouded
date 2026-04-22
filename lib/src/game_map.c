@@ -40,7 +40,12 @@ GameAssets load_assets(SDL_Renderer *renderer)
         snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
         asset.skins[i] = loading_img(renderer, path);
     }
-
+    
+    for (int i = 0; i < PLAYER_SLOTS; i++)
+    {
+        snprintf(path, sizeof(path), "assets/sprites/dead_skin%d.png", i);
+        asset.dead_skins[i] = loading_img(renderer, path);
+    }
     return asset;   
 }
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)

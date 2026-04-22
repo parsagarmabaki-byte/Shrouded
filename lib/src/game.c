@@ -23,7 +23,7 @@ void request_kill(Client *client, gameState *state)
     send_client_input(client->socket, client->serverAddr, &input);
 }
 
-void collect_packets(Client *client, gameState *state)
+void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 {
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
@@ -42,6 +42,9 @@ void collect_packets(Client *client, gameState *state)
                    msg.killer_id, msg.victim_id);
 
             // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
+            start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
+                     state->players[msg.victim_id].x,
+                     state->players[msg.victim_id].y);
         }
     }
 }
@@ -90,7 +93,8 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (state->players[i].active)
+
+        if (state->players[i].active && state->players[i].isAlive)
         {
             Player p = player;
             if (i == local_id)
@@ -143,6 +147,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     // initialize in-game tasks
     Task task;
     init_task(&task, renderer);
+    KillAnimation bodies[MAX_PLAYERS] = {0};
     int score = 0;
 
     // Camera starts at origin — camera_follow() centers it on the player each frame
@@ -164,7 +169,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_SHOW_ROLE)
         {
             SDL_Texture *role_img;
-            collect_packets(client,state);
+            collect_packets(client, state, bodies);
             SDL_RenderClear(renderer);
             if (state->players[local_id].isImpostor)
             {
@@ -178,7 +183,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             SDL_Rect role_rect;
             role_rect.w = 400;                                       // bredd i logiska pixlar
             role_rect.h = 200;                                       // höjd i logiska pixlar
-            role_rect.x = (LOGICAL_SCREEN_WIDTH  - role_rect.w) / 2; // centrera horisontellt
+            role_rect.x = (LOGICAL_SCREEN_WIDTH - role_rect.w) / 2;  // centrera horisontellt
             role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4; //  vertikalt
 
             SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
@@ -267,32 +272,37 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         accumulator += dt;
         clientInput user_input = read_input(task.active);
 
-        while (accumulator >= SERVER_TICK_INTERVAL) // SERVER TICK ÄR 0.016f
+        while (accumulator >= SERVER_TICK_INTERVAL)
         {
-            if (user_input.up)
-                player.direction = DIR_UP;
-            if (user_input.down)
-                player.direction = DIR_DOWN;
-            if (user_input.left)
-                player.direction = DIR_LEFT;
-            if (user_input.right)
-                player.direction = DIR_RIGHT;
+            if (state->players[local_id].isAlive)
+            {
+                if (user_input.up)
+                    player.direction = DIR_UP;
+                if (user_input.down)
+                    player.direction = DIR_DOWN;
+                if (user_input.left)
+                    player.direction = DIR_LEFT;
+                if (user_input.right)
+                    player.direction = DIR_RIGHT;
 
-            apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
+                apply_movement(&player.Hitbox.x, &player.Hitbox.y, user_input, SERVER_TICK_INTERVAL);
+            }
             accumulator -= SERVER_TICK_INTERVAL;
         }
         // KillEventMsg msg = {0};
         // collect_kill_msg(client,&msg);
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
-        if (!task.active)
+        if (!task.active && state->players[local_id].isAlive)
         {
             sendInput(client, state, &player);
         }
         // collect_client_data(client, state, &player, local_id);
-        collect_packets(client, state);
+        collect_packets(client, state, bodies);
 
-        //update active task
+        // update active task
         update_task(&task, dt);
+        for (int i = 0; i < MAX_PLAYERS; i++)
+            update_kill_animation(&bodies[i], dt);
 
         // Move the camera to keep the local player centered on screen
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
@@ -302,6 +312,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
         // Draw all active players
         render_all_players(state, player, assets, &cam, renderer, local_id);
+        for (int i = 0; i < MAX_PLAYERS; i++)
+            render_kill_animation(renderer, &bodies[i], assets, &cam);
 
         if (local_player_is_impostor)
         {
@@ -327,4 +339,53 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     for (int i = 0; i < PLAYER_SLOTS; i++)
         SDL_DestroyTexture(assets.skins[i]);
     TTF_Quit();
+}
+
+void start_kill_animation(KillAnimation *anim, int killer_id, int victim_id, float x, float y)
+{
+    anim->active = true;
+    anim->killer_id = killer_id;
+    anim->victim_id = victim_id;
+    anim->x = x;
+    anim->y = y;
+    anim->current_frame = 0;
+    anim->animation_timer = 0.0f;
+}
+
+void update_kill_animation(KillAnimation *anim, float dt)
+{
+    if (!anim->active)
+        return;
+
+    anim->animation_timer += dt;
+    if (anim->animation_timer > 0.05f) // snabb animation
+    {
+        anim->current_frame++;
+        anim->animation_timer = 0.0f;
+
+        if (anim->current_frame >= 24)
+        {
+            anim->current_frame = 24;
+        }
+    }
+}
+
+void render_kill_animation(SDL_Renderer *renderer, KillAnimation *anim, GameAssets assets, Camera *cam)
+{
+    if (!anim->active)
+        return;
+
+    SDL_Rect src = {
+        (anim->current_frame % 5) * FRAME_SIZE,
+        (anim->current_frame / 5) * FRAME_SIZE,
+        FRAME_SIZE,
+        FRAME_SIZE};
+
+    SDL_Rect dst = {
+        (int)(anim->x - cam->x),
+        (int)(anim->y - cam->y),
+        PLAYER_SIZE,
+        PLAYER_SIZE};
+
+    SDL_RenderCopy(renderer, assets.dead_skins[anim->victim_id], &src, &dst);
 }
