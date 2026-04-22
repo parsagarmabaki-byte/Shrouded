@@ -3,9 +3,11 @@
 #include "player_movement.h"
 #include "game_map.h"
 #include "network_data.h"
+#include "wall_data.h"
 #include <math.h>
 
 void apply_movement(float *x, float *y, clientInput input, float dt)
+
 {
     float dx = (input.right - input.left);
     float dy = (input.down - input.up);
@@ -13,12 +15,29 @@ void apply_movement(float *x, float *y, clientInput input, float dt)
     if (dx || dy)
     {
         float inv_len = 1.0f / sqrtf(dx * dx + dy * dy);
+
         dx *= inv_len;
         dy *= inv_len;
     }
 
-    *x += dx * PLAYER_SPEED * dt;
-    *y += dy * PLAYER_SPEED * dt;
+    float move = PLAYER_SPEED * dt;
+
+    // Testa X och Y separat så spelaren kan glida längs väggar
+
+    float new_x = *x + dx * move;
+
+    if (!collides_with_wall(new_x, *y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
+    {
+        *x = new_x;
+    }
+
+    float new_y = *y + dy * move;
+
+    if (!collides_with_wall(*x, new_y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
+    {
+        *y = new_y;
+    }
+
 }
 
 Player init_player(gameState state, int local_id)
@@ -27,6 +46,8 @@ Player init_player(gameState state, int local_id)
     player.current_frame = state.players[local_id].current_frame;
     player.direction = state.players[local_id].direction;
     player.animation_timer = 0.0f;
+    player.kill_cooldown_active = state.players[local_id].kill_cooldown_active;
+    player.kill_cooldown_end = state.players[local_id].kill_cooldown_start;
     return player;
 }
 
@@ -40,6 +61,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
 {
     SDL_Rect src;
     SDL_Rect dst;
+    Uint8 old_r, old_g, old_b, old_a;
 
     // --- Pick frame from sprite sheet ---
     src.x = player->current_frame * FRAME_SIZE;
@@ -58,4 +80,9 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
     dst.h = (int)player->Hitbox.h;
 
     SDL_RenderCopy(renderer, texture, &src, &dst);
+
+    SDL_GetRenderDrawColor(renderer, &old_r, &old_g, &old_b, &old_a);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_RenderDrawRect(renderer, &dst);
+    SDL_SetRenderDrawColor(renderer, old_r, old_g, old_b, old_a);
 }

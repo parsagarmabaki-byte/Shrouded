@@ -1,6 +1,7 @@
 #ifndef NETWORK_DATA_H
 #define NETWORK_DATA_H
 
+#include <stdbool.h>
 
 #define MAX_PLAYERS 6
 #define SERVER_PORT 2000
@@ -8,7 +9,9 @@
 #define SERVER_TICK_INTERVAL 0.016f
 
 #define PLAYER_SPEED 200 //DELAD DATA MELLAN SERVER OCH CLIENT
-#define PLAYER_SIZE 85
+#define PLAYER_SIZE 75
+#define PLAYER_HITBOX_SIZE 30
+
 
 // BARA RÖRELSER OCH ROLLER IMPLEMENTERADE
 // MER SKA LÄGGAS TILL
@@ -26,6 +29,8 @@ typedef enum{
     MSG_CLIENT_INPUT,
     MSG_GAME_STATE,
     MSG_READY_STATUS,
+    MSG_KILL_REQUEST,
+    MSG_KILL_EVENT
 } MessageType;
 
 
@@ -43,14 +48,30 @@ typedef struct { // Info som användaren klickar in
     Direction direction;
 } clientInput; 
 
+typedef struct
+{
+    MessageType type;
+    int killer_id;
+    int victim_id;
+    float x;
+    float y;
+} KillEventMsg;
+
 typedef struct {
     int active;
     int player_id;
+    
     float x;
     float y;
+
     int isAlive;
     int isImpostor;
     int isDoingTask;
+
+    bool kill_cooldown_active;
+    Uint32 kill_cooldown_start;
+
+
     int current_frame;
     Direction direction;
 } playerState;
