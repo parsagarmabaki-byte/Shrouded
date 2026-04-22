@@ -50,26 +50,33 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (state->players[i].active)
-        {
-            Player p = player;
-            if (i == local_id)
-            {
-                p.Hitbox.x = player.Hitbox.x;
-                p.Hitbox.y = player.Hitbox.y;
-                p.current_frame = player.current_frame;
-                p.direction = player.direction;
-            }
-            else
-            {
-                p.Hitbox.x = state->players[i].x;
-                p.Hitbox.y = state->players[i].y;
-                p.current_frame = state->players[i].current_frame;
-                p.direction = state->players[i].direction;
-            }
+        if (!state->players[i].active)
+            continue;
 
-            renderPlayer(renderer, &p, assets.skins[i], cam);
+        Player p = player;
+        int alpha = 255;
+        if (i == local_id)
+        {
+            if (!state->players[i].isAlive)
+                alpha = 155;
+
+            p.Hitbox.x = player.Hitbox.x;
+            p.Hitbox.y = player.Hitbox.y;
+            p.current_frame = player.current_frame;
+            p.direction = player.direction;
         }
+        else
+        {
+            if (!state->players[i].isAlive)
+                continue;
+            p.Hitbox.x = state->players[i].x;
+            p.Hitbox.y = state->players[i].y;
+            p.current_frame = state->players[i].current_frame;
+            p.direction = state->players[i].direction;
+        }
+        SDL_SetTextureAlphaMod(assets.skins[local_id], alpha);
+        renderPlayer(renderer, &p, assets.skins[i], cam);
+        SDL_SetTextureAlphaMod(assets.skins[local_id], 255);
     }
 }
 // Main game loop. Runs after the lobby phase when the server signals GAME_RUNNING.
@@ -124,9 +131,9 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_SHOW_ROLE)
         {
             SDL_Texture *role_img;
-            collect_packets(client,state);
+            collect_packets(client, state);
             SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer,assets.role_art_img,NULL,NULL);
+            SDL_RenderCopy(renderer, assets.role_art_img, NULL, NULL);
             if (state->players[local_id].isImpostor)
             {
                 role_img = assets.killer_img;
@@ -139,7 +146,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             SDL_Rect role_rect;
             role_rect.w = 400;                                       // bredd i logiska pixlar
             role_rect.h = 200;                                       // höjd i logiska pixlar
-            role_rect.x = (LOGICAL_SCREEN_WIDTH  - role_rect.w) / 2; // centrera horisontellt
+            role_rect.x = (LOGICAL_SCREEN_WIDTH - role_rect.w) / 2;  // centrera horisontellt
             role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4; //  vertikalt
 
             SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
@@ -252,7 +259,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // collect_client_data(client, state, &player, local_id);
         collect_packets(client, state);
 
-        //update active task
+        // update active task
         update_task(&task, dt);
 
         // Move the camera to keep the local player centered on screen
