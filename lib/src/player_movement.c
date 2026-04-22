@@ -3,9 +3,11 @@
 #include "player_movement.h"
 #include "game_map.h"
 #include "network_data.h"
+#include "wall_data.h"
 #include <math.h>
 
 void apply_movement(float *x, float *y, clientInput input, float dt)
+
 {
     float dx = (input.right - input.left);
     float dy = (input.down - input.up);
@@ -13,12 +15,29 @@ void apply_movement(float *x, float *y, clientInput input, float dt)
     if (dx || dy)
     {
         float inv_len = 1.0f / sqrtf(dx * dx + dy * dy);
+
         dx *= inv_len;
         dy *= inv_len;
     }
 
-    *x += dx * PLAYER_SPEED * dt;
-    *y += dy * PLAYER_SPEED * dt;
+    float move = PLAYER_SPEED * dt;
+
+    // Testa X och Y separat så spelaren kan glida längs väggar
+
+    float new_x = *x + dx * move;
+
+    if (!collides_with_wall(new_x, *y, PLAYER_SIZE, PLAYER_SIZE))
+    {
+        *x = new_x;
+    }
+
+    float new_y = *y + dy * move;
+
+    if (!collides_with_wall(*x, new_y, PLAYER_SIZE, PLAYER_SIZE))
+    {
+        *y = new_y;
+    }
+
 }
 
 Player init_player(gameState state, int local_id)

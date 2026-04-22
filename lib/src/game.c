@@ -1,53 +1,10 @@
 #include "game.h"
+#include "client_network.h"
 
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
 // Reads keyboard state and sends the local player's input to the server every frame.
 // The server uses this to update the authoritative player position.
-void sendInput(Client *client, gameState *state, Player *player)
-{
-    const Uint8 *keys = SDL_GetKeyboardState(NULL);
-    clientInput input = read_input(false);
-    input.type = MSG_CLIENT_INPUT;
-    input.player_id = state->local_player_id;
-    input.current_frame = player->current_frame;
-    input.direction = player->direction;
 
-    send_client_input(client->socket, client->serverAddr, &input);
-}
-
-void request_kill(Client *client, gameState *state)
-{
-    clientInput input = {0};
-    input.type = MSG_KILL_REQUEST;
-    input.player_id = state->local_player_id;
-    send_client_input(client->socket, client->serverAddr, &input);
-}
-
-void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
-{
-    while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
-    {
-        uint8_t type = client->recievepacket->data[0];
-
-        if (type == MSG_GAME_STATE)
-        {
-            memcpy(state, client->recievepacket->data, sizeof(gameState));
-        }
-        else if (type == MSG_KILL_EVENT)
-        {
-            KillEventMsg msg;
-            memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
-
-            printf("Kill received: killer=%d victim=%d\n",
-                   msg.killer_id, msg.victim_id);
-
-            // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
-            start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
-                     state->players[msg.victim_id].x,
-                     state->players[msg.victim_id].y);
-        }
-    }
-}
 clientInput read_input(bool tasks_active)
 {
     clientInput input = {0};
@@ -93,27 +50,33 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
+        if (!state->players[i].active)
+            continue;
 
-        if (state->players[i].active && state->players[i].isAlive)
+        Player p = player;
+        int alpha = 255;
+        if (i == local_id)
         {
-            Player p = player;
-            if (i == local_id)
-            {
-                p.Hitbox.x = player.Hitbox.x;
-                p.Hitbox.y = player.Hitbox.y;
-                p.current_frame = player.current_frame;
-                p.direction = player.direction;
-            }
-            else
-            {
-                p.Hitbox.x = state->players[i].x;
-                p.Hitbox.y = state->players[i].y;
-                p.current_frame = state->players[i].current_frame;
-                p.direction = state->players[i].direction;
-            }
+            if (!state->players[i].isAlive)
+                alpha = 155;
 
-            renderPlayer(renderer, &p, assets.skins[i], cam);
+            p.Hitbox.x = player.Hitbox.x;
+            p.Hitbox.y = player.Hitbox.y;
+            p.current_frame = player.current_frame;
+            p.direction = player.direction;
         }
+        else
+        {
+            if (!state->players[i].isAlive)
+                continue;
+            p.Hitbox.x = state->players[i].x;
+            p.Hitbox.y = state->players[i].y;
+            p.current_frame = state->players[i].current_frame;
+            p.direction = state->players[i].direction;
+        }
+        SDL_SetTextureAlphaMod(assets.skins[local_id], alpha);
+        renderPlayer(renderer, &p, assets.skins[i], cam);
+        SDL_SetTextureAlphaMod(assets.skins[local_id], 255);
     }
 }
 // Main game loop. Runs after the lobby phase when the server signals GAME_RUNNING.
@@ -171,6 +134,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             SDL_Texture *role_img;
             collect_packets(client, state, bodies);
             SDL_RenderClear(renderer);
+            SDL_RenderCopy(renderer, assets.role_art_img, NULL, NULL);
             if (state->players[local_id].isImpostor)
             {
                 role_img = assets.killer_img;
@@ -205,7 +169,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 {
-                    send_leave(client->socket, client->serverAddr);
+                    send_leave_message(client->socket, client->serverAddr);
                     running = false;
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_1)
@@ -294,7 +258,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
         if (!task.active && state->players[local_id].isAlive)
         {
-            sendInput(client, state, &player);
+            send_input(client, state, &player);
         }
         // collect_client_data(client, state, &player, local_id);
         collect_packets(client, state, bodies);
