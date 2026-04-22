@@ -301,8 +301,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
         // update active task
         update_task(&task, dt);
-        // for (int i = 0; i < MAX_PLAYERS; i++)
-        //     update_kill_animation(&bodies[i], dt);
+        for (int i = 0; i < MAX_PLAYERS; i++)
+            update_kill_animation(&bodies[i], dt);
 
         // Move the camera to keep the local player centered on screen
         camera_follow(&cam, player.Hitbox.x, player.Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
@@ -313,10 +313,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // Draw all active players
         render_all_players(state, player, assets, &cam, renderer, local_id);
         for (int i = 0; i < MAX_PLAYERS; i++)
-        {
-            update_kill_animation(&bodies[i], dt);
             render_kill_animation(renderer, &bodies[i], assets, &cam);
-        }
+        
         if (local_player_is_impostor)
         {
             // Sync kill cooldown from server state
