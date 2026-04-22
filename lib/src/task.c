@@ -294,7 +294,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
         case TASK_TIMER:
         {
             
-            // --- TIMER BAR ---
+            // progress bar
             float progress = 0.0f;
             if (task->timer_duration > 0.0f)
             {
@@ -311,7 +311,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
             SDL_RenderFillRect(renderer, &bar_fill);
 
-            // --- TEXT ---
+            // text
             if (task->task_text_texture)
             {
                 SDL_Rect textRect = {520, 400, task->task_text_w, task->task_text_h};
@@ -322,7 +322,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
         case TASK_CLICK:
         {
-            // --- click count ---
+            // click count
             char buffer[32];
             snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target);
 
@@ -340,7 +340,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
             SDL_RenderCopy(renderer, textTex, NULL, &textRect);
 
-            // --- instruction text ---
+            // instruction text
             if (task->task_text_texture)
             {
                 SDL_Rect textRect2 = {520, 350, task->task_text_w, task->task_text_h};
