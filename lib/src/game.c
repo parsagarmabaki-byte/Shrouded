@@ -1,5 +1,6 @@
 #include "game.h"
 #include "client_network.h"
+#include "wall_data.h"
 
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
 // Reads keyboard state and sends the local player's input to the server every frame.
@@ -270,6 +271,61 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
         // Draw the map with the camera offset
         render_map(renderer, assets.map_texture, &cam);
+
+                #ifdef DEBUG_WALLS
+SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+
+    // --- 1. Rita Rutnätet (Grid) ---
+    // Vi använder en ljus färg med låg opacitet för att det inte ska störa för mycket
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 50);
+
+
+    for (int row = 0; row <= WALL_MAP_ROWS; row++) {
+        // Horisontella linjer
+        int y = row * WALL_TILE_SIZE - (int)cam.x; // OBS: Kontrollera om cam.y ska vara här
+        // Korrigering: Det ska vara cam.y för rader
+        y = row * WALL_TILE_SIZE - (int)cam.y;
+        SDL_RenderDrawLine(renderer,
+            0 - (int)cam.x, y,
+            (WALL_MAP_COLS * WALL_TILE_SIZE) - (int)cam.x, y);
+    }
+
+
+    for (int col = 0; col <= WALL_MAP_COLS; col++) {
+        // Vertikala linjer
+        int x = col * WALL_TILE_SIZE - (int)cam.x;
+        SDL_RenderDrawLine(renderer,
+            x, 0 - (int)cam.y,
+            x, (WALL_MAP_ROWS * WALL_TILE_SIZE) - (int)cam.y);
+    }
+
+
+    // --- 2. Rita Väggarna (Röda rutor) ---
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
+
+
+    for (int row = 0; row < WALL_MAP_ROWS; row++) {
+        for (int col = 0; col < WALL_MAP_COLS; col++) {
+            if (wall_map[row][col]) {
+                SDL_Rect r = {
+                    col * WALL_TILE_SIZE - (int)cam.x,
+                    row * WALL_TILE_SIZE - (int)cam.y,
+                    WALL_TILE_SIZE,
+                    WALL_TILE_SIZE
+                };
+                SDL_RenderFillRect(renderer, &r);
+               
+                // Valfritt: Rita en starkare kant runt just vägg-rutan
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                SDL_RenderDrawRect(renderer, &r);
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100); // Återställ alpha
+            }
+        }
+    }
+
+
+    #endif
 
         // Draw all active players
         render_all_players(state, player, assets, &cam, renderer, local_id);

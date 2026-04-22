@@ -25,7 +25,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
 {
     GameAssets asset = {0};
     asset.map_texture = loading_img(renderer,"assets/images/Game_map.png");
-    asset.vignette_img = loading_img(renderer, "assets/images/vignette.png");
+    asset.vignette_img = loading_img(renderer, "assets/images/vignette2.png");
     if (asset.vignette_img)
         SDL_SetTextureBlendMode(asset.vignette_img, SDL_BLENDMODE_BLEND);
 
