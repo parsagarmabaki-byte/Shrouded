@@ -152,10 +152,16 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     task->cursor_pos = 0.0f;
     task->cursor_speed = 0.8f;
     task->direction = 1;
-    task->success_min = 0.4f;
-    task->success_max = 0.6f;
+
     task->success_count = 0;
     task->success_target = 5;
+    
+    // success zone size
+    float base_width = 0.2f;
+    task->success_min = 0.4f; 
+    task->success_max = 0.6f;
+    task->base_zone_width = base_width;
+    task->current_zone_width = base_width;
 
     task->task_image = IMG_LoadTexture(renderer, "assets/images/fireplace.png");
     if (!task->task_image)
@@ -411,7 +417,52 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
         case TASK_REFLEX:
         {
-            
+            // --- BAR BACKGROUND ---
+            SDL_Rect bar_bg = {520, 350, 300, 40};
+            SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+            SDL_RenderFillRect(renderer, &bar_bg);
+
+            // --- SUCCESS ZONE ---
+            int success_x = 520 + (int)(task->success_min * 300);
+            int success_w = (int)((task->success_max - task->success_min) * 300);
+
+            SDL_Rect success_zone = {success_x, 350, success_w, 40};
+            SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+            SDL_RenderFillRect(renderer, &success_zone);
+
+            // --- MOVING CURSOR ---
+            int cursor_x = 520 + (int)(task->cursor_pos * 300);
+
+            SDL_Rect cursor = {cursor_x - 5, 345, 10, 50};
+            SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
+            SDL_RenderFillRect(renderer, &cursor);
+
+            // --- PROGRESS TEXT (success count) ---
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "%d / %d", task->success_count, task->success_target);
+
+            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
+            if (surface)
+            {
+                SDL_Texture *textTex = SDL_CreateTextureFromSurface(renderer, surface);
+
+                if (textTex)
+                {
+                    SDL_Rect textRect = {520, 400, surface->w, surface->h};
+                    SDL_RenderCopy(renderer, textTex, NULL, &textRect);
+                    SDL_DestroyTexture(textTex);
+                }
+
+                SDL_FreeSurface(surface);
+            }
+
+            // --- INSTRUCTION TEXT ---
+            if (task->task_text_texture)
+            {
+                SDL_Rect textRect2 = {520, 300, task->task_text_w, task->task_text_h};
+                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &textRect2);
+            }
+
             break;
         }
 

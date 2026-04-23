@@ -49,12 +49,15 @@ typedef struct {
     int direction;        // 1 or -1
     float success_min;    // cursor range for success
     float success_max;    
+    float base_zone_width;  // success zone width for shrinking
+    float current_zone_width;;
     int success_count;    
     int success_target;   // number of wins to complete task
 
 } Task;
 
-// API
+
+SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h);
 void init_task(Task *task, SDL_Renderer *renderer);
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
 void start_click_task(Task *task, SDL_Renderer *renderer, int target);
@@ -66,6 +69,5 @@ void cleanup_task(Task *task);
 void destroy_task(Task *task);
 void render_task(SDL_Renderer *renderer, Task *task);
 void cancel_task(Task *task);
-SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h);
 
 #endif
