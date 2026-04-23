@@ -67,16 +67,24 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
         }
         else
         {
-            if (!state->players[i].isAlive)
-                continue;
+            if (state->players[local_id].isAlive)
+            {
+                if (!state->players[i].isAlive)
+                    continue;
+            }
+            else
+            {
+                alpha = 155;
+            }
             p.Hitbox.x = state->players[i].x;
             p.Hitbox.y = state->players[i].y;
             p.current_frame = state->players[i].current_frame;
             p.direction = state->players[i].direction;
         }
         SDL_SetTextureAlphaMod(assets.skins[local_id], alpha);
+        SDL_SetTextureAlphaMod(assets.skins[i], alpha);
         renderPlayer(renderer, &p, assets.skins[i], cam);
-        SDL_SetTextureAlphaMod(assets.skins[local_id], 255);
+        SDL_SetTextureAlphaMod(assets.skins[i], 255);
     }
 }
 // Main game loop. Runs after the lobby phase when the server signals GAME_RUNNING.
