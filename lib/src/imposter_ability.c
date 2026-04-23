@@ -113,7 +113,7 @@ float find_kill_target(playerState imposter, playerState innocent)
     float dot = fx * vx + fy * vy;
     // printf(" -> dot=%.2f (fx=%.2f fy=%.2f)\n", dot, fx, fy);
 
-    if (dot < 0.5f)
+    if (dot < 0.2f)
     {
         // printf(" -> not in front\n");
         return -1;
