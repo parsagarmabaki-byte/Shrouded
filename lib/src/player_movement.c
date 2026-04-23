@@ -7,7 +7,6 @@
 #include <math.h>
 
 void apply_movement(float *x, float *y, clientInput input, float dt)
-
 {
     float dx = (input.right - input.left);
     float dy = (input.down - input.up);
@@ -26,14 +25,14 @@ void apply_movement(float *x, float *y, clientInput input, float dt)
 
     float new_x = *x + dx * move;
 
-    if (!collides_with_wall(new_x, *y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
+    if (!collides_with_wall(wall_map,new_x, *y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
     {
         *x = new_x;
     }
 
     float new_y = *y + dy * move;
 
-    if (!collides_with_wall(*x, new_y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
+    if (!collides_with_wall(wall_map,*x, new_y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
     {
         *y = new_y;
     }

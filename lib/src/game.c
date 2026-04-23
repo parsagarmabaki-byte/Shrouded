@@ -53,13 +53,15 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
     {
         if (!state->players[i].active)
             continue;
-
+        
         Player p = player;
         int alpha = 255;
+
         if (i == local_id)
         {
             if (!state->players[i].isAlive)
                 alpha = 155;
+
             p.Hitbox.x = player.Hitbox.x;
             p.Hitbox.y = player.Hitbox.y;
             p.current_frame = player.current_frame;
@@ -74,14 +76,19 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
             }
             else
             {
-                alpha = 155;
+                if (!state->players[i].isAlive)
+                    alpha = 155;
+                else
+                    alpha = 255;
+
             }
+
             p.Hitbox.x = state->players[i].x;
             p.Hitbox.y = state->players[i].y;
             p.current_frame = state->players[i].current_frame;
             p.direction = state->players[i].direction;
         }
-        SDL_SetTextureAlphaMod(assets.skins[local_id], alpha);
+
         SDL_SetTextureAlphaMod(assets.skins[i], alpha);
         renderPlayer(renderer, &p, assets.skins[i], cam);
         SDL_SetTextureAlphaMod(assets.skins[i], 255);
@@ -192,6 +199,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 {
                     start_type_task(&task, renderer);
                 }
+                if (event.key.keysym.scancode == SDL_SCANCODE_E && collides_with_wall(activity_map_position,player.Hitbox.x, player.Hitbox.y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
+                {
+                    printf("\nEMERGENCY SCREEN OPENED\n");
+                }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {
                     if (task.active)
@@ -262,7 +273,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // KillEventMsg msg = {0};
         // collect_kill_msg(client,&msg);
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
-        if (!task.active && state->players[local_id].isAlive)
+        if (!task.active)
         {
             send_input(client, state, &player);
         }
