@@ -8,6 +8,7 @@
 #include "game.h"
 #include "SFX.h"
 #include "client_network.h"
+#include "emergency_meeting.h"
 
 static int init_client(UDPsocket *socket, IPaddress *server_addr)
 {

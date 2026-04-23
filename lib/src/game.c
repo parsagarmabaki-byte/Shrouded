@@ -201,7 +201,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_E && collides_with_wall(activity_map_position,player.Hitbox.x, player.Hitbox.y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
                 {
-                    printf("\nEMERGENCY SCREEN OPENED\n");
+                    
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {

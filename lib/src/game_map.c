@@ -36,6 +36,8 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.kill_button_active = loading_img(renderer, "assets/images/kill_button_active.png");
     asset.kill_button_deactive = loading_img(renderer, "assets/images/kill_button_deactive.png");
 
+    asset.emergency_button_view = loading_img(renderer, "assets/images/emergency_button_view.png")
+
     char path[64];
     for (int i = 0; i < PLAYER_SLOTS; i++)
     {

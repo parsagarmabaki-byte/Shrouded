@@ -25,6 +25,7 @@ typedef struct
     SDL_Texture *role_art_img;
     SDL_Texture *kill_button_active;
     SDL_Texture *kill_button_deactive;
+    SDL_Texture *emergency_button_view;
 } GameAssets;
 
 typedef struct {
