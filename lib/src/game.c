@@ -199,9 +199,9 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 {
                     start_type_task(&task, renderer);
                 }
-                if (event.key.keysym.scancode == SDL_SCANCODE_E && collides_with_wall(activity_map_position,player.Hitbox.x, player.Hitbox.y, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE))
+                if (event.key.keysym.scancode == SDL_SCANCODE_E && collides_with_wall(player.Hitbox.x, player.Hitbox.y) == 2)
                 {
-                    
+                    printf("EMERGENCY MEETING");
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {
