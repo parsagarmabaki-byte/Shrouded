@@ -67,16 +67,24 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
         }
         else
         {
-            if (!state->players[i].isAlive)
-                continue;
+            if (state->players[local_id].isAlive)
+            {
+                if (!state->players[i].isAlive)
+                    continue;
+            }
+            else
+            {
+                alpha = 155;
+            }
             p.Hitbox.x = state->players[i].x;
             p.Hitbox.y = state->players[i].y;
             p.current_frame = state->players[i].current_frame;
             p.direction = state->players[i].direction;
         }
         SDL_SetTextureAlphaMod(assets.skins[local_id], alpha);
+        SDL_SetTextureAlphaMod(assets.skins[i], alpha);
         renderPlayer(renderer, &p, assets.skins[i], cam);
-        SDL_SetTextureAlphaMod(assets.skins[local_id], 255);
+        SDL_SetTextureAlphaMod(assets.skins[i], 255);
     }
 }
 // Main game loop. Runs after the lobby phase when the server signals GAME_RUNNING.
@@ -272,60 +280,58 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // Draw the map with the camera offset
         render_map(renderer, assets.map_texture, &cam);
 
-                #ifdef DEBUG_WALLS
-SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+#ifdef DEBUG_WALLS
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
+        // --- 1. Rita Rutnätet (Grid) ---
+        // Vi använder en ljus färg med låg opacitet för att det inte ska störa för mycket
+        SDL_SetRenderDrawColor(renderer, 200, 200, 200, 50);
 
-    // --- 1. Rita Rutnätet (Grid) ---
-    // Vi använder en ljus färg med låg opacitet för att det inte ska störa för mycket
-    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 50);
+        for (int row = 0; row <= WALL_MAP_ROWS; row++)
+        {
+            // Horisontella linjer
+            int y = row * WALL_TILE_SIZE - (int)cam.x; // OBS: Kontrollera om cam.y ska vara här
+            // Korrigering: Det ska vara cam.y för rader
+            y = row * WALL_TILE_SIZE - (int)cam.y;
+            SDL_RenderDrawLine(renderer,
+                               0 - (int)cam.x, y,
+                               (WALL_MAP_COLS * WALL_TILE_SIZE) - (int)cam.x, y);
+        }
 
+        for (int col = 0; col <= WALL_MAP_COLS; col++)
+        {
+            // Vertikala linjer
+            int x = col * WALL_TILE_SIZE - (int)cam.x;
+            SDL_RenderDrawLine(renderer,
+                               x, 0 - (int)cam.y,
+                               x, (WALL_MAP_ROWS * WALL_TILE_SIZE) - (int)cam.y);
+        }
 
-    for (int row = 0; row <= WALL_MAP_ROWS; row++) {
-        // Horisontella linjer
-        int y = row * WALL_TILE_SIZE - (int)cam.x; // OBS: Kontrollera om cam.y ska vara här
-        // Korrigering: Det ska vara cam.y för rader
-        y = row * WALL_TILE_SIZE - (int)cam.y;
-        SDL_RenderDrawLine(renderer,
-            0 - (int)cam.x, y,
-            (WALL_MAP_COLS * WALL_TILE_SIZE) - (int)cam.x, y);
-    }
+        // --- 2. Rita Väggarna (Röda rutor) ---
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
 
+        for (int row = 0; row < WALL_MAP_ROWS; row++)
+        {
+            for (int col = 0; col < WALL_MAP_COLS; col++)
+            {
+                if (wall_map[row][col])
+                {
+                    SDL_Rect r = {
+                        col * WALL_TILE_SIZE - (int)cam.x,
+                        row * WALL_TILE_SIZE - (int)cam.y,
+                        WALL_TILE_SIZE,
+                        WALL_TILE_SIZE};
+                    SDL_RenderFillRect(renderer, &r);
 
-    for (int col = 0; col <= WALL_MAP_COLS; col++) {
-        // Vertikala linjer
-        int x = col * WALL_TILE_SIZE - (int)cam.x;
-        SDL_RenderDrawLine(renderer,
-            x, 0 - (int)cam.y,
-            x, (WALL_MAP_ROWS * WALL_TILE_SIZE) - (int)cam.y);
-    }
-
-
-    // --- 2. Rita Väggarna (Röda rutor) ---
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
-
-
-    for (int row = 0; row < WALL_MAP_ROWS; row++) {
-        for (int col = 0; col < WALL_MAP_COLS; col++) {
-            if (wall_map[row][col]) {
-                SDL_Rect r = {
-                    col * WALL_TILE_SIZE - (int)cam.x,
-                    row * WALL_TILE_SIZE - (int)cam.y,
-                    WALL_TILE_SIZE,
-                    WALL_TILE_SIZE
-                };
-                SDL_RenderFillRect(renderer, &r);
-               
-                // Valfritt: Rita en starkare kant runt just vägg-rutan
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                SDL_RenderDrawRect(renderer, &r);
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100); // Återställ alpha
+                    // Valfritt: Rita en starkare kant runt just vägg-rutan
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                    SDL_RenderDrawRect(renderer, &r);
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100); // Återställ alpha
+                }
             }
         }
-    }
 
-
-    #endif
+#endif
 
         // Draw all active players
         render_all_players(state, player, assets, &cam, renderer, local_id);
