@@ -25,14 +25,16 @@ GameAssets load_assets(SDL_Renderer *renderer)
 {
     GameAssets asset = {0};
     asset.map_texture = loading_img(renderer,"assets/images/Game_map.png");
-    asset.vignette_img = loading_img(renderer, "assets/images/vignette.png");
+    asset.vignette_img = loading_img(renderer, "assets/images/vignette2.png");
     if (asset.vignette_img)
         SDL_SetTextureBlendMode(asset.vignette_img, SDL_BLENDMODE_BLEND);
 
-    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");  
-    asset.kill_button_img = loading_img(renderer, "assets/images/Kill_button.png");
+    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");
     asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
     asset.role_art_img = loading_img(renderer, "assets/images/show_role.png");
+
+    asset.kill_button_active = loading_img(renderer, "assets/images/kill_button_active.png");
+    asset.kill_button_deactive = loading_img(renderer, "assets/images/kill_button_deactive.png");
 
     char path[64];
     for (int i = 0; i < PLAYER_SLOTS; i++)
@@ -40,7 +42,12 @@ GameAssets load_assets(SDL_Renderer *renderer)
         snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
         asset.skins[i] = loading_img(renderer, path);
     }
-
+    
+    for (int i = 0; i < PLAYER_SLOTS; i++)
+    {
+        snprintf(path, sizeof(path), "assets/sprites/dead_skin%d.png", i);
+        asset.dead_skins[i] = loading_img(renderer, path);
+    }
     return asset;   
 }
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)

@@ -9,6 +9,8 @@
 #define WALL_MAP_ROWS  64
 
 extern const unsigned char wall_map[WALL_MAP_ROWS][WALL_MAP_COLS];
-bool collides_with_wall(float x, float y, float w, float h);
+extern const unsigned char activity_map_position[WALL_MAP_ROWS][WALL_MAP_COLS];
+bool collides_with_wall(const unsigned char map[WALL_MAP_ROWS][WALL_MAP_COLS] ,float x, float y, float w, float h);
+bool activity_map(float x, float y, float w, float h);
 
 #endif

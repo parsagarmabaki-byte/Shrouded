@@ -4,29 +4,36 @@
 #include "network_data.h"
 #include "game.h"
 
-void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_img, bool kill_cooldown)
+void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id)
 {
-    SDL_Rect kill_button = {1000, 580, 230, 100};
+    SDL_Rect kill_button = {1050, 520, 200, 200};
 
-    SDL_SetTextureColorMod(kill_button_img, 255, 255, 255);
-    SDL_SetTextureAlphaMod(kill_button_img, 255);
+    if (handle_kill_request(&state, killer_id) != -1)
+    
+        SDL_RenderCopy(renderer,kill_button_active, NULL, &kill_button);
+    else 
+        SDL_RenderCopy(renderer,kill_button_deactive,NULL, &kill_button);
 
-    if (!kill_cooldown)
-    {
-        bool hovering = is_hovering(renderer, kill_button);
 
-        if (hovering)
-        {
-            SDL_SetTextureColorMod(kill_button_img, 255, 220, 220);
-        }
-    }
-    else
-    {
-        SDL_SetTextureAlphaMod(kill_button_img, 150);
-    }
+    // SDL_SetTextureColorMod(kill_button_active, 255, 255, 255);
+    // SDL_SetTextureAlphaMod(kill_button_active, 255);
 
-    SDL_RenderCopy(renderer, kill_button_img, NULL, &kill_button);
+    // if (!kill_cooldown)
+    // {
+    //     bool hovering = is_hovering(renderer, kill_button);
+
+    //     if (hovering)
+    //     {
+    //         SDL_SetTextureColorMod(kill_button_active, 255, 220, 220);
+    //     }
+    // }
+    // else
+    // {
+    //     SDL_SetTextureAlphaMod(kill_button_active, 150);
+    // }
+
 }
+
 bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
 {
     int mx, my;
@@ -106,7 +113,7 @@ float find_kill_target(playerState imposter, playerState innocent)
     float dot = fx * vx + fy * vy;
     // printf(" -> dot=%.2f (fx=%.2f fy=%.2f)\n", dot, fx, fy);
 
-    if (dot < 0.5f)
+    if (dot < 0.2f)
     {
         // printf(" -> not in front\n");
         return -1;
@@ -131,3 +138,49 @@ void get_forward_vector(Direction direction, float *fx, float *fy)
         *fx = 1.0f;
 }
 
+void start_kill_animation(KillAnimation *anim, int killer_id, int victim_id, float x, float y)
+{
+    anim->active = true;
+    anim->killer_id = killer_id;
+    anim->victim_id = victim_id;
+    anim->x = x;
+    anim->y = y;
+    anim->current_frame = 0;
+    anim->animation_timer = 0.0f;
+}
+
+void update_kill_animation(KillAnimation *anim, float dt)
+{
+    if (!anim->active)
+        return;
+
+    anim->animation_timer += dt;
+    if (anim->animation_timer > 0.05f) // snabb animation
+    {
+        if (anim->current_frame < 24)
+        {
+            anim->current_frame++;
+            anim->animation_timer = 0.0f;
+        }
+    }
+}
+
+void render_kill_animation(SDL_Renderer *renderer, KillAnimation *anim, GameAssets assets, Camera *cam)
+{
+    if (!anim->active)
+        return;
+
+    SDL_Rect src = {
+        (anim->current_frame % 5) * FRAME_SIZE,
+        (anim->current_frame / 5) * FRAME_SIZE,
+        FRAME_SIZE,
+        FRAME_SIZE};
+
+    SDL_Rect dst = {
+        (int)(anim->x - cam->x),
+        (int)(anim->y - cam->y),
+        PLAYER_SIZE,
+        PLAYER_SIZE};
+
+    SDL_RenderCopy(renderer, assets.dead_skins[anim->victim_id], &src, &dst);
+}

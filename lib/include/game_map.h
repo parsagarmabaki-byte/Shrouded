@@ -17,12 +17,14 @@
 typedef struct
 {
     SDL_Texture *skins[PLAYER_SLOTS];
+    SDL_Texture *dead_skins[PLAYER_SLOTS];
     SDL_Texture *map_texture;
     SDL_Texture *vignette_img;
     SDL_Texture *killer_img;
     SDL_Texture *innocent_img;
-    SDL_Texture *kill_button_img;
     SDL_Texture *role_art_img;
+    SDL_Texture *kill_button_active;
+    SDL_Texture *kill_button_deactive;
 } GameAssets;
 
 typedef struct {

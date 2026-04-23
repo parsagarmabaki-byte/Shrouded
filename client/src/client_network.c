@@ -60,25 +60,42 @@ void request_kill(Client *client, gameState *state)
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
 
-void collect_packets(Client *client, gameState *state)
+void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 {
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
+        if (client->recievepacket->len < sizeof(MessageType))
+        {
+            printf("ERROR: packet too small for MessageType\n");
+            continue;
+        }
+
         uint8_t type = client->recievepacket->data[0];
 
         if (type == MSG_GAME_STATE)
         {
+            if (client->recievepacket->len < sizeof(gameState)){
+                printf("ERROR: MSG_GAME_STATE packet too small\n");
+            } else
             memcpy(state, client->recievepacket->data, sizeof(gameState));
         }
         else if (type == MSG_KILL_EVENT)
         {
             KillEventMsg msg;
-            memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
+            if (client->recievepacket->len < sizeof(KillEventMsg)){
+                printf("ERROR: MSG_KILL_EVENT packet too small\n");
+            } else
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
 
-            printf("Kill received: killer=%d victim=%d\n",
-                   msg.killer_id, msg.victim_id);
+                printf("Kill received: killer=%d victim=%d\n",
+                       msg.killer_id, msg.victim_id);
 
             // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
+            start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
+                     state->players[msg.victim_id].x,
+                     state->players[msg.victim_id].y);
         }
     }
+}
 }
