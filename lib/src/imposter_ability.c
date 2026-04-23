@@ -4,28 +4,34 @@
 #include "network_data.h"
 #include "game.h"
 
-void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_img, bool kill_cooldown)
+void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id)
 {
-    SDL_Rect kill_button = {1000, 580, 230, 100};
+    SDL_Rect kill_button = {1050, 520, 200, 200};
 
-    SDL_SetTextureColorMod(kill_button_img, 255, 255, 255);
-    SDL_SetTextureAlphaMod(kill_button_img, 255);
+    if (handle_kill_request(&state, killer_id) != -1)
+    
+        SDL_RenderCopy(renderer,kill_button_active, NULL, &kill_button);
+    else 
+        SDL_RenderCopy(renderer,kill_button_deactive,NULL, &kill_button);
 
-    if (!kill_cooldown)
-    {
-        bool hovering = is_hovering(renderer, kill_button);
 
-        if (hovering)
-        {
-            SDL_SetTextureColorMod(kill_button_img, 255, 220, 220);
-        }
-    }
-    else
-    {
-        SDL_SetTextureAlphaMod(kill_button_img, 150);
-    }
+    // SDL_SetTextureColorMod(kill_button_active, 255, 255, 255);
+    // SDL_SetTextureAlphaMod(kill_button_active, 255);
 
-    SDL_RenderCopy(renderer, kill_button_img, NULL, &kill_button);
+    // if (!kill_cooldown)
+    // {
+    //     bool hovering = is_hovering(renderer, kill_button);
+
+    //     if (hovering)
+    //     {
+    //         SDL_SetTextureColorMod(kill_button_active, 255, 220, 220);
+    //     }
+    // }
+    // else
+    // {
+    //     SDL_SetTextureAlphaMod(kill_button_active, 150);
+    // }
+
 }
 
 bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)

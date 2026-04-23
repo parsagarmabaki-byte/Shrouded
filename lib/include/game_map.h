@@ -23,7 +23,8 @@ typedef struct
     SDL_Texture *killer_img;
     SDL_Texture *innocent_img;
     SDL_Texture *role_art_img;
-    SDL_Texture *kill_button_img;
+    SDL_Texture *kill_button_active;
+    SDL_Texture *kill_button_deactive;
 } GameAssets;
 
 typedef struct {

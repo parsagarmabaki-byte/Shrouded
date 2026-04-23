@@ -16,7 +16,7 @@ typedef struct
 } KillAnimation;
 
 
-void render_imposter_ability(SDL_Renderer *renderer, SDL_Texture *kill_button_img, bool kill_cooldown);
+void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id);
 bool is_hovering(SDL_Renderer *renderer,SDL_Rect rect);
 int handle_kill_request(gameState *state, int killer_id);
 void activate_kill_cooldown(gameState *state, int local_id);

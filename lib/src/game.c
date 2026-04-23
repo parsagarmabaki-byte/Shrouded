@@ -355,7 +355,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             // Sync kill cooldown from server state
             player.kill_cooldown_active = state->players[local_id].kill_cooldown_active;
             // printf("\n%d\n",player.kill_cooldown_active);
-            render_imposter_ability(renderer, assets.kill_button_img, player.kill_cooldown_active);
+            render_imposter_ability(renderer, *state,assets.kill_button_active, assets.kill_button_deactive, player.kill_cooldown_active, local_id);
         }
         if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);

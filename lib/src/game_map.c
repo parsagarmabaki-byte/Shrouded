@@ -29,10 +29,12 @@ GameAssets load_assets(SDL_Renderer *renderer)
     if (asset.vignette_img)
         SDL_SetTextureBlendMode(asset.vignette_img, SDL_BLENDMODE_BLEND);
 
-    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");  
-    asset.kill_button_img = loading_img(renderer, "assets/images/Kill_button.png");
+    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");
     asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
     asset.role_art_img = loading_img(renderer, "assets/images/show_role.png");
+
+    asset.kill_button_active = loading_img(renderer, "assets/images/kill_button_active.png");
+    asset.kill_button_deactive = loading_img(renderer, "assets/images/kill_button_deactive.png");
 
     char path[64];
     for (int i = 0; i < PLAYER_SLOTS; i++)
