@@ -1,10 +1,37 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL_image.h>
+#include <stdlib.h>
 #include "player_movement.h"
 #include "game_map.h"
 #include "network_data.h"
 #include "wall_data.h"
 #include <math.h>
+
+// ADT: konstruktör
+
+/* 
+    player_create() allokerar minne på heapen med malloc, anropar befintliga init_player() för att fylla structen, 
+    och returnerar en pekare, 
+    medan player_destroy() frigor minnet med free.
+*/
+Player *player_create(gameState *state, int local_id)
+{
+    Player *p = malloc(sizeof(Player));
+    if (!p)
+    {
+        printf("player_create: malloc failed\n");
+        return NULL;
+    }
+    *p = init_player(*state, local_id);
+    return p;
+}
+
+// ADT: destruktör
+void player_destroy(Player *p)
+{
+    if (p)
+        free(p);
+}
 
 void apply_movement(float *x, float *y, clientInput input, float dt)
 {
@@ -36,7 +63,6 @@ void apply_movement(float *x, float *y, clientInput input, float dt)
     {
         *y = new_y;
     }
-
 }
 
 Player init_player(gameState state, int local_id)
@@ -64,7 +90,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
     Uint8 old_r, old_g, old_b, old_a;
 
     // --- 1. Storleken gubben ska ha på skärmen ---
-    int visual_w = 70; 
+    int visual_w = 70;
     int visual_h = 70;
 
     src.x = player->current_frame * FRAME_SIZE;
@@ -78,7 +104,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
 
     dst_render.x = (int)(player->Hitbox.x - cam->x) - offset_x;
     dst_render.y = (int)(player->Hitbox.y - cam->y) - offset_y;
-    dst_render.w = visual_w; 
+    dst_render.w = visual_w;
     dst_render.h = visual_h;
 
     // --- 4. Beräkna var HITBOXEN är (för den gula ramen) ---
