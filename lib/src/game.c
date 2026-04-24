@@ -226,10 +226,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                     {
                         request_kill(client, state);
                     }
-                    if (is_hovering(renderer, kill_button) && event.type == SDL_MOUSEBUTTONDOWN)
-                    {
-                        request_kill(client, state);
-                    }
+                }
+            }
+            if (!kill_cooldown && local_player_is_impostor && event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                if (is_hovering(renderer, kill_button))
+                {
+                    request_kill(client, state);
                 }
             }
 
