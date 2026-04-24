@@ -23,4 +23,6 @@ Player init_player(gameState state, int local_id);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam);
 void apply_movement(float *x, float *y, clientInput input, float dt);
+void compare_server_position(gameState state, Player *player,int local_id);
+
 #endif

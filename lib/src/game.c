@@ -1,6 +1,7 @@
 #include "game.h"
 #include "client_network.h"
 #include "wall_data.h"
+#include "emergency_meeting.h"
 
 // Must match PLAYER_SPEED in server.c for prediction to stay in sync
 // Reads keyboard state and sends the local player's input to the server every frame.
@@ -53,7 +54,7 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
     {
         if (!state->players[i].active)
             continue;
-        
+
         Player p = player;
         int alpha = 255;
 
@@ -80,7 +81,6 @@ void render_all_players(gameState *state, Player player, GameAssets assets, Came
                     alpha = 155;
                 else
                     alpha = 255;
-
             }
 
             p.Hitbox.x = state->players[i].x;
@@ -119,8 +119,9 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     int local_id = state->local_player_id;
     local_player_is_impostor = state->players[local_id].isImpostor != 0;
     bool kill_cooldown = false;
-    SDL_Rect kill_button = {1400, 800, 442, 181};
+    SDL_Rect kill_button = {1050, 520, 200, 200};
     Player player = init_player(*state, local_id);
+    bool emergency_window_open = false;
 
     // initialize in-game tasks
     Task task;
@@ -134,6 +135,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     // Ensure the game window has focus so keyboard input is captured
     SDL_RaiseWindow(lobby->window);
     SDL_SetWindowInputFocus(lobby->window);
+    SDL_Rect emergency_button = {(LOGICAL_SCREEN_WIDTH/2)-20,((LOGICAL_SCREEN_HEIGHT)/2)-65,33,33};
 
     SDL_Event event;
     bool running = true;
@@ -184,8 +186,15 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 {
-                    send_leave_message(client->socket, client->serverAddr);
-                    running = false;
+                    if (emergency_window_open)
+                    {
+                        emergency_window_open = false;
+                    }
+                    else
+                    {
+                        send_leave_message(client->socket, client->serverAddr);
+                        running = false;
+                    }
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_1)
                 {
@@ -199,9 +208,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 {
                     start_type_task(&task, renderer);
                 }
-                if (event.key.keysym.scancode == SDL_SCANCODE_E && collides_with_wall(player.Hitbox.x, player.Hitbox.y) == 2)
+                if (event.key.keysym.scancode == SDL_SCANCODE_E)
                 {
-                    printf("EMERGENCY MEETING");
+                    if (collides_with_wall(player.Hitbox.x, player.Hitbox.y) == 2 && state->players[local_id].isAlive)
+                        emergency_window_open = true;
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_Q)
                 {
@@ -210,16 +220,24 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                         cancel_task(&task);
                     }
                 }
-                if (event.key.keysym.scancode == SDL_SCANCODE_K && !kill_cooldown && local_player_is_impostor)
+                if (!kill_cooldown && local_player_is_impostor)
                 {
-                    request_kill(client, state);
+                    if (event.key.keysym.scancode == SDL_SCANCODE_K)
+                    {
+                        request_kill(client, state);
+                    }
+                    if (is_hovering(renderer, kill_button) && event.type == SDL_MOUSEBUTTONDOWN)
+                    {
+                        request_kill(client, state);
+                    }
                 }
             }
-            if (event.type == SDL_MOUSEBUTTONDOWN)
+
+            if (emergency_window_open && event.type == SDL_MOUSEBUTTONDOWN)
             {
-                if (is_hovering(renderer, kill_button) && event.button.button == SDL_BUTTON_LEFT && !kill_cooldown && local_player_is_impostor)
+                if (is_hovering(renderer, emergency_button))
                 {
-                    request_kill(client, state);
+                    printf("\nemergency button clicked\n");
                 }
             }
 
@@ -255,7 +273,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         accumulator += dt;
         clientInput user_input = read_input(task.active);
 
-        while (accumulator >= SERVER_TICK_INTERVAL)
+        while (accumulator >= SERVER_TICK_INTERVAL && !emergency_window_open)
         {
             if (user_input.up)
                 player.direction = DIR_UP;
@@ -273,12 +291,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         // KillEventMsg msg = {0};
         // collect_kill_msg(client,&msg);
         run_animations(&player.animation_timer, &player.current_frame, user_input, dt);
-        if (!task.active)
+        if (!task.active && !emergency_window_open)
         {
             send_input(client, state, &player);
         }
         // collect_client_data(client, state, &player, local_id);
         collect_packets(client, state, bodies);
+        compare_server_position(*state, &player, local_id);
 
         // update active task
         update_task(&task, dt);
@@ -355,13 +374,17 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             // Sync kill cooldown from server state
             player.kill_cooldown_active = state->players[local_id].kill_cooldown_active;
             // printf("\n%d\n",player.kill_cooldown_active);
-            render_imposter_ability(renderer, *state,assets.kill_button_active, assets.kill_button_deactive, player.kill_cooldown_active, local_id);
+            render_imposter_ability(renderer, *state, assets.kill_button_active, assets.kill_button_deactive, player.kill_cooldown_active, local_id);
         }
         if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
         TTF_Init();
         render_task(renderer, &task);
+        if (emergency_window_open)
+        {
+            emergency_meeting_view(renderer, assets.emergency_button_view);
+        }
         SDL_RenderPresent(renderer);
     }
 
