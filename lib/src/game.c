@@ -96,6 +96,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     SDL_Renderer *renderer = lobby->renderer;
 
     SDL_RenderSetLogicalSize(renderer, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
     GameAssets assets = load_assets(renderer);
     if (!assets.map_texture)
@@ -141,6 +142,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         {
             SDL_Texture *role_img;
             collect_packets(client, state, bodies);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
             SDL_RenderCopy(renderer, assets.role_art_img, NULL, NULL);
             if (state->players[local_id].isImpostor)
