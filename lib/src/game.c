@@ -135,7 +135,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     // Ensure the game window has focus so keyboard input is captured
     SDL_RaiseWindow(lobby->window);
     SDL_SetWindowInputFocus(lobby->window);
-    SDL_Rect emergency_button = {(LOGICAL_SCREEN_WIDTH/2)-20,((LOGICAL_SCREEN_HEIGHT)/2)-65,33,33};
+    SDL_Rect emergency_button = {(LOGICAL_SCREEN_WIDTH / 2) - 20, ((LOGICAL_SCREEN_HEIGHT) / 2) - 65, 33, 33};
 
     SDL_Event event;
     bool running = true;
@@ -143,7 +143,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     // TEST för att få bort drift
     float accumulator = 0.0f;
-
+    int count = 0;
     while (running)
     {
         if (state->phase == GAME_SHOW_ROLE)
@@ -171,6 +171,28 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             SDL_RenderPresent(renderer);
             continue; // hoppa till nästa loop-iteration
         }
+        if (state->phase == GAME_MEETING)
+        {
+            if (local_id != state->emergency_meeting_reported_id)
+            {
+                SDL_Rect size;
+                size.w = 941;
+                size.h = 641;
+                size.x = (LOGICAL_SCREEN_WIDTH / 2) - size.w / 2;
+                size.y = (LOGICAL_SCREEN_HEIGHT / 2) - size.h / 2;
+                SDL_Texture *image;
+                if (state->type == MSG_EMERGENCY_MEETING)
+                {
+                    image = assets.emergency_meeting_info;
+                }
+                SDL_RenderCopy(renderer, image, NULL, &size);
+                SDL_RenderPresent(renderer);
+            }
+
+            collect_packets(client, state, bodies);
+            continue;
+        }
+        
 
         // Delta time — time since last frame in seconds
         Uint64 now = SDL_GetPerformanceCounter();
@@ -240,7 +262,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             {
                 if (is_hovering(renderer, emergency_button))
                 {
-                    printf("\nemergency button clicked\n");
+                    printf("\n[CLIENT] Player %d tried to open emergency meeting screen. isAlive=%d\n",
+                           state->local_player_id,
+                           state->players[state->local_player_id].isAlive);
+                    request_emergency_meeting(client, state, local_id);
                 }
             }
 

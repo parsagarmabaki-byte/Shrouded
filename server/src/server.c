@@ -79,6 +79,8 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].isImpostor = 0;
             state->players[i].kill_cooldown_start = 0;
             state->players[i].kill_cooldown_active = false;
+            state->players[i].emergency_meeting = 1;
+            state->emergency_meeting_reported_id= -1;
             return i;
         }
     }
@@ -143,7 +145,21 @@ void broadcast_Kill_msg(UDPsocket socket, UDPpacket *packet, KillEventMsg *msg, 
     {
         if (clientUsed[i])
         {
-            if (!send_kill_msg(socket, packet ,clientAddresses[i], msg))
+            if (!send_kill_msg(socket, packet, clientAddresses[i], msg))
+            {
+                printf("Failed to send game state to player %d\n", i);
+            }
+        }
+    }
+}
+
+void broadcast_emergency_meeting_msg(UDPsocket socket, UDPpacket *packet, KillEventMsg *msg, IPaddress *clientAddresses, int *clientUsed)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (clientUsed[i])
+        {
+            if (!send_kill_msg(socket, packet, clientAddresses[i], msg))
             {
                 printf("Failed to send game state to player %d\n", i);
             }
@@ -223,6 +239,7 @@ int main(void)
 
     Uint64 lastBroadcast = SDL_GetPerformanceCounter();
     Uint64 state_start_time = 0;
+    Uint64 state_time = 0;
 
     while (1)
     {
@@ -299,6 +316,22 @@ int main(void)
                     }
                 }
             }
+            else if (type == MSG_EMERGENCY_MEETING)
+            {
+                clientInput input;
+                memcpy(&input, receive_packet->data, sizeof(clientInput));
+                int local_id = input.player_id;
+                if (input.isAlive && input.emergency_meeting_left == 1)
+                {
+                    state.phase = GAME_MEETING;
+                    state.type = MSG_EMERGENCY_MEETING;
+                    state.players[local_id].emergency_meeting = 0;
+                    state.emergency_meeting_reported_id = local_id;
+                    printf("[SERVER] Accept: player %d started an emergency meeting. %d\n", local_id);
+                    state_time = SDL_GetTicks64(); // TIDSSTÄMPEL
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
         }
 
         // Applicera input och broadcasta på fast 60fps
@@ -313,6 +346,15 @@ int main(void)
                 {
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
+                }
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            if (state.phase == GAME_MEETING)
+            {
+                if (SDL_GetTicks64() - state_time >= 3000) // NÄR 3 SEKUNDER GÅTT
+                {   
+                    state.phase = GAME_RUNNING;
+                    printf("MEETING ENDED\n");
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }

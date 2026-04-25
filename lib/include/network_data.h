@@ -30,7 +30,8 @@ typedef enum{
     MSG_GAME_STATE,
     MSG_READY_STATUS,
     MSG_KILL_REQUEST,
-    MSG_KILL_EVENT
+    MSG_KILL_EVENT,
+    MSG_EMERGENCY_MEETING
 } MessageType;
 
 
@@ -45,8 +46,11 @@ typedef struct { // Info som användaren klickar in
     int kill;
     int report;
     int current_frame;
+    int isAlive;
+    int emergency_meeting_left;
     Direction direction;
 } clientInput; 
+
 
 typedef struct
 {
@@ -71,6 +75,7 @@ typedef struct {
     bool kill_cooldown_active;
     Uint32 kill_cooldown_start;
 
+    int emergency_meeting;
 
     int current_frame;
     Direction direction;
@@ -88,6 +93,7 @@ typedef struct {
     playerState players[MAX_PLAYERS];
     gamePhase phase;
     int local_player_id;
+    int emergency_meeting_reported_id;
 } gameState;
 
 typedef struct {

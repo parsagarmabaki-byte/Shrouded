@@ -60,6 +60,16 @@ void request_kill(Client *client, gameState *state)
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
 
+void request_emergency_meeting(Client *client, gameState *state, int local_id)
+{
+    clientInput request = {0};
+    request.type = MSG_EMERGENCY_MEETING;
+    request.emergency_meeting_left = state->players[local_id].emergency_meeting;
+    request.isAlive = state->players[local_id].isAlive;
+    request.player_id = local_id;
+    send_client_input_packet(client->socket, client->serverAddr, &request);
+}
+
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 {
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
@@ -72,7 +82,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 
         uint8_t type = client->recievepacket->data[0];
 
-        if (type == MSG_GAME_STATE)
+        if (type == MSG_GAME_STATE || type == MSG_EMERGENCY_MEETING)
         {
             if (client->recievepacket->len < sizeof(gameState)){
                 printf("ERROR: MSG_GAME_STATE packet too small\n");
