@@ -43,13 +43,13 @@ void cleanupServer(UDPsocket server_socket, UDPpacket *receive_packet, UDPpacket
     SDLNet_Quit();
 }
 
-int findClientByAddress(IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
+int get_player_id_from_sender(IPaddress *clientAddresses, int *clientUsed, IPaddress sender)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         if (clientUsed[i] &&
-            clientAddresses[i].host == addr.host &&
-            clientAddresses[i].port == addr.port)
+            clientAddresses[i].host == sender.host &&
+            clientAddresses[i].port == sender.port)
         {
             return i;
         }
@@ -186,7 +186,7 @@ void broadcast_emergency_meeting_msg(UDPsocket socket, UDPpacket *packet, KillEv
 
 int removeFromLobby(gameState *state, IPaddress *clientAddress, int *clientUsed, IPaddress addr)
 {
-    int player = findClientByAddress(clientAddress, clientUsed, addr);
+    int player = get_player_id_from_sender(clientAddress, clientUsed, addr);
     if (player >= 0)
     {
         clientUsed[player] = 0;
@@ -271,7 +271,7 @@ int main(void)
 
             if (type == MSG_JOIN)
             {
-                int existing = findClientByAddress(clientAddresses, clientUsed, receive_packet->address);
+                int existing = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
                 if (existing < 0)
                 {
                     int newPlayer = addToLobby(&state, clientAddresses, clientUsed, receive_packet->address);
@@ -314,11 +314,12 @@ int main(void)
                     if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_CLIENT_INPUT"))
                     {
                         memcpy(&input, receive_packet->data, sizeof(clientInput));
-                        int id = input.player_id;
-                        if (id >= 0 && id < MAX_PLAYERS)
-                        {
-                            lastInput[id] = input;
+                        int sender_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
+                        if (sender_id >= 0){
+                            input.player_id = sender_id;
+                            lastInput[sender_id] = input;
                         }
+                        
                     }
                 }
             }
@@ -327,8 +328,7 @@ int main(void)
                 clientInput input;
                 if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_KILL_REQUEST"))
                 {
-                    memcpy(&input, receive_packet->data, sizeof(clientInput));
-                    int killer_id = input.player_id;
+                    int killer_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
                     if (killer_id >= 0 && killer_id < MAX_PLAYERS)
                     {
                         int target_id = handle_kill_request(&state, killer_id);
@@ -348,12 +348,10 @@ int main(void)
             }
             else if (type == MSG_EMERGENCY_MEETING)
             {
-                clientInput input;
                 if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_EMERGENCY_MEETING"))
                 {
-                    memcpy(&input, receive_packet->data, sizeof(clientInput));
-                    int local_id = input.player_id;
-                    if (input.isAlive && input.emergency_meeting_left == 1)
+                    int local_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
+                    if (local_id >= 0 && local_id < MAX_PLAYERS && state.players[local_id].isAlive && state.players[local_id].emergency_meeting == 1)
                     {
                         state.phase = GAME_INFO_MEETING;
                         state.type = MSG_EMERGENCY_MEETING;
