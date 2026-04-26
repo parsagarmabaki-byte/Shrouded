@@ -8,7 +8,7 @@ void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Textur
 {
     SDL_Rect kill_button = {1050, 520, 200, 200};
 
-    if (handle_kill_request(&state, killer_id) != -1)
+    if (handle_kill_request(&state, killer_id) != -1 && !kill_cooldown) 
     
         SDL_RenderCopy(renderer,kill_button_active, NULL, &kill_button);
     else 
