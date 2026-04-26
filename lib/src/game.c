@@ -440,6 +440,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         {
             render_kill_animation(renderer, &bodies[i], assets, &cam);
         }
+        render_player_ability(renderer, *player, assets, bodies);
         if (local_player_is_impostor)
         {
             // Sync kill cooldown from server state

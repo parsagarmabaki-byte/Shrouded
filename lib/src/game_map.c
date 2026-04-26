@@ -36,6 +36,9 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.kill_button_active = loading_img(renderer, "assets/images/kill_button_active.png");
     asset.kill_button_deactive = loading_img(renderer, "assets/images/kill_button_deactive.png");
 
+    asset.report_button_deactive = loading_img(renderer, "assets/images/report_button_deactive.png");
+    asset.report_button_active = loading_img(renderer, "assets/images/report_button_active.png");
+
     asset.emergency_button_view = loading_img(renderer, "assets/images/emergency_button_view.png");
     asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
     asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
@@ -58,6 +61,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
     }
     return asset;   
 }
+
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)
 {
     cam->x = player_x + player_w / 2 - cam->screen_w / 2;
