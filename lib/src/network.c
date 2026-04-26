@@ -52,3 +52,27 @@ int send_packet_data(UDPsocket socket, UDPpacket *packet, IPaddress address, con
     }
     return 1;
 }
+
+int packet_has_size(UDPpacket *packet, int expectedsize, const char *label)
+{
+    if (!packet)
+    {
+        printf("ERROR: packet is NULL\n");
+        return 0;
+    }
+
+    if (packet->len < expectedsize)
+    {
+        if (label)
+        {
+            printf("ERROR: %s packet too small\n", label);
+        }
+        else
+        {
+            printf("ERROR: packet too small\n");
+        }
+        return 0;
+    }
+
+    return 1;
+}

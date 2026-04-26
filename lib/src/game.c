@@ -136,6 +136,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     SDL_Event event;
     bool running = true;
     Uint64 last = SDL_GetPerformanceCounter();
+    TTF_Init();
 
     float accumulator = 0.0f;
     int count = 0;
@@ -449,7 +450,6 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (assets.vignette_img && !local_player_is_impostor)
             SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
-        TTF_Init();
         render_task(renderer, &task);
         if (emergency_window_open)
         {

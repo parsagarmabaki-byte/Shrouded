@@ -263,6 +263,10 @@ int main(void)
         if (SDLNet_UDP_Recv(server_socket, receive_packet))
         {
             MessageType type;
+            if (!packet_has_size(receive_packet, sizeof(MessageType), "MessageType"))
+            {
+                continue;
+            }
             memcpy(&type, receive_packet->data, sizeof(MessageType));
 
             if (type == MSG_JOIN)
@@ -306,47 +310,59 @@ int main(void)
                 if (state.phase == GAME_RUNNING)
                 {
                     clientInput input;
-                    memcpy(&input, receive_packet->data, sizeof(clientInput));
-                    int id = input.player_id;
-                    if (id >= 0 && id < MAX_PLAYERS)
-                        lastInput[id] = input;
+
+                    if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_CLIENT_INPUT"))
+                    {
+                        memcpy(&input, receive_packet->data, sizeof(clientInput));
+                        int id = input.player_id;
+                        if (id >= 0 && id < MAX_PLAYERS)
+                        {
+                            lastInput[id] = input;
+                        }
+                    }
                 }
             }
             else if (type == MSG_KILL_REQUEST)
             {
                 clientInput input;
-                memcpy(&input, receive_packet->data, sizeof(clientInput));
-                int killer_id = input.player_id;
-                if (killer_id >= 0 && killer_id < MAX_PLAYERS)
+                if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_KILL_REQUEST"))
                 {
-                    int target_id = handle_kill_request(&state, killer_id);
-                    if (target_id != -1)
+                    memcpy(&input, receive_packet->data, sizeof(clientInput));
+                    int killer_id = input.player_id;
+                    if (killer_id >= 0 && killer_id < MAX_PLAYERS)
                     {
-                        state.players[target_id].isAlive = 0;
-                        KillEventMsg msg = {0};
-                        msg.type = MSG_KILL_EVENT;
-                        msg.killer_id = killer_id;
-                        msg.victim_id = target_id;
-                        msg.x = state.players[killer_id].x;
-                        msg.y = state.players[killer_id].y;
-                        broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
+                        int target_id = handle_kill_request(&state, killer_id);
+                        if (target_id != -1)
+                        {
+                            state.players[target_id].isAlive = 0;
+                            KillEventMsg msg = {0};
+                            msg.type = MSG_KILL_EVENT;
+                            msg.killer_id = killer_id;
+                            msg.victim_id = target_id;
+                            msg.x = state.players[killer_id].x;
+                            msg.y = state.players[killer_id].y;
+                            broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
+                        }
                     }
                 }
             }
             else if (type == MSG_EMERGENCY_MEETING)
             {
                 clientInput input;
-                memcpy(&input, receive_packet->data, sizeof(clientInput));
-                int local_id = input.player_id;
-                if (input.isAlive && input.emergency_meeting_left == 1)
+                if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_EMERGENCY_MEETING"))
                 {
-                    state.phase = GAME_INFO_MEETING;
-                    state.type = MSG_EMERGENCY_MEETING;
-                    state.players[local_id].emergency_meeting = 0;
-                    state.emergency_meeting_reported_id = local_id;
-                    printf("[SERVER] Accept: player %d started an emergency meeting. %d\n", local_id);
-                    phase_time = SDL_GetTicks64(); // TIDSSTÄMPEL
-                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                    memcpy(&input, receive_packet->data, sizeof(clientInput));
+                    int local_id = input.player_id;
+                    if (input.isAlive && input.emergency_meeting_left == 1)
+                    {
+                        state.phase = GAME_INFO_MEETING;
+                        state.type = MSG_EMERGENCY_MEETING;
+                        state.players[local_id].emergency_meeting = 0;
+                        state.emergency_meeting_reported_id = local_id;
+                        printf("[SERVER] Accept: player %d started an emergency meeting.\n", local_id);
+                        phase_time = SDL_GetTicks64(); // TIDSSTÄMPEL
+                        broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                    }
                 }
             }
         }

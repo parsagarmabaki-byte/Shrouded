@@ -74,9 +74,8 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 {
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
-        if (client->recievepacket->len < sizeof(MessageType))
+        if (!packet_has_size(client->recievepacket, sizeof(MessageType), "MessageType"))
         {
-            printf("ERROR: packet too small for MessageType\n");
             continue;
         }
 
@@ -84,17 +83,15 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 
         if (type == MSG_GAME_STATE || type == MSG_EMERGENCY_MEETING)
         {
-            if (client->recievepacket->len < sizeof(gameState)){
-                printf("ERROR: MSG_GAME_STATE packet too small\n");
-            } else
-            memcpy(state, client->recievepacket->data, sizeof(gameState));
+            if (packet_has_size(client->recievepacket, sizeof(gameState), "MSG_GAME_STATE"))
+            {
+                memcpy(state, client->recievepacket->data, sizeof(gameState));
+            }
         }
         else if (type == MSG_KILL_EVENT)
         {
             KillEventMsg msg;
-            if (client->recievepacket->len < sizeof(KillEventMsg)){
-                printf("ERROR: MSG_KILL_EVENT packet too small\n");
-            } else
+            if (packet_has_size(client->recievepacket, sizeof(KillEventMsg), "MSG_KILL_EVENT"))
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
 
