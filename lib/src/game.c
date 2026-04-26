@@ -176,7 +176,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             if (local_id != state->emergency_meeting_reported_id)
             {
                 SDL_Rect size;
-                size.w = 941;
+                size.w = 1041;
                 size.h = 641;
                 size.x = (LOGICAL_SCREEN_WIDTH / 2) - size.w / 2;
                 size.y = (LOGICAL_SCREEN_HEIGHT / 2) - size.h / 2;
