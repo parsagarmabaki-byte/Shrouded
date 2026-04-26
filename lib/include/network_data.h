@@ -85,6 +85,7 @@ typedef enum{
     GAME_LOBBY,
     GAME_RUNNING,
     GAME_SHOW_ROLE,
+    GAME_INFO_MEETING,
     GAME_MEETING
 } gamePhase;
 

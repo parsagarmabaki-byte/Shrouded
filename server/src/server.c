@@ -80,11 +80,28 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].kill_cooldown_start = 0;
             state->players[i].kill_cooldown_active = false;
             state->players[i].emergency_meeting = 1;
-            state->emergency_meeting_reported_id= -1;
+            state->emergency_meeting_reported_id = -1;
             return i;
         }
     }
     return -1;
+}
+
+void spawn_players(gameState *state)
+{
+    float spawnX[MAX_PLAYERS] = {1290, 1150, 1420, 1000, 1290, 1150};
+    float spawnY[MAX_PLAYERS] = {665, 665, 850, 850, 1000, 1000};
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+
+        state->players[i].x = spawnX[i];
+        state->players[i].y = spawnY[i];
+        state->players[i].current_frame = 2;
+        state->players[i].direction = DIR_DOWN;
+        state->players[i].kill_cooldown_start = 0;
+        state->players[i].kill_cooldown_active = false;
+    }
 }
 
 int countActivePlayers(gameState *state)
@@ -239,7 +256,7 @@ int main(void)
 
     Uint64 lastBroadcast = SDL_GetPerformanceCounter();
     Uint64 state_start_time = 0;
-    Uint64 state_time = 0;
+    Uint64 phase_time = 0;
 
     while (1)
     {
@@ -323,12 +340,12 @@ int main(void)
                 int local_id = input.player_id;
                 if (input.isAlive && input.emergency_meeting_left == 1)
                 {
-                    state.phase = GAME_MEETING;
+                    state.phase = GAME_INFO_MEETING;
                     state.type = MSG_EMERGENCY_MEETING;
                     state.players[local_id].emergency_meeting = 0;
                     state.emergency_meeting_reported_id = local_id;
                     printf("[SERVER] Accept: player %d started an emergency meeting. %d\n", local_id);
-                    state_time = SDL_GetTicks64(); // TIDSSTÄMPEL
+                    phase_time = SDL_GetTicks64(); // TIDSSTÄMPEL
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
@@ -349,15 +366,28 @@ int main(void)
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
-            if (state.phase == GAME_MEETING)
+            else if (state.phase == GAME_INFO_MEETING)
             {
-                if (SDL_GetTicks64() - state_time >= 3000) // NÄR 3 SEKUNDER GÅTT
-                {   
+                if (SDL_GetTicks64() - phase_time >= 3000) // NÄR 3 SEKUNDER GÅTT
+                {
+                    state.phase = GAME_MEETING;
+                    phase_time = 0;
+                    phase_time = SDL_GetTicks64();
+                    printf("INFORMATION OF MEETING ENDED\n");
+                }
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            else if (state.phase == GAME_MEETING)
+            {
+                if (SDL_GetTicks64() - phase_time >= 3000) // NÄR 15 SEKUNDER GÅTT
+                {
                     state.phase = GAME_RUNNING;
+                    spawn_players(&state);
                     printf("MEETING ENDED\n");
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
+
             else if (state.phase == GAME_RUNNING)
             {
                 for (int i = 0; i < MAX_PLAYERS; i++)

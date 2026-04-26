@@ -171,7 +171,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             SDL_RenderPresent(renderer);
             continue; // hoppa till nästa loop-iteration
         }
-        if (state->phase == GAME_MEETING)
+        else if (state->phase == GAME_INFO_MEETING)
         {
             if (local_id != state->emergency_meeting_reported_id)
             {
@@ -192,7 +192,21 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
             collect_packets(client, state, bodies);
             continue;
         }
-        
+        else if (state->phase == GAME_MEETING)
+        {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+
+            if (assets.emergency_meeting != NULL)
+            {
+                SDL_RenderCopy(renderer, assets.emergency_meeting, NULL, NULL);
+            }
+
+            SDL_RenderPresent(renderer);
+            collect_packets(client, state, bodies);
+            emergency_window_open = false;
+            continue;
+        }
 
         // Delta time — time since last frame in seconds
         Uint64 now = SDL_GetPerformanceCounter();

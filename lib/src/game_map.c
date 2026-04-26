@@ -39,6 +39,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.emergency_button_view = loading_img(renderer, "assets/images/emergency_button_view.png");
     asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
     asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
+    asset.emergency_meeting = loading_img(renderer, "assets/images/emergency_meeting.png");
 
     if (!asset.emergency_meeting_info)
         printf("image not loaded");
