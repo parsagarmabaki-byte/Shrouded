@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <SDL2/SDL_image.h>
 #include "game_map.h"
 #include "network_data.h"
@@ -17,8 +18,13 @@ typedef struct{
     float animation_timer;
     bool kill_cooldown_active;
     Uint32 kill_cooldown_end;
-}Player;
+} Player;
 
+// ADT
+Player *player_create(gameState *state, int local_id);
+void player_destroy(Player *p);
+
+//-----
 Player init_player(gameState state, int local_id);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam);

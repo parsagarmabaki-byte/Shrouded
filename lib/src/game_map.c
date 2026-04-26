@@ -93,6 +93,7 @@ void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam
     
     SDL_Rect picturesize = {draw_x, draw_y, GAME_MAP_WIDTH, GAME_MAP_HEIGHT};
     
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, background_img, NULL, &picturesize);
 }

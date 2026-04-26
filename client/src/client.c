@@ -3,6 +3,7 @@
 #include <SDL2/SDL_net.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include "network.h"
 #include "lobby.h"
 #include "game.h"
@@ -10,19 +11,25 @@
 #include "client_network.h"
 #include "emergency_meeting.h"
 
-static int init_client(UDPsocket *socket, IPaddress *server_addr)
+static int init_client(UDPsocket *socket, IPaddress *server_addr, const char *server_ip, char *error_message, size_t error_size)
 {
     if (!init_network_socket(socket, 0))
     {
+        snprintf(error_message, error_size, "Could not open client socket");
         return 0;
     }
 
-    if (SDLNet_ResolveHost(server_addr, "127.0.0.1", SERVER_PORT) != 0)
+    if (SDLNet_ResolveHost(server_addr, server_ip, SERVER_PORT) != 0)
     {
+        snprintf(error_message, error_size, "Invalid IP or unreachable host");
         printf("SDLNet_ResolveHost error: %s\n", SDLNet_GetError());
+        SDLNet_UDP_Close(*socket);
+        *socket = NULL;
+        SDLNet_Quit();
         return 0;
     }
 
+    error_message[0] = '\0';
     return 1;
 }
 
@@ -81,12 +88,37 @@ int main()
     gameState state = {0};
     AudioAssets audio;
     bool running = true;
+    char server_ip[64] = "127.0.0.1";
+    char connection_error[128] = "";
 
-    if (!init_client(&client.socket, &client.serverAddr)) return 1;
-    client.recievepacket = create_packet(512);
-    if (!client.recievepacket) return 1;
-    if (!send_join(client.socket, client.serverAddr)) return 1;
     if (!initiate(&lobby)) return 1;
+    while (running)
+    {
+        if (!promptServerAddress(&lobby, server_ip, sizeof(server_ip), connection_error))
+        {
+            cleanLobby(&lobby);
+            return 0;
+        }
+
+        if (init_client(&client.socket, &client.serverAddr, server_ip, connection_error, sizeof(connection_error)))
+        {
+            break;
+        }
+    }
+
+    client.recievepacket = create_packet(512);
+    if (!client.recievepacket)
+    {
+        cleanLobby(&lobby);
+        clean_client(&client);
+        return 1;
+    }
+    if (!send_join(client.socket, client.serverAddr))
+    {
+        cleanLobby(&lobby);
+        clean_client(&client);
+        return 1;
+    }
     if (!init_audio()) return 1;
     if (!load_audio(&audio)){cleanup_audio(&audio);return 1;}
 
