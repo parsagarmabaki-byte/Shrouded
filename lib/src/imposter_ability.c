@@ -3,17 +3,17 @@
 #include "game_map.h"
 #include "network_data.h"
 #include "game.h"
+#include "player_movement.h"
 
-void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id)
+void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
 {
     SDL_Rect kill_button = {1050, 520, 200, 200};
 
-    if (handle_kill_request(&state, killer_id) != -1 && !kill_cooldown) 
-    
-        SDL_RenderCopy(renderer,kill_button_active, NULL, &kill_button);
-    else 
-        SDL_RenderCopy(renderer,kill_button_deactive,NULL, &kill_button);
+    if (handle_kill_request(&state, killer_id) != -1 && !kill_cooldown)
 
+        SDL_RenderCopy(renderer, kill_button_active, NULL, &kill_button);
+    else
+        SDL_RenderCopy(renderer, kill_button_deactive, NULL, &kill_button);
 
     // SDL_SetTextureColorMod(kill_button_active, 255, 255, 255);
     // SDL_SetTextureAlphaMod(kill_button_active, 255);
@@ -31,7 +31,6 @@ void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Textur
     // {
     //     SDL_SetTextureAlphaMod(kill_button_active, 150);
     // }
-
 }
 
 bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
@@ -76,7 +75,7 @@ int handle_kill_request(gameState *state, int killer_id)
 
         if (state->players[i].isAlive && state->players[i].active)
         {
-            float distance = find_kill_target(imposter,state->players[i]);
+            float distance = find_kill_target(imposter, state->players[i]);
             if (distance > 0 && distance < best_distance)
             {
                 target_id = i;
@@ -163,6 +162,46 @@ void update_kill_animation(KillAnimation *anim, float dt)
             anim->animation_timer = 0.0f;
         }
     }
+}
+
+int target_report_body(KillAnimation bodies[MAX_PLAYERS], Player player)
+{
+    int target = -1;
+    float shortest_distance = KILL_RADIUS * KILL_RADIUS;
+
+    float player_center_x = player.Hitbox.x + player.Hitbox.w / 2.0f;
+    float player_center_y = player.Hitbox.y + player.Hitbox.h / 2.0f;
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (!bodies[i].active)
+            continue;
+
+        float dx = player_center_x - bodies[i].x;
+        float dy = player_center_y - bodies[i].y;
+        float dist_sq = dx * dx + dy * dy;
+        if (dist_sq < shortest_distance)
+        {
+            target = i;
+            shortest_distance = dist_sq;
+        }
+    }
+    return target;
+}
+
+void render_player_ability(SDL_Renderer *renderer, Player player, GameAssets assets, KillAnimation bodies[MAX_PLAYERS])
+{
+    SDL_Rect picture_size = {940, 440, 150, 150};
+    SDL_Texture *report_body = assets.report_button_deactive;
+    if (target_report_body(bodies, player) != -1)
+    {
+        picture_size.x -= 15;
+        picture_size.y -= 15;
+        picture_size.w += 30;
+        picture_size.h += 30;
+        report_body = assets.report_button_active;
+    }
+    SDL_RenderCopy(renderer, report_body, NULL, &picture_size);
 }
 
 void render_kill_animation(SDL_Renderer *renderer, KillAnimation *anim, GameAssets assets, Camera *cam)

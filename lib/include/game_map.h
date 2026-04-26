@@ -23,9 +23,13 @@ typedef struct
     SDL_Texture *killer_img;
     SDL_Texture *innocent_img;
     SDL_Texture *role_art_img;
+
     SDL_Texture *kill_button_active;
     SDL_Texture *kill_button_deactive;
     
+    SDL_Texture *report_button_deactive;
+    SDL_Texture *report_button_active;
+
     SDL_Texture *emergency_button_view;
     SDL_Texture *emergency_meeting_info;
     SDL_Texture *dead_body_reported_info;
