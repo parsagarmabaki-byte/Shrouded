@@ -238,6 +238,55 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
                 {
                     start_type_task(&task, renderer);
                 }
+                if (event.key.keysym.scancode == SDL_SCANCODE_4)
+                {
+                    start_reflex_task(&task, renderer);
+                }
+                if (event.key.repeat == 0)
+                {
+                    if (event.key.keysym.sym == SDLK_SPACE)
+                    {
+                        if (task.type == TASK_REFLEX && task.active)
+                        {
+                            if (task.cursor_pos >= task.success_min &&
+                                task.cursor_pos <= task.success_max)
+                            {
+                                // success
+                                task.success_count++;
+
+                                // shrink zone
+                                task.current_zone_width *= 0.8f;
+                                if (task.current_zone_width < 0.05f)
+                                    task.current_zone_width = 0.05f;
+
+                                float center = (task.success_min + task.success_max) / 2.0f;
+                                task.success_min = center - task.current_zone_width / 2.0f;
+                                task.success_max = center + task.current_zone_width / 2.0f;
+
+                                if (task.success_min < 0.0f) task.success_min = 0.0f;
+                                if (task.success_max > 1.0f) task.success_max = 1.0f;
+
+                                if (task.success_count >= task.success_target)
+                                {
+                                    complete_task(&task);
+                                }
+                            }
+                            else
+                            {
+                                // failure reset
+                                task.success_count = 0;
+                                task.cursor_pos = 0.0f;
+                                task.direction = 1;
+
+                                task.current_zone_width = task.base_zone_width;
+
+                                float center = 0.5f;
+                                task.success_min = center - task.current_zone_width / 2.0f;
+                                task.success_max = center + task.current_zone_width / 2.0f;
+                            }
+                        }
+                    }
+                }
                 if (event.key.keysym.scancode == SDL_SCANCODE_E)
                 {
                     if (collides_with_wall(player->Hitbox.x, player->Hitbox.y) == 2 && state->players[local_id].isAlive)
