@@ -184,9 +184,9 @@ void broadcast_emergency_meeting_msg(UDPsocket socket, UDPpacket *packet, KillEv
     }
 }
 
-int removeFromLobby(gameState *state, IPaddress *clientAddress, int *clientUsed, IPaddress addr)
+int removeFromLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
-    int player = get_player_id_from_sender(clientAddress, clientUsed, addr);
+    int player = get_player_id_from_sender(clientAddresses, clientUsed, addr);
     if (player >= 0)
     {
         clientUsed[player] = 0;
@@ -325,7 +325,6 @@ int main(void)
             }
             else if (type == MSG_KILL_REQUEST)
             {
-                clientInput input;
                 if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_KILL_REQUEST"))
                 {
                     int killer_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
