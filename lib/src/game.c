@@ -14,6 +14,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     bool emergency_window_open = false;
     bool is_local_impostor = state->players[local_id].isImpostor != 0;
     bool running = true;
+    bool task_map_open = false;
     float accumulator = 0.0f;
     Uint64 last_tick = SDL_GetPerformanceCounter();
 
@@ -39,17 +40,18 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         float dt = (float)(current_tick - last_tick) / (float)SDL_GetPerformanceFrequency();
         last_tick = current_tick;
 
-        process_events(client, renderer, state, &task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor);
+        process_events(client, renderer, state, &task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
 
         accumulator += dt;
 
-        update_player_movement(player, &user_input, task.active, emergency_window_open, &accumulator);
-        send_player_input(client, state, player,task.active,emergency_window_open);
+        bool ui_open = emergency_window_open || task_map_open;
+        update_player_movement(player, &user_input, task.active, ui_open, &accumulator);
+        send_player_input(client, state, player,task.active, ui_open);
         collect_packets(client, state, bodies);
         compare_server_position(*state, player, local_id);
         update_task(&task, dt);
         update_kill_animation(bodies, dt);
-        render_game(renderer, state, &cam, assets, user_input, player, bodies, &task, local_id, dt, is_local_impostor, emergency_window_open);
+        render_game(renderer, state, &cam, assets, user_input, player, bodies, &task, local_id, dt, is_local_impostor, emergency_window_open, task_map_open);
     }
 
     // ADT: förstör spelaren (FRIGÖR MINNE PÅ HEAPEN)
@@ -341,8 +343,60 @@ void debug_walls(SDL_Renderer *renderer, Camera cam)
     }
 #endif
 }
+void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player)
+{
+    SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+    SDL_Rect map_rect = {252, 56, 776, 620};
 
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor)
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
+    SDL_RenderFillRect(renderer, &backdrop);
+
+    SDL_SetRenderDrawColor(renderer, 10, 15, 22, 235);
+    SDL_RenderFillRect(renderer, &map_rect);
+
+    if (assets.map_texture)
+    {
+        SDL_RenderCopy(renderer, assets.map_texture, NULL, &map_rect);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &map_rect);
+
+    // Exempelmarkörer för tasks
+    SDL_Rect marker1 = {350, 220, 24, 24};
+    SDL_Rect marker2 = {620, 360, 24, 24};
+    SDL_Rect marker3 = {840, 250, 24, 24};
+
+    SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
+    SDL_RenderFillRect(renderer, &marker1);
+    SDL_RenderFillRect(renderer, &marker2);
+    SDL_RenderFillRect(renderer, &marker3);
+
+    float scale_x = (float)map_rect.w / GAME_MAP_WIDTH;
+    float scale_y = (float)map_rect.h / GAME_MAP_HEIGHT;
+
+    float player_center_x = player->Hitbox.x + player->Hitbox.w / 2.0f;
+    float player_center_y = player->Hitbox.y + player->Hitbox.h / 2.0f;
+
+    int marker_x = map_rect.x + (int)(player_center_x * scale_x);
+    int marker_y = map_rect.y + (int)(player_center_y * scale_y);
+
+    SDL_Rect player_marker = {
+        marker_x - 6,
+        marker_y - 6,
+        12,
+        12
+    };
+
+    SDL_SetRenderDrawColor(renderer, 60, 160, 255, 255);
+    SDL_RenderFillRect(renderer, &player_marker);
+    
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &player_marker);
+}
+
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
 {
     while (SDL_PollEvent(event))
     {
@@ -361,6 +415,11 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
                     send_leave_message(client->socket, client->serverAddr);
                     *running = false;
                 }
+            }
+
+            if (event->key.keysym.scancode == SDL_SCANCODE_M)
+            {
+                *task_map_open = !*task_map_open;
             }
         }
         task_events(renderer, event, task);
@@ -460,11 +519,14 @@ void update_player_movement(Player *player, clientInput *user_input, bool task_i
     }
 }
 
-static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open)
+static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open)
 {
     run_animations(&player->animation_timer, &player->current_frame, user_input, dt);
     camera_follow(cam, player->Hitbox.x, player->Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
     render_map(renderer, assets.map_texture, cam);
+    if (assets.vignette_img && !is_local_impostor && state->players[local_id].isAlive)
+        SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
+
     debug_walls(renderer, *cam);
     render_all_players(state, player, assets, cam, renderer, local_id);
     render_kill_animation(renderer, bodies, assets, cam);
@@ -476,13 +538,15 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
         player->kill_cooldown_active = state->players[local_id].kill_cooldown_active;
         render_imposter_ability(renderer, *state, assets.kill_button_active, assets.kill_button_deactive, player->kill_cooldown_active, local_id);
     }
-    if (assets.vignette_img && !is_local_impostor && state->players[local_id].isAlive)
-        SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
 
     render_task(renderer, task);
     if (emergency_window_open)
     {
         emergency_meeting_view(renderer, assets.emergency_button_view);
+    }
+    if (task_map_open)
+    {
+        render_task_map(renderer, task, assets, player);
     }
     SDL_RenderPresent(renderer);
 }

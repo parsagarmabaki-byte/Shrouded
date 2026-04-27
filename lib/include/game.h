@@ -31,11 +31,12 @@ void kill_events(Client *client, SDL_Renderer *renderer, gameState *state, SDL_E
 void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, bool *emergency_window_open, int local_id);
 void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task);
 void debug_walls(SDL_Renderer *renderer, Camera cam);
+void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player);
 void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
 void update_player_direction(Player *player, clientInput *user_input);
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor);
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
 bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, KillAnimation bodies[MAX_PLAYERS], GameAssets assets, int local_id, bool *emergency_window_open);
-static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets,clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task,int local_id, float dt, bool is_local_impostor, bool emergency_window_open);
+static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets,clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task,int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open);
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
 
 
