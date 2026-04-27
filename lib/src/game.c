@@ -18,14 +18,12 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     Uint64 last_tick = SDL_GetPerformanceCounter();
 
     Player *player = player_create(state, local_id);
-    Task task;
+    Task *task = create_task(renderer);
     KillAnimation bodies[MAX_PLAYERS] = {0};
     Camera cam = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
     SDL_Event event;
     clientInput user_input;
     GameAssets assets = load_assets(renderer);
-
-    init_task(&task, renderer);
 
     SDL_RaiseWindow(lobby->window);
     SDL_SetWindowInputFocus(lobby->window);
@@ -39,22 +37,22 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         float dt = (float)(current_tick - last_tick) / (float)SDL_GetPerformanceFrequency();
         last_tick = current_tick;
 
-        process_events(client, renderer, state, &task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor);
+        process_events(client, renderer, state, task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor);
 
         accumulator += dt;
 
-        update_player_movement(player, &user_input, task.active, emergency_window_open, &accumulator);
-        send_player_input(client, state, player,task.active,emergency_window_open);
+        update_player_movement(player, &user_input, task_is_active(task), emergency_window_open, &accumulator);
+        send_player_input(client, state, player, task_is_active(task), emergency_window_open);
         collect_packets(client, state, bodies);
         compare_server_position(*state, player, local_id);
-        update_task(&task, dt);
+        update_task(task, dt);
         update_kill_animation(bodies, dt);
-        render_game(renderer, state, &cam, assets, user_input, player, bodies, &task, local_id, dt, is_local_impostor, emergency_window_open);
+        render_game(renderer, state, &cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, emergency_window_open);
     }
 
     // ADT: förstör spelaren (FRIGÖR MINNE PÅ HEAPEN)
     player_destroy(player);
-    destroy_task(&task);
+    destroy_task(task);
     destroy_assets(&assets);
     TTF_Quit();
 }
