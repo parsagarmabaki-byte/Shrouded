@@ -12,7 +12,9 @@
 #include <stdio.h>
 #include <math.h>
 #include "task.h"
+#include "kill_animation.h"
 #include "imposter_ability.h"
+
 
 typedef struct
 {
@@ -25,5 +27,17 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state);
 clientInput read_input(bool tasks_active);
 void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt);
 void render_all_players(gameState *state, Player *player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id);
+void kill_events(Client *client, SDL_Renderer *renderer, gameState *state, SDL_Event *event, bool kill_cooldown, bool is_local_impostor);
+void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, bool *emergency_window_open, int local_id);
+void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task);
+void debug_walls(SDL_Renderer *renderer, Camera cam);
+void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
+void update_player_direction(Player *player, clientInput *user_input);
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor);
+bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, KillAnimation bodies[MAX_PLAYERS], GameAssets assets, int local_id, bool *emergency_window_open);
+static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets,clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task,int local_id, float dt, bool is_local_impostor, bool emergency_window_open);
+void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
+
+
 
 #endif

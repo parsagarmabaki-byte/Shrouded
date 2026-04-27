@@ -34,9 +34,6 @@ typedef struct
     SDL_Texture *emergency_meeting_info;
     SDL_Texture *dead_body_reported_info;
     SDL_Texture *emergency_meeting;
-
-
-
 } GameAssets;
 
 typedef struct {
@@ -48,5 +45,8 @@ GameAssets load_assets(SDL_Renderer *renderer);
 SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
 void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam);
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h);
+static void destroy_texture(SDL_Texture **texture);
+void destroy_assets(GameAssets *assets);
+
 #endif
  

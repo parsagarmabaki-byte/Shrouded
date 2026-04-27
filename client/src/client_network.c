@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "network_data.h"
 #include "game.h"
+#include "imposter_ability.h"
 
 
 static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, clientInput *input)
@@ -87,6 +88,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
             {
                 memcpy(state, client->recievepacket->data, sizeof(gameState));
             }
+            
         }
         else if (type == MSG_KILL_EVENT)
         {

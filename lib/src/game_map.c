@@ -62,6 +62,40 @@ GameAssets load_assets(SDL_Renderer *renderer)
     return asset;   
 }
 
+static void destroy_texture(SDL_Texture **texture)
+{
+    if (texture && *texture)
+    {
+        SDL_DestroyTexture(*texture);
+        *texture = NULL;
+    }
+}
+
+void destroy_assets(GameAssets *assets)
+{
+    if (!assets) return;
+
+    for (int i = 0; i < PLAYER_SLOTS; i++)
+    {
+        destroy_texture(&assets->skins[i]);
+        destroy_texture(&assets->dead_skins[i]);
+    }
+
+    destroy_texture(&assets->map_texture);
+    destroy_texture(&assets->vignette_img);
+    destroy_texture(&assets->killer_img);
+    destroy_texture(&assets->innocent_img);
+    destroy_texture(&assets->role_art_img);
+    destroy_texture(&assets->kill_button_active);
+    destroy_texture(&assets->kill_button_deactive);
+    destroy_texture(&assets->report_button_deactive);
+    destroy_texture(&assets->report_button_active);
+    destroy_texture(&assets->emergency_button_view);
+    destroy_texture(&assets->emergency_meeting_info);
+    destroy_texture(&assets->dead_body_reported_info);
+    destroy_texture(&assets->emergency_meeting);
+}
+
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)
 {
     cam->x = player_x + player_w / 2 - cam->screen_w / 2;
