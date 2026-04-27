@@ -51,6 +51,11 @@ void init_task(Task *task, SDL_Renderer *renderer)
     }
     task->task_text_texture = NULL;
     task->task_image = NULL;
+
+    for(int i = 0; i < 5; i++)
+    {
+        task->number_textures[i] = NULL;
+    } 
 }
 
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
@@ -180,6 +185,64 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
         task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE", WHITE, &task->task_text_w, &task->task_text_h);
     }
 }
+
+/*
+void start_logical_order_task(Task *task, SDL_Renderer *renderer)
+{
+    srand(time(NULL));
+    cleanup_task(task);
+    task->type = TASK_LOGICAL_ORDER;
+    task->active = true;
+    task->next_expected_idx = 0;
+
+    SDL_Color white = {255, 255, 255, 255};
+
+    for(int i = 0; i < 5; i++)
+    {
+        int num;
+        bool unique;
+
+        do
+        {
+            unique = true;
+            num = (rand() % 99) + 10;
+
+            for(int j = 0; j < i; j++)
+            {
+                if(task->numbers[j] == num)
+                {
+                    unique = false;
+                }
+            }
+        } while(!unique);
+
+        task->numbers[i] = num;
+        task->sortedNumbers[i] = num;
+
+        char str[3];
+        sprintf(str, "%d", num);
+        task->number_textures[i] = create_text_texture(renderer, task->font, str, white, &task->number_rects[i].w, &task->number_rects[i].h);
+
+        task->number_rects[i].x = 400 + (rand() % 400);
+        task->number_rects[i].y = 250 + (rand() % 250);
+
+        for(int i = 0; i < 4; i++)
+        {
+            for(int j = 0; j < 4 - i; j++)
+            {
+                if(task->sortedNumbers[j] < task->sortedNumbers[j + 1])
+                {
+                    int tmp = task->sortedNumbers[j + 1];
+                    task->sortedNumbers[j + 1] = task->sortedNumbers[j];
+                    task->sortedNumbers[j] = tmp;
+                }
+            }
+        }
+        
+    }
+}
+*/
+
 
 void update_task(Task *task, float dt) // updates task logic every frame
 {

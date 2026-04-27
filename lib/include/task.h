@@ -6,13 +6,16 @@
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 typedef enum {
     TASK_NONE,
     TASK_TIMER,
     TASK_CLICK,
     TASK_TYPE,
-    TASK_REFLEX
+    TASK_REFLEX,
+    TASK_LOGICAL_ORDER
 } TaskType;
 
 typedef struct {
@@ -53,6 +56,12 @@ typedef struct {
     float current_zone_width;;
     int success_count;    
     int success_target;   // number of wins to complete task
+
+    // TASK_LOGICAL_ORDER specific
+    int numbers[5];
+    int sortedNumbers[5];
+    SDL_Texture *number_textures[5];
+    SDL_Rect numbers_rect[5];
 
 } Task;
 
