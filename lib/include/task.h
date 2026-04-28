@@ -28,6 +28,8 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer);
 void update_task(Task *task, float dt);
 void render_task(SDL_Renderer *renderer, Task *task);
 void cancel_task(Task *task);
+void cleanup_task(Task *task);
+void complete_task(Task *task);
 
 // getters (important for ADT)
 bool task_is_active(Task *task);

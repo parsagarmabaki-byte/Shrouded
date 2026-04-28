@@ -113,26 +113,13 @@ void task_handle_key(Task *task, SDL_Keycode key)
 
 void task_handle_click(Task *task)
 {
-    if (!task->active) return;
+    if (!task || !task->active) return;
 
-    if (task->type == TASK_TYPE)
+    if (task->type == TASK_CLICK)
     {
-        char expected = task->target_string[task->current_index];
-        SDL_Keycode key = event->key.keysym.sym;
-        char pressed = (char)SDL_toupper(key);
-
-        if (pressed == expected)
-        {
-            task->current_index++;
-        }
-        else
-        {
-            task->current_index = 0;
-        }
+        task->click_count++;
     }
 }
-
-
 
 SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h)
 {
@@ -385,7 +372,7 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     }
     else
     {
-        task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE", WHITE, &task->task_text_w, &task->task_text_h);
+        task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE (PRESS SPACE!)", WHITE, &task->task_text_w, &task->task_text_h);
     }
 }
 
