@@ -61,6 +61,14 @@ void request_kill(Client *client, gameState *state)
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
 
+void request_report_body(Client *client, gameState *state)
+{
+    clientInput input = {0};
+    input.type = MSG_BODY_FOUND;
+    input.player_id = state->local_player_id;
+    send_client_input_packet(client->socket, client->serverAddr, &input);
+}
+
 void request_emergency_meeting(Client *client, gameState *state, int local_id)
 {
     clientInput request = {0};
@@ -82,7 +90,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
 
         uint8_t type = client->recievepacket->data[0];
 
-        if (type == MSG_GAME_STATE || type == MSG_EMERGENCY_MEETING)
+        if (type == MSG_GAME_STATE || type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
         {
             if (packet_has_size(client->recievepacket, sizeof(gameState), "MSG_GAME_STATE"))
             {

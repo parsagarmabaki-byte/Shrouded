@@ -345,7 +345,7 @@ int main(void)
                     }
                 }
             }
-            else if (type == MSG_EMERGENCY_MEETING)
+            else if (type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
             {
                 if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_EMERGENCY_MEETING"))
                 {
@@ -353,7 +353,7 @@ int main(void)
                     if (local_id >= 0 && local_id < MAX_PLAYERS && state.players[local_id].isAlive && state.players[local_id].emergency_meeting == 1)
                     {
                         state.phase = GAME_INFO_MEETING;
-                        state.type = MSG_EMERGENCY_MEETING;
+                        state.type = type;
                         state.players[local_id].emergency_meeting = 0;
                         state.emergency_meeting_reported_id = local_id;
                         printf("[SERVER] Accept: player %d started an emergency meeting.\n", local_id);

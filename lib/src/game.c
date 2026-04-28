@@ -38,7 +38,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         float dt = (float)(current_tick - last_tick) / (float)SDL_GetPerformanceFrequency();
         last_tick = current_tick;
 
-        process_events(client, renderer, state, task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
+        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
 
         accumulator += dt;
 
@@ -149,7 +149,8 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
 
 void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 {
-    if (!task) return;
+    if (!task)
+        return;
 
     if (event->type == SDL_KEYDOWN)
     {
@@ -186,6 +187,17 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
     if (event->type == SDL_MOUSEBUTTONDOWN)
     {
         task_handle_click(task);
+    }
+}
+
+void report_body_events(Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
+{
+    if (event->type == SDL_KEYDOWN)
+    {
+        if (event->key.keysym.scancode == SDL_SCANCODE_R && target_report_body(bodies, *player) != -1 && state->players[state->local_player_id].isAlive)
+        {
+            request_report_body(client, state);
+        }
     }
 }
 
@@ -280,6 +292,7 @@ void debug_walls(SDL_Renderer *renderer, Camera cam)
     }
 #endif
 }
+
 void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player)
 {
     SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
@@ -323,17 +336,16 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
         marker_x - 6,
         marker_y - 6,
         12,
-        12
-    };
+        12};
 
     SDL_SetRenderDrawColor(renderer, 60, 160, 255, 255);
     SDL_RenderFillRect(renderer, &player_marker);
-    
+
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawRect(renderer, &player_marker);
 }
 
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
 {
     while (SDL_PollEvent(event))
     {
@@ -362,6 +374,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
         task_events(renderer, event, task);
         kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
         emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
+        report_body_events(client, state, event, bodies, player);
     }
 }
 
@@ -404,9 +417,14 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
             meeting_info_rect.x = (LOGICAL_SCREEN_WIDTH / 2) - meeting_info_rect.w / 2;
             meeting_info_rect.y = (LOGICAL_SCREEN_HEIGHT / 2) - meeting_info_rect.h / 2;
             SDL_Texture *meeting_info_texture = NULL;
+
             if (state->type == MSG_EMERGENCY_MEETING)
             {
                 meeting_info_texture = assets.emergency_meeting_info;
+            }
+            else if (state->type == MSG_BODY_FOUND)
+            {
+                meeting_info_texture = assets.dead_body_reported_info;
             }
             SDL_RenderCopy(renderer, meeting_info_texture, NULL, &meeting_info_rect);
             SDL_RenderPresent(renderer);
@@ -429,6 +447,14 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
         return true;
+    }
+    if (state->type == MSG_BODY_FOUND)
+    {
+        for (int i = 0; i<MAX_PLAYERS; i++)
+        {
+            state->type = MSG_GAME_STATE;
+            bodies[i].active = false;
+        }
     }
     return false;
 }
@@ -461,12 +487,11 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     run_animations(&player->animation_timer, &player->current_frame, user_input, dt);
     camera_follow(cam, player->Hitbox.x, player->Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
     render_map(renderer, assets.map_texture, cam);
-    if (assets.vignette_img && !is_local_impostor && state->players[local_id].isAlive)
-        SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
-
     debug_walls(renderer, *cam);
     render_all_players(state, player, assets, cam, renderer, local_id);
     render_kill_animation(renderer, bodies, assets, cam);
+    if (assets.vignette_img && !is_local_impostor && state->players[local_id].isAlive)
+        SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
     if (state->players[local_id].isAlive)
         render_player_ability(renderer, *player, assets, bodies);
 
