@@ -225,7 +225,7 @@ void cancel_task(Task *task)
     cleanup_task(task);
 }
 
-void cleanup_task(Task *task) // cleans non specific things
+void cleanup_task(Task *task) // cleans non specific things, used before starting a new task to free old textures and reset variables
 {
     if (task->task_text_texture)
     {
