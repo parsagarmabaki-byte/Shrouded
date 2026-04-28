@@ -7,7 +7,7 @@
 
 static const SDL_Color WHITE = {255,255,255,255};
 
-struct Task {
+struct Task {           // task ADT struct
     TaskType type;
     bool active;
     int points;
@@ -53,6 +53,7 @@ struct Task {
     SDL_Rect numbers_rect[5];
 };
 
+// handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key)
 {
     if (!task->active) return;
@@ -185,7 +186,7 @@ Task* create_task(SDL_Renderer *renderer)
     return task;
 }
 
-bool task_active_check(Task *task) // call these 2 functions outside task.c to access struct variables
+bool task_active_check(Task *task) // call these 2 getter functions outside task.c to access struct variables
 {
     return task->active;
 }
