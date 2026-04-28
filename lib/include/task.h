@@ -2,12 +2,9 @@
 #define TASK_H
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+
+typedef struct Task Task;
 
 typedef enum {
     TASK_NONE,
@@ -18,65 +15,28 @@ typedef enum {
     TASK_LOGICAL_ORDER
 } TaskType;
 
-typedef struct {
-    TaskType type;
-    bool active;
-    int points;
-    float timer;
-    SDL_Texture *task_image;
+// constructor / destructor
+Task* create_task(SDL_Renderer *renderer);
+void destroy_task(Task *task);
 
-    //text
-    TTF_Font *font;
-    SDL_Texture *task_text_texture;
-    SDL_Texture *global_text_texture;
-    int task_text_w;
-    int task_text_h;
-    int global_text_w;
-    int global_text_h;
-
-    // TASK_TIMER specific
-    float timer_duration;
-
-    // TASK_CLICK specific
-    int click_count;
-    int click_target;
-
-    // TASK_TYPE specific
-    char target_string[16]; 
-    int current_index;
-    int length;
-
-    // TASK_REFLEX specific
-    float cursor_pos;     // 0.0 → 1.0
-    float cursor_speed;
-    int direction;        // 1 or -1
-    float success_min;    // cursor range for success
-    float success_max;    
-    float base_zone_width;  // success zone width for shrinking
-    float current_zone_width;;
-    int success_count;    
-    int success_target;   // number of wins to complete task
-
-    // TASK_LOGICAL_ORDER specific
-    int numbers[5];
-    int sortedNumbers[5];
-    SDL_Texture *number_textures[5];
-    SDL_Rect numbers_rect[5];
-
-} Task;
-
-
-SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h);
-void init_task(Task *task, SDL_Renderer *renderer);
+// behavior
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
 void start_click_task(Task *task, SDL_Renderer *renderer, int target);
 void start_type_task(Task *task, SDL_Renderer *renderer);
 void start_reflex_task(Task *task, SDL_Renderer *renderer);
+
 void update_task(Task *task, float dt);
-void complete_task(Task *task);
-void cleanup_task(Task *task);
-void destroy_task(Task *task);
 void render_task(SDL_Renderer *renderer, Task *task);
 void cancel_task(Task *task);
+void cleanup_task(Task *task);
+void complete_task(Task *task);
+
+// getters
+bool task_active_check(Task *task);
+int task_get_points(Task *task);
+
+// handle input events for tasks
+void task_handle_key(Task *task, SDL_Keycode key);
+void task_handle_click(Task *task);
 
 #endif

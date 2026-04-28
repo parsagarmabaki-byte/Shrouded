@@ -19,14 +19,12 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     Uint64 last_tick = SDL_GetPerformanceCounter();
 
     Player *player = player_create(state, local_id);
-    Task task;
+    Task *task = create_task(renderer);
     KillAnimation bodies[MAX_PLAYERS] = {0};
     Camera cam = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
     SDL_Event event;
     clientInput user_input;
     GameAssets assets = load_assets(renderer);
-
-    init_task(&task, renderer);
 
     SDL_RaiseWindow(lobby->window);
     SDL_SetWindowInputFocus(lobby->window);
@@ -40,23 +38,23 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         float dt = (float)(current_tick - last_tick) / (float)SDL_GetPerformanceFrequency();
         last_tick = current_tick;
 
-        process_events(client, renderer, state, &task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
+        process_events(client, renderer, state, task, &event, player, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
 
         accumulator += dt;
 
         bool ui_open = emergency_window_open || task_map_open;
-        update_player_movement(player, &user_input, task.active, ui_open, &accumulator);
-        send_player_input(client, state, player,task.active, ui_open);
+        update_player_movement(player, &user_input, task_active_check(task), ui_open, &accumulator);
+        send_player_input(client, state, player, task_active_check(task), ui_open);
         collect_packets(client, state, bodies);
         compare_server_position(*state, player, local_id);
-        update_task(&task, dt);
+        update_task(task, dt);
         update_kill_animation(bodies, dt);
-        render_game(renderer, state, &cam, assets, user_input, player, bodies, &task, local_id, dt, is_local_impostor, emergency_window_open, task_map_open);
+        render_game(renderer, state, &cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, emergency_window_open, task_map_open);
     }
 
     // ADT: förstör spelaren (FRIGÖR MINNE PÅ HEAPEN)
     player_destroy(player);
-    destroy_task(&task);
+    destroy_task(task);
     destroy_assets(&assets);
     TTF_Quit();
 }
@@ -151,104 +149,43 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
 
 void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 {
+    if (!task) return;
+
     if (event->type == SDL_KEYDOWN)
     {
-        if (event->key.keysym.scancode == SDL_SCANCODE_1)
-        {
+        SDL_Scancode sc = event->key.keysym.scancode;
+
+        // start tasks
+        if (sc == SDL_SCANCODE_1)
             start_timer_task(task, renderer, 10.0f);
-        }
-        if (event->key.keysym.scancode == SDL_SCANCODE_2)
-        {
+
+        if (sc == SDL_SCANCODE_2)
             start_click_task(task, renderer, 25);
-        }
-        if (event->key.keysym.scancode == SDL_SCANCODE_3)
-        {
+
+        if (sc == SDL_SCANCODE_3)
             start_type_task(task, renderer);
-        }
-        if (event->key.keysym.scancode == SDL_SCANCODE_4)
-        {
+
+        if (sc == SDL_SCANCODE_4)
             start_reflex_task(task, renderer);
+
+        // cancel task
+        if (sc == SDL_SCANCODE_Q)
+        {
+            if (task_active_check(task))
+                cancel_task(task);
         }
+
+        // handle task input
         if (event->key.repeat == 0)
         {
-            if (event->key.keysym.sym == SDLK_SPACE)
-            {
-                if (task->type == TASK_REFLEX && task->active)
-                {
-                    if (task->cursor_pos >= task->success_min &&
-                        task->cursor_pos <= task->success_max)
-                    {
-                        // success
-                        (task->success_count)++;
-
-                        // shrink zone
-                        task->current_zone_width *= 0.8f;
-                        if (task->current_zone_width < 0.05f)
-                            task->current_zone_width = 0.05f;
-
-                        float center = (task->success_min + task->success_max) / 2.0f;
-                        task->success_min = center - task->current_zone_width / 2.0f;
-                        task->success_max = center + task->current_zone_width / 2.0f;
-
-                        if (task->success_min < 0.0f)
-                            task->success_min = 0.0f;
-                        if (task->success_max > 1.0f)
-                            task->success_max = 1.0f;
-
-                        if (task->success_count >= task->success_target)
-                        {
-                            complete_task(task);
-                        }
-                    }
-                    else
-                    {
-                        // failure reset
-                        task->success_count = 0;
-                        task->cursor_pos = 0.0f;
-                        task->direction = 1;
-
-                        task->current_zone_width = task->base_zone_width;
-
-                        float center = 0.5f;
-                        task->success_min = center - task->current_zone_width / 2.0f;
-                        task->success_max = center + task->current_zone_width / 2.0f;
-                    }
-                }
-            }
-        }
-        if (event->key.keysym.scancode == SDL_SCANCODE_Q)
-        {
-            if (task->active)
-            {
-                cancel_task(task);
-            }
-        }
-    }
-    if (task->active && task->type == TASK_TYPE)
-    {
-        if (event->type == SDL_KEYDOWN)
-        {
-            char expected = task->target_string[task->current_index];
-            SDL_Keycode key = event->key.keysym.sym;
-            char pressed = (char)SDL_toupper(key);
-
-            if (pressed == expected)
-            {
-                task->current_index++;
-            }
-            else
-            {
-                task->current_index = 0;
-            }
+            task_handle_key(task, event->key.keysym.sym);
         }
     }
 
-    if (task->active && task->type == TASK_CLICK)
+    // handle click input
+    if (event->type == SDL_MOUSEBUTTONDOWN)
     {
-        if (event->type == SDL_MOUSEBUTTONDOWN)
-        {
-            (task->click_count)++;
-        }
+        task_handle_click(task);
     }
 }
 

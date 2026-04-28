@@ -1,6 +1,125 @@
 #include "task.h"
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
 
 static const SDL_Color WHITE = {255,255,255,255};
+
+struct Task {
+    TaskType type;
+    bool active;
+    int points;
+    float timer;
+    SDL_Texture *task_image;
+
+    //text
+    TTF_Font *font;
+    SDL_Texture *task_text_texture;
+    SDL_Texture *global_text_texture;
+    int task_text_w;
+    int task_text_h;
+    int global_text_w;
+    int global_text_h;
+
+    // TASK_TIMER specific
+    float timer_duration;
+
+    // TASK_CLICK specific
+    int click_count;
+    int click_target;
+
+    // TASK_TYPE specific
+    char target_string[16]; 
+    int current_index;
+    int length;
+
+    // TASK_REFLEX specific
+    float cursor_pos;     // 0.0 → 1.0
+    float cursor_speed;
+    int direction;        // 1 or -1
+    float success_min;    // cursor range for success
+    float success_max;    
+    float base_zone_width;  // success zone width for shrinking
+    float current_zone_width;
+    int success_count;    
+    int success_target;   // number of wins to complete task
+
+    // TASK_LOGICAL_ORDER specific
+    int numbers[5];
+    int sortedNumbers[5];
+    SDL_Texture *number_textures[5];
+    SDL_Rect numbers_rect[5];
+};
+
+void task_handle_key(Task *task, SDL_Keycode key)
+{
+    if (!task->active) return;
+
+    if (task->type == TASK_REFLEX && key == SDLK_SPACE)
+    {
+        if (task->cursor_pos >= task->success_min &&
+            task->cursor_pos <= task->success_max)
+        {
+            // success
+            (task->success_count)++;
+
+            // shrink zone
+            task->current_zone_width *= 0.8f;
+            if (task->current_zone_width < 0.05f)
+                task->current_zone_width = 0.05f;
+
+            float center = (task->success_min + task->success_max) / 2.0f;
+            task->success_min = center - task->current_zone_width / 2.0f;
+            task->success_max = center + task->current_zone_width / 2.0f;
+
+            if (task->success_min < 0.0f)
+                task->success_min = 0.0f;
+            if (task->success_max > 1.0f)
+                task->success_max = 1.0f;
+
+            if (task->success_count >= task->success_target)
+            {
+                complete_task(task);
+            }
+        }
+        else
+        {
+            // failure reset
+            task->success_count = 0;
+            task->cursor_pos = 0.0f;
+            task->direction = 1;
+
+            task->current_zone_width = task->base_zone_width;
+
+            float center = 0.5f;
+            task->success_min = center - task->current_zone_width / 2.0f;
+            task->success_max = center + task->current_zone_width / 2.0f;
+        }
+    }
+
+    if (task->type == TASK_TYPE)
+    {
+        char pressed = (char)SDL_toupper(key);
+        char expected = task->target_string[task->current_index];
+
+        if (pressed == expected)
+            task->current_index++;
+        else
+            task->current_index = 0;
+    }
+}
+
+void task_handle_click(Task *task)
+{
+    if (!task || !task->active) return;
+
+    if (task->type == TASK_CLICK)
+    {
+        task->click_count++;
+    }
+}
 
 SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h)
 {
@@ -30,32 +149,103 @@ SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const c
 }
 
 
-void init_task(Task *task, SDL_Renderer *renderer)
+Task* create_task(SDL_Renderer *renderer)
 {
+    Task *task = malloc(sizeof(Task));
+    if (!task) return NULL;
+
     task->type = TASK_NONE;
     task->active = false;
     task->timer = 0.0f;
-    task->points = 0; //total crewmate points
+    task->points = 0;   //total innocent points from completed tasks
+
     task->font = TTF_OpenFont("assets/fonts/BebasNeue-Regular.ttf", 32);
-    if (!task->font)
-    {
-        printf("Font error: %s\n", TTF_GetError());
-    }
+
     if (task->font)
     {
-        task->global_text_texture = create_text_texture(renderer, task->font, "PRESS Q TO CLOSE ASSIGNMENT", WHITE, &task->global_text_w, &task->global_text_h);
+        task->global_text_texture = create_text_texture(
+            renderer, task->font,
+            "PRESS Q TO CLOSE ASSIGNMENT",
+            WHITE,
+            &task->global_text_w,
+            &task->global_text_h
+        );
     }
     else
     {
         task->global_text_texture = NULL;
     }
+
     task->task_text_texture = NULL;
     task->task_image = NULL;
 
     for(int i = 0; i < 5; i++)
-    {
         task->number_textures[i] = NULL;
-    } 
+
+    return task;
+}
+
+bool task_active_check(Task *task) // call these 2 functions outside task.c to access struct variables
+{
+    return task->active;
+}
+
+int task_get_points(Task *task)
+{
+    return task->points;
+}
+
+void complete_task(Task *task)
+{
+    task->active = false;
+    task->type = TASK_NONE;
+    task->points += 1;
+    cleanup_task(task);
+}
+
+void cancel_task(Task *task)
+{
+    if (!task->active) return;
+
+    task->active = false;
+    task->type = TASK_NONE;
+    cleanup_task(task);
+}
+
+void cleanup_task(Task *task) // cleans non specific things, used before starting a new task to free old textures and reset variables
+{
+    if (task->task_text_texture)
+    {
+        SDL_DestroyTexture(task->task_text_texture);
+        task->task_text_texture = NULL;
+    }
+
+    if (task->task_image)
+    {
+        SDL_DestroyTexture(task->task_image);
+        task->task_image = NULL;
+    }
+}
+
+void destroy_task(Task *task) // cleans everything, used at the end of the game
+{
+    if (!task) return;
+
+    cleanup_task(task);
+
+    if (task->global_text_texture)
+    {
+        SDL_DestroyTexture(task->global_text_texture);
+        task->global_text_texture = NULL;
+    }
+
+    if (task->font)
+    {
+        TTF_CloseFont(task->font);
+        task->font = NULL;
+    }
+
+    free(task);
 }
 
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
@@ -182,7 +372,7 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     }
     else
     {
-        task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE", WHITE, &task->task_text_w, &task->task_text_h);
+        task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE (PRESS SPACE!)", WHITE, &task->task_text_w, &task->task_text_h);
     }
 }
 
@@ -289,55 +479,6 @@ void update_task(Task *task, float dt) // updates task logic every frame
         }
         default:
             break;
-    }
-}
-
-void complete_task(Task *task)
-{
-    task->active = false;
-    task->type = TASK_NONE;
-    task->points += 1;
-    cleanup_task(task);
-}
-
-void cancel_task(Task *task)
-{
-    if (!task->active) return;
-
-    task->active = false;
-    task->type = TASK_NONE;
-    cleanup_task(task);
-}
-
-void cleanup_task(Task *task) // cleans non specific things
-{
-    if (task->task_text_texture)
-    {
-        SDL_DestroyTexture(task->task_text_texture);
-        task->task_text_texture = NULL;
-    }
-
-    if (task->task_image)
-    {
-        SDL_DestroyTexture(task->task_image);
-        task->task_image = NULL;
-    }
-}
-
-void destroy_task(Task *task) // cleans everything, used at the end of the game
-{
-    cleanup_task(task);
-
-    if (task->global_text_texture)
-    {
-        SDL_DestroyTexture(task->global_text_texture);
-        task->global_text_texture = NULL;
-    }
-
-    if (task->font)
-    {
-        TTF_CloseFont(task->font);
-        task->font = NULL;
     }
 }
 
@@ -480,12 +621,12 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
         case TASK_REFLEX:
         {
-            // --- BAR BACKGROUND ---
+            // bar background
             SDL_Rect bar_bg = {520, 350, 300, 40};
             SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
             SDL_RenderFillRect(renderer, &bar_bg);
 
-            // --- SUCCESS ZONE ---
+            // success zone
             int success_x = 520 + (int)(task->success_min * 300);
             int success_w = (int)((task->success_max - task->success_min) * 300);
 
@@ -493,14 +634,14 @@ void render_task(SDL_Renderer *renderer, Task *task)
             SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
             SDL_RenderFillRect(renderer, &success_zone);
 
-            // --- MOVING CURSOR ---
+            // moving cursor
             int cursor_x = 520 + (int)(task->cursor_pos * 300);
 
             SDL_Rect cursor = {cursor_x - 5, 345, 10, 50};
             SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
             SDL_RenderFillRect(renderer, &cursor);
 
-            // --- PROGRESS TEXT (success count) ---
+            // progress text (success count)
             char buffer[32];
             snprintf(buffer, sizeof(buffer), "%d / %d", task->success_count, task->success_target);
 
@@ -519,7 +660,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 SDL_FreeSurface(surface);
             }
 
-            // --- INSTRUCTION TEXT ---
+            // instruction text
             if (task->task_text_texture)
             {
                 SDL_Rect textRect2 = {520, 300, task->task_text_w, task->task_text_h};
