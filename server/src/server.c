@@ -141,6 +141,35 @@ int designateImpostor(gameState *state)
     return -1; // alla aktiva spelare gicks igenom utan match (borde inte hända)
 }
 
+void check_win_condition(gameState *state)
+{
+    int alive_impostor = 0;
+    int alive_crewmates = 0;
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (state->players[i].isAlive)
+        {
+            alive_crewmates++;
+        }
+
+        if (state->players[i].isImpostor)
+        {
+            alive_impostor++;
+        }
+        
+    } // Kolla om impostorn finns
+    if (!alive_impostor)
+    {
+        state->phase = GAME_CREWMATES_WIN;
+    }
+    else if (alive_impostor >= alive_crewmates)
+    {
+        state->phase = GAME_IMPOSTOR_WIN;
+    }
+
+    // Lägg till task win-conditions
+}
+
 void broadcastGameState(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clientAddresses, int *clientUsed)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -343,7 +372,7 @@ int main(void)
                             broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
                         }
                     }
-                }
+                }                
             }
             else if (type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
             {

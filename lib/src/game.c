@@ -168,6 +168,9 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
         if (sc == SDL_SCANCODE_4)
             start_reflex_task(task, renderer);
+        
+        if(sc == SDL_SCANCODE_5)
+            start_logical_order_task(task, renderer);
 
         // cancel task
         if (sc == SDL_SCANCODE_Q)
@@ -181,13 +184,16 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
         {
             task_handle_key(task, event->key.keysym.sym);
         }
+
     }
 
     // handle click input
     if (event->type == SDL_MOUSEBUTTONDOWN)
     {
         task_handle_click(task);
+        task_handle_logical_order(task, event->button.x, event->button.y, renderer); 
     }
+
 }
 
 void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
@@ -322,9 +328,9 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderDrawRect(renderer, &map_rect);
 
     // Exempelmarkörer för tasks
-    SDL_Rect marker1 = {350, 220, 24, 24};
-    SDL_Rect marker2 = {620, 360, 24, 24};
-    SDL_Rect marker3 = {840, 250, 24, 24};
+    SDL_Rect marker1 = {320, 140, 24, 24};
+    SDL_Rect marker2 = {453, 310, 24, 24};
+    SDL_Rect marker3 = {835, 310, 24, 24};
 
     SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
     SDL_RenderFillRect(renderer, &marker1);
@@ -369,7 +375,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
                 }
                 else
                 {
-                    send_leave_message(client->socket, client->serverAddr);
+                    send_leave_message(client);
                     *running = false;
                 }
             }
@@ -456,6 +462,16 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         SDL_RenderPresent(renderer);
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
+        return true;
+    }
+    else if (state->phase == GAME_CREWMATES_WIN)
+    {
+        // Rendera crewmate win screen
+        return true;
+    }
+    else if (state->phase == GAME_IMPOSTOR_WIN)
+    {
+        //Rendera impostor win screen
         return true;
     }
     return false;
