@@ -301,9 +301,9 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderDrawRect(renderer, &map_rect);
 
     // Exempelmarkörer för tasks
-    SDL_Rect marker1 = {350, 220, 24, 24};
-    SDL_Rect marker2 = {620, 360, 24, 24};
-    SDL_Rect marker3 = {840, 250, 24, 24};
+    SDL_Rect marker1 = {320, 140, 24, 24};
+    SDL_Rect marker2 = {453, 310, 24, 24};
+    SDL_Rect marker3 = {835, 310, 24, 24};
 
     SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
     SDL_RenderFillRect(renderer, &marker1);
