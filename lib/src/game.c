@@ -349,7 +349,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
                 }
                 else
                 {
-                    send_leave_message(client->socket, client->serverAddr);
+                    send_leave_message(client);
                     *running = false;
                 }
             }
@@ -428,6 +428,16 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         SDL_RenderPresent(renderer);
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
+        return true;
+    }
+    else if (state->phase == GAME_CREWMATES_WIN)
+    {
+        // Rendera crewmate win screen
+        return true;
+    }
+    else if (state->phase == GAME_IMPOSTOR_WIN)
+    {
+        //Rendera impostor win screen
         return true;
     }
     return false;
