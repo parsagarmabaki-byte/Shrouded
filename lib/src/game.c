@@ -190,11 +190,19 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
     }
 }
 
-void report_body_events(Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
+void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
 {
     if (event->type == SDL_KEYDOWN)
     {
         if (event->key.keysym.scancode == SDL_SCANCODE_R && target_report_body(bodies, *player) != -1 && state->players[state->local_player_id].isAlive)
+        {
+            request_report_body(client, state);
+        }
+    }
+    else if (event->type == SDL_MOUSEBUTTONDOWN)
+    {
+        SDL_Rect report_button = {955, 455, 120, 120};
+        if (is_hovering(renderer, report_button))
         {
             request_report_body(client, state);
         }
@@ -226,7 +234,7 @@ void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *re
 
 void kill_events(Client *client, SDL_Renderer *renderer, gameState *state, SDL_Event *event, bool kill_cooldown, bool is_local_impostor)
 {
-    SDL_Rect kill_button = {1050, 520, 200, 200};
+    SDL_Rect kill_button = {1077, 550, 150, 145};
     if (event->type == SDL_KEYDOWN)
     {
         if (!kill_cooldown && is_local_impostor)
@@ -374,7 +382,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
         task_events(renderer, event, task);
         kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
         emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
-        report_body_events(client, state, event, bodies, player);
+        report_body_events(renderer, client, state, event, bodies, player);
     }
 }
 

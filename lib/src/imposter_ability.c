@@ -8,7 +8,8 @@
 void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
 {
     SDL_Rect kill_button = {1050, 520, 200, 200};
-
+    // SDL_Rect button = {1077, 550, 150, 145};
+    // SDL_RenderFillRect(renderer,&button);
     if (handle_kill_request(&state, killer_id) != -1 && !kill_cooldown)
 
         SDL_RenderCopy(renderer, kill_button_active, NULL, &kill_button);
@@ -210,14 +211,14 @@ void render_kill_animation(SDL_Renderer *renderer, KillAnimation bodies[MAX_PLAY
             PLAYER_SIZE,
             PLAYER_SIZE};
 
-        printf("\nRENDER BODY client=%d i=%d active=%d x=%.1f y=%.1f cam=(%.1f, %.1f)\n",
-            //    /* skicka in local_id hit till funktionen om du måste */,
-               i,i,
-               bodies[i].active,
-               bodies[i].x,
-               bodies[i].y,
-               cam->x,
-               cam->y);
+        // printf("\nRENDER BODY client=%d i=%d active=%d x=%.1f y=%.1f cam=(%.1f, %.1f)\n",
+        //     //    /* skicka in local_id hit till funktionen om du måste */,
+        //        i,i,
+        //        bodies[i].active,
+        //        bodies[i].x,
+        //        bodies[i].y,
+        //        cam->x,
+        //        cam->y);
         SDL_RenderCopy(renderer, assets.dead_skins[bodies[i].victim_id], &src, &dst);
     }
 }

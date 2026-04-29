@@ -38,6 +38,7 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
 static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets,clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task,int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open);
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
 void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player,KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
+void report_body_events(SDL_Renderer *renderer,Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player);
 
 
 
