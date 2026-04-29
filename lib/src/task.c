@@ -57,10 +57,12 @@ struct Task {           // task ADT struct
     int sequence_length;
     int input_index;
     int round;
+    float start_delay;
     float flash_timer; 
     int flash_index;
     float flash_interval;
     bool showing_sequence;
+    bool flash_visible;
 };
 
 // handle input events for tasks
@@ -165,7 +167,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
             {
                 // FAIL → full reset like reflex
                 task->round = 0;
-                task->sequence_length = 5;
+                task->sequence_length = 4;
                 task->flash_interval = 0.6f;
 
                 task->flash_index = 0;
@@ -510,10 +512,12 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
     task->active = true;
 
     task->round = 0;
-    task->sequence_length = 5;
+    task->sequence_length = 4;
+    task->start_delay = 2.0f;
 
+    task->flash_visible = false;
     task->flash_interval = 0.6f;
-    task->flash_index = 0;
+    task->flash_index = -1;
     task->input_index = 0;
 
     task->showing_sequence = true;
@@ -538,7 +542,7 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
         task->task_text_texture = create_text_texture(
             renderer,
             task->font,
-            "REMEMBER THE SEQUENCE (ARROW KEYS!)",
+            "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE)",
             WHITE,
             &task->task_text_w,
             &task->task_text_h
@@ -591,19 +595,37 @@ void update_task(Task *task, float dt) // updates task logic every frame
         }
         case TASK_MEMORY:
         {
+            if (task->start_delay > 0.0f)
+            {
+                task->start_delay -= dt;
+                return;
+            }
             if (task->showing_sequence)
             {
                 task->flash_timer -= dt;
 
-                if (task->flash_timer <= 0.0f)
+                while (task->flash_timer <= 0.0f && task->showing_sequence)
                 {
-                    task->flash_index++;
-                    task->flash_timer = task->flash_interval;
-
-                    if (task->flash_index >= task->sequence_length)
+                    if (task->flash_visible)
                     {
-                        task->showing_sequence = false;
-                        task->input_index = 0;
+                        // go invisible
+                        task->flash_visible = false;
+                        task->flash_timer += task->flash_interval * 0.5f;
+                    }
+                    else
+                    {
+                        // next arrow
+                        task->flash_visible = true;
+                        task->flash_index++;
+
+                        if (task->flash_index >= task->sequence_length)
+                        {
+                            task->showing_sequence = false;
+                            task->input_index = 0;
+                            break;
+                        }
+
+                        task->flash_timer += task->flash_interval;
                     }
                 }
             }
@@ -808,7 +830,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             // SHOWING PHASE
             if (task->showing_sequence)
             {
-                if (task->flash_index < task->sequence_length)
+                if (task->flash_visible && task->flash_index < task->sequence_length)
                 {
                     const char *symbol = arrows[task->sequence[task->flash_index]];
 
@@ -845,6 +867,19 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 SDL_FreeSurface(surface);
                 SDL_DestroyTexture(tex);
             }
+
+            // round text
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "Round %d / 3", task->round + 1);
+
+            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
+            SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
+
+            SDL_Rect r = {520, 450, surface->w, surface->h};
+            SDL_RenderCopy(renderer, tex, NULL, &r);
+
+            SDL_FreeSurface(surface);
+            SDL_DestroyTexture(tex);
 
             // instruction text
             if (task->task_text_texture)
