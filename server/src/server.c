@@ -372,9 +372,7 @@ int main(void)
                             broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
                         }
                     }
-                }
-                check_win_condition(&state);
-                
+                }                
             }
             else if (type == MSG_EMERGENCY_MEETING)
             {
