@@ -210,6 +210,14 @@ void render_kill_animation(SDL_Renderer *renderer, KillAnimation bodies[MAX_PLAY
             PLAYER_SIZE,
             PLAYER_SIZE};
 
+        printf("\nRENDER BODY client=%d i=%d active=%d x=%.1f y=%.1f cam=(%.1f, %.1f)\n",
+            //    /* skicka in local_id hit till funktionen om du måste */,
+               i,i,
+               bodies[i].active,
+               bodies[i].x,
+               bodies[i].y,
+               cam->x,
+               cam->y);
         SDL_RenderCopy(renderer, assets.dead_skins[bodies[i].victim_id], &src, &dst);
     }
 }

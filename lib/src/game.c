@@ -409,26 +409,28 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == GAME_INFO_MEETING)
     {
-        if (local_id != state->emergency_meeting_reported_id)
-        {
-            SDL_Rect meeting_info_rect;
-            meeting_info_rect.w = 1041;
-            meeting_info_rect.h = 641;
-            meeting_info_rect.x = (LOGICAL_SCREEN_WIDTH / 2) - meeting_info_rect.w / 2;
-            meeting_info_rect.y = (LOGICAL_SCREEN_HEIGHT / 2) - meeting_info_rect.h / 2;
-            SDL_Texture *meeting_info_texture = NULL;
 
-            if (state->type == MSG_EMERGENCY_MEETING)
-            {
-                meeting_info_texture = assets.emergency_meeting_info;
-            }
-            else if (state->type == MSG_BODY_FOUND)
-            {
-                meeting_info_texture = assets.dead_body_reported_info;
-            }
-            SDL_RenderCopy(renderer, meeting_info_texture, NULL, &meeting_info_rect);
-            SDL_RenderPresent(renderer);
+        SDL_Rect meeting_info_rect;
+        meeting_info_rect.w = 1041;
+        meeting_info_rect.h = 641;
+        meeting_info_rect.x = (LOGICAL_SCREEN_WIDTH / 2) - meeting_info_rect.w / 2;
+        meeting_info_rect.y = (LOGICAL_SCREEN_HEIGHT / 2) - meeting_info_rect.h / 2;
+        SDL_Texture *meeting_info_texture = NULL;
+
+        if (state->type == MSG_EMERGENCY_MEETING)
+        {
+            meeting_info_texture = assets.emergency_meeting_info;
         }
+        else if (state->type == MSG_BODY_FOUND)
+        {
+            meeting_info_texture = assets.dead_body_reported_info;
+            for (int i = 0; i < MAX_PLAYERS; i++)
+            {
+                bodies[i].active = false;
+            }
+        }
+        SDL_RenderCopy(renderer, meeting_info_texture, NULL, &meeting_info_rect);
+        SDL_RenderPresent(renderer);
 
         collect_packets(client, state, bodies);
         return true;
@@ -447,14 +449,6 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
         return true;
-    }
-    if (state->type == MSG_BODY_FOUND)
-    {
-        for (int i = 0; i<MAX_PLAYERS; i++)
-        {
-            state->type = MSG_GAME_STATE;
-            bodies[i].active = false;
-        }
     }
     return false;
 }

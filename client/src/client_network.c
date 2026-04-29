@@ -4,7 +4,6 @@
 #include "game.h"
 #include "imposter_ability.h"
 
-
 static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, clientInput *input)
 {
     UDPpacket *packet = create_packet(512);
@@ -96,7 +95,6 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
             {
                 memcpy(state, client->recievepacket->data, sizeof(gameState));
             }
-            
         }
         else if (type == MSG_KILL_EVENT)
         {
@@ -108,11 +106,17 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
                 printf("Kill received: killer=%d victim=%d\n",
                        msg.killer_id, msg.victim_id);
 
-            // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
-            start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
-                     state->players[msg.victim_id].x,
-                     state->players[msg.victim_id].y);
+                // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
+                start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
+                                     state->players[msg.victim_id].x,
+                                     state->players[msg.victim_id].y);
+                printf("\nCLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
+                       state->local_player_id,
+                       msg.victim_id,
+                       bodies[msg.victim_id].active,
+                       bodies[msg.victim_id].x,
+                       bodies[msg.victim_id].y);
+            }
         }
     }
-}
 }

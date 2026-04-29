@@ -315,11 +315,11 @@ int main(void)
                     {
                         memcpy(&input, receive_packet->data, sizeof(clientInput));
                         int sender_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
-                        if (sender_id >= 0){
+                        if (sender_id >= 0)
+                        {
                             input.player_id = sender_id;
                             lastInput[sender_id] = input;
                         }
-                        
                     }
                 }
             }
@@ -354,7 +354,10 @@ int main(void)
                     {
                         state.phase = GAME_INFO_MEETING;
                         state.type = type;
-                        state.players[local_id].emergency_meeting = 0;
+                        if (type == MSG_EMERGENCY_MEETING)
+                        {
+                            state.players[local_id].emergency_meeting = 0;
+                        }
                         state.emergency_meeting_reported_id = local_id;
                         printf("[SERVER] Accept: player %d started an emergency meeting.\n", local_id);
                         phase_time = SDL_GetTicks64(); // TIDSSTÄMPEL
