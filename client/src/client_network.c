@@ -1,9 +1,89 @@
 #include <SDL2/SDL_net.h>
 #include <stdio.h>
+#include <string.h>
+#include "network.h"
 #include "network_data.h"
 #include "game.h"
 #include "imposter_ability.h"
 
+int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size)
+{
+    if (!init_network_socket(&client->socket, 0))
+    {
+        snprintf(error_message, error_size, "Could not open client socket");
+        return 0;
+    }
+
+    if (SDLNet_ResolveHost(&client->serverAddr, server_ip, SERVER_PORT) != 0)
+    {
+        snprintf(error_message, error_size, "Invalid IP or unreachable host");
+        printf("SDLNet_ResolveHost error: %s\n", SDLNet_GetError());
+        SDLNet_UDP_Close(client->socket);
+        client->socket = NULL;
+        SDLNet_Quit();
+        return 0;
+    }
+
+    client->recievepacket = create_packet(512);
+    if (!client->recievepacket)
+    {
+        snprintf(error_message, error_size, "Could not allocate receive packet");
+        SDLNet_UDP_Close(client->socket);
+        client->socket = NULL;
+        SDLNet_Quit();
+        return 0;
+    }
+
+    error_message[0] = '\0';
+    return 1;
+}
+
+void clean_client(Client *client)
+{
+    if (client->recievepacket)
+    {
+        SDLNet_FreePacket(client->recievepacket);
+        client->recievepacket = NULL;
+    }
+    if (client->socket)
+    {
+        SDLNet_UDP_Close(client->socket);
+        client->socket = NULL;
+    }
+    SDLNet_Quit();
+}
+
+static int send_client_message(UDPsocket socket, IPaddress server_addr, MessageType type)
+{
+    UDPpacket *packet = create_packet(512);
+    if (!packet)
+    {
+        return 0;
+    }
+
+    if (!send_packet_data(socket, packet, server_addr, &type, sizeof(type)))
+    {
+        SDLNet_FreePacket(packet);
+        return 0;
+    }
+
+    SDLNet_FreePacket(packet);
+    return 1;
+}
+
+int send_join(Client *client)
+{
+    joinMessage join = {0};
+    join.type = MSG_JOIN;
+    return send_client_message(client->socket, client->serverAddr, join.type);
+}
+
+int send_start_game(Client *client)
+{
+    startGameMessage start = {0};
+    start.type = MSG_START_GAME;
+    return send_client_message(client->socket, client->serverAddr, start.type);
+}
 
 static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, clientInput *input)
 {
@@ -23,7 +103,7 @@ static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, cli
     return 1;
 }
 
-int send_leave_message(UDPsocket socket, IPaddress server_addr)
+int send_leave_message(Client *client)
 {
     leaveMessage leave = {0};
     leave.type = MSG_LEAVE;
@@ -34,7 +114,7 @@ int send_leave_message(UDPsocket socket, IPaddress server_addr)
         return 0;
     }
 
-    if (!send_packet_data(socket, packet, server_addr, &leave, sizeof(leave)))
+    if (!send_packet_data(client->socket, packet, client->serverAddr, &leave, sizeof(leave)))
     {
         SDLNet_FreePacket(packet);
         return 0;

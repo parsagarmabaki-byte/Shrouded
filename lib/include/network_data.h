@@ -86,7 +86,9 @@ typedef enum{
     GAME_RUNNING,
     GAME_SHOW_ROLE,
     GAME_INFO_MEETING,
-    GAME_MEETING
+    GAME_MEETING,
+    GAME_CREWMATES_WIN,
+    GAME_IMPOSTOR_WIN
 } gamePhase;
 
 typedef struct {
