@@ -49,6 +49,7 @@ struct Task {           // task ADT struct
     // TASK_LOGICAL_ORDER specific
     int numbers[5];
     int sortedNumbers[5];
+    int next_expected_idx;
     SDL_Texture *number_textures[5];
     SDL_Rect numbers_rect[5];
 };
@@ -226,6 +227,15 @@ void cleanup_task(Task *task) // cleans non specific things, used before startin
         SDL_DestroyTexture(task->task_image);
         task->task_image = NULL;
     }
+
+    for(int i = 0; i < 5; i++)
+    {
+        if(task->number_textures[i])
+        {
+            SDL_DestroyTexture(task->number_textures[i]);
+            task->number_textures[i] = NULL;
+        }
+    }
 }
 
 void destroy_task(Task *task) // cleans everything, used at the end of the game
@@ -377,11 +387,12 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     }
 }
 
-/*
 void start_logical_order_task(Task *task, SDL_Renderer *renderer)
 {
-    srand(time(NULL));
+    srand(time(NULL)); 
+
     cleanup_task(task);
+
     task->type = TASK_LOGICAL_ORDER;
     task->active = true;
     task->next_expected_idx = 0;
@@ -396,13 +407,14 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
         do
         {
             unique = true;
-            num = (rand() % 99) + 10;
+            num = (rand() % 100) + 1;
 
             for(int j = 0; j < i; j++)
             {
                 if(task->numbers[j] == num)
                 {
                     unique = false;
+                    break;
                 }
             }
         } while(!unique);
@@ -410,31 +422,30 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
         task->numbers[i] = num;
         task->sortedNumbers[i] = num;
 
-        char str[3];
+        char str[4]; 
         sprintf(str, "%d", num);
-        task->number_textures[i] = create_text_texture(renderer, task->font, str, white, &task->number_rects[i].w, &task->number_rects[i].h);
+        task->number_textures[i] = create_text_texture(renderer, task->font, str, white, &task->numbers_rect[i].w, &task->numbers_rect[i].h);
 
-        task->number_rects[i].x = 400 + (rand() % 400);
-        task->number_rects[i].y = 250 + (rand() % 250);
+        int start_x = 450; 
+        int spacing = 100; 
 
-        for(int i = 0; i < 4; i++)
+        task->numbers_rect[i].x = start_x + (i * spacing);
+        task->numbers_rect[i].y = 350;
+    }
+
+    for(int i = 0; i < 5 - 1; i++)
+    {
+        for(int j = 0; j < 5 - i - 1; j++)
         {
-            for(int j = 0; j < 4 - i; j++)
+            if(task->sortedNumbers[j] > task->sortedNumbers[j + 1])
             {
-                if(task->sortedNumbers[j] < task->sortedNumbers[j + 1])
-                {
-                    int tmp = task->sortedNumbers[j + 1];
-                    task->sortedNumbers[j + 1] = task->sortedNumbers[j];
-                    task->sortedNumbers[j] = tmp;
-                }
+                int tmp = task->sortedNumbers[j];
+                task->sortedNumbers[j] = task->sortedNumbers[j + 1];
+                task->sortedNumbers[j + 1] = tmp;
             }
         }
-        
     }
 }
-*/
-
-
 void update_task(Task *task, float dt) // updates task logic every frame
 {
     if (!task->active) return;
@@ -671,7 +682,67 @@ void render_task(SDL_Renderer *renderer, Task *task)
             break;
         }
 
-        default:
+        case TASK_LOGICAL_ORDER:
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                if (task->number_textures[i] != NULL)
+                {
+                    SDL_RenderCopy(renderer, task->number_textures[i], NULL, &task->numbers_rect[i]);
+                }
+            }
+            
+            // show score
+            char progress_buf[16];
+            snprintf(progress_buf, sizeof(progress_buf), "%d / 5", task->next_expected_idx);
+            SDL_Surface *surf = TTF_RenderText_Blended(task->font, progress_buf, WHITE);
+            if (surf) 
+            {
+                SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surf);
+                SDL_Rect r = {520, 450, surf->w, surf->h};
+                SDL_RenderCopy(renderer, tex, NULL, &r);
+                SDL_FreeSurface(surf);
+                SDL_DestroyTexture(tex);
+            }
+    
             break;
+        }
+
+    default:
+        break;
+    }
+}
+
+void task_handle_logical_order(Task *task, int mx, int my, SDL_Renderer *renderer)
+{
+    if (!task || !task->active || task->type != TASK_LOGICAL_ORDER)
+    {
+        return;
+    }
+
+    SDL_Point mouse_pos = {mx, my};
+
+    for (int i = 0; i < 5; i++)
+    {
+        if (task->number_textures[i] != NULL && SDL_PointInRect(&mouse_pos, &task->numbers_rect[i]))
+        {
+            if (task->numbers[i] == task->sortedNumbers[task->next_expected_idx])
+            {
+                SDL_DestroyTexture(task->number_textures[i]);
+                task->number_textures[i] = NULL;
+                task->next_expected_idx++;
+
+                if (task->next_expected_idx >= 5)
+                {
+                    complete_task(task); 
+                }
+            }
+            else
+            {
+                // Reset
+                start_logical_order_task(task, renderer);
+            }
+            break; 
+        }
     }
 }

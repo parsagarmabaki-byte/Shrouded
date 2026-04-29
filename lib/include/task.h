@@ -24,6 +24,7 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
 void start_click_task(Task *task, SDL_Renderer *renderer, int target);
 void start_type_task(Task *task, SDL_Renderer *renderer);
 void start_reflex_task(Task *task, SDL_Renderer *renderer);
+void start_logical_order_task(Task *task, SDL_Renderer *renderer);
 
 void update_task(Task *task, float dt);
 void render_task(SDL_Renderer *renderer, Task *task);
@@ -38,5 +39,6 @@ int task_get_points(Task *task);
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key);
 void task_handle_click(Task *task);
+void task_handle_logical_order(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 #endif

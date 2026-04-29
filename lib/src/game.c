@@ -167,6 +167,9 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
         if (sc == SDL_SCANCODE_4)
             start_reflex_task(task, renderer);
+        
+        if(sc == SDL_SCANCODE_5)
+            start_logical_order_task(task, renderer);
 
         // cancel task
         if (sc == SDL_SCANCODE_Q)
@@ -180,13 +183,16 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
         {
             task_handle_key(task, event->key.keysym.sym);
         }
+
     }
 
     // handle click input
     if (event->type == SDL_MOUSEBUTTONDOWN)
     {
         task_handle_click(task);
+        task_handle_logical_order(task, event->button.x, event->button.y, renderer); 
     }
+
 }
 
 void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, bool *emergency_window_open, int local_id)
