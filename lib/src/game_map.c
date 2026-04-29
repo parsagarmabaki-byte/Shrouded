@@ -5,7 +5,7 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
     SDL_Surface *surface = IMG_Load(path);
     if (!surface)
     {
-        printf("IMG_Load failed: %s\n", IMG_GetError());
+        printf("IMG_Load failed for %s: %s\n", path, IMG_GetError());
         return NULL;
     }
 
@@ -14,7 +14,7 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
 
     if (!texture)
     {
-        printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        printf("SDL_CreateTextureFromSurface failed for %s: %s\n", path, SDL_GetError());
         return NULL;
     }
 
@@ -43,6 +43,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
     asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
     asset.emergency_meeting = loading_img(renderer, "assets/images/emergency_meeting.png");
+    asset.emergency_meeting_icon = loading_img(renderer, "assets/images/meeting-ikon.png");
 
     if (!asset.emergency_meeting_info)
         printf("image not loaded");

@@ -413,7 +413,7 @@ int main(void)
             }
             else if (state.phase == GAME_INFO_MEETING)
             {
-                if (SDL_GetTicks64() - phase_time >= 3000) // NÄR 3 SEKUNDER GÅTT
+                if (SDL_GetTicks64() - phase_time >= 1500) // NÄR 3 SEKUNDER GÅTT
                 {
                     state.phase = GAME_MEETING;
                     phase_time = 0;

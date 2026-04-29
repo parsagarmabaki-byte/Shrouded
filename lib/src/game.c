@@ -168,8 +168,8 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
         if (sc == SDL_SCANCODE_4)
             start_reflex_task(task, renderer);
-        
-        if(sc == SDL_SCANCODE_5)
+
+        if (sc == SDL_SCANCODE_5)
             start_logical_order_task(task, renderer);
 
         // cancel task
@@ -184,16 +184,14 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
         {
             task_handle_key(task, event->key.keysym.sym);
         }
-
     }
 
     // handle click input
     if (event->type == SDL_MOUSEBUTTONDOWN)
     {
         task_handle_click(task);
-        task_handle_logical_order(task, event->button.x, event->button.y, renderer); 
+        task_handle_logical_order(task, event->button.x, event->button.y, renderer);
     }
-
 }
 
 void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
@@ -451,15 +449,17 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == GAME_MEETING)
     {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+        // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        // SDL_RenderClear(renderer);
 
-        if (assets.emergency_meeting != NULL)
-        {
-            SDL_RenderCopy(renderer, assets.emergency_meeting, NULL, NULL);
-        }
+        // if (assets.emergency_meeting != NULL)
+        // {
+        //     SDL_RenderCopy(renderer, assets.emergency_meeting, NULL, NULL);
+        // }
 
-        SDL_RenderPresent(renderer);
+        // SDL_RenderPresent(renderer);
+        int player_reported_id = state->emergency_meeting_reported_id;
+        render_emergency_meeting(renderer, assets, player_reported_id);
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
         return true;
@@ -471,10 +471,37 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == GAME_IMPOSTOR_WIN)
     {
-        //Rendera impostor win screen
+        // Rendera impostor win screen
         return true;
     }
     return false;
+}
+
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, int id_reported)
+{
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, assets.emergency_meeting, NULL, NULL);
+    render_emergency_icon(renderer, assets.emergency_meeting_icon, id_reported);
+
+    SDL_RenderPresent(renderer);
+}
+
+void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported)
+{
+    int start_x = 540;
+    int start_y = 200;
+
+    if (id_reported < 0 || id_reported >= 6)
+        return;
+
+    int col = id_reported % 2;
+    int row = id_reported / 2;
+
+    int x_pos = start_x + col * col_dx;
+    int y_pos = start_y + row * row_dy;
+    SDL_Rect icon_pos = {x_pos, y_pos, 50, 50};
+    SDL_RenderCopy(renderer, icon, NULL, &icon_pos);
 }
 
 void update_player_direction(Player *player, clientInput *user_input)
