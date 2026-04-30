@@ -836,6 +836,33 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
             break;
         }
+        
+        case TASK_LOGICAL_ORDER:
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                if (task->number_textures[i] != NULL)
+                {
+                    SDL_RenderCopy(renderer, task->number_textures[i], NULL, &task->numbers_rect[i]);
+                }
+            }
+            
+            // show score
+            char progress_buf[16];
+            snprintf(progress_buf, sizeof(progress_buf), "%d / 5", task->next_expected_idx);
+            SDL_Surface *surf = TTF_RenderText_Blended(task->font, progress_buf, WHITE);
+            if (surf) 
+            {
+                SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surf);
+                SDL_Rect r = {520, 450, surf->w, surf->h};
+                SDL_RenderCopy(renderer, tex, NULL, &r);
+                SDL_FreeSurface(surf);
+                SDL_DestroyTexture(tex);
+            }
+    
+            break;
+        }
+
         case TASK_MEMORY:
         {
             const char *arrows[] = {"UP", "DOWN", "LEFT", "RIGHT"};
@@ -901,32 +928,6 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 SDL_RenderCopy(renderer, task->task_text_texture, NULL, &t);
             }
 
-            break;
-        }
-
-        case TASK_LOGICAL_ORDER:
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                if (task->number_textures[i] != NULL)
-                {
-                    SDL_RenderCopy(renderer, task->number_textures[i], NULL, &task->numbers_rect[i]);
-                }
-            }
-            
-            // show score
-            char progress_buf[16];
-            snprintf(progress_buf, sizeof(progress_buf), "%d / 5", task->next_expected_idx);
-            SDL_Surface *surf = TTF_RenderText_Blended(task->font, progress_buf, WHITE);
-            if (surf) 
-            {
-                SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surf);
-                SDL_Rect r = {520, 450, surf->w, surf->h};
-                SDL_RenderCopy(renderer, tex, NULL, &r);
-                SDL_FreeSurface(surf);
-                SDL_DestroyTexture(tex);
-            }
-    
             break;
         }
 
