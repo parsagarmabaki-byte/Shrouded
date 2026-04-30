@@ -424,7 +424,7 @@ int main(void)
             }
             else if (state.phase == GAME_MEETING)
             {
-                if (SDL_GetTicks64() - phase_time >= 3000) // NÄR 15 SEKUNDER GÅTT
+                if (SDL_GetTicks64() - phase_time >= 10000) // NÄR 15 SEKUNDER GÅTT
                 {
                     state.phase = GAME_RUNNING;
                     spawn_players(&state);

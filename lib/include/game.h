@@ -41,6 +41,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
 void report_body_events(SDL_Renderer *renderer,Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player);
 void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported);
 void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported);
+void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state);
 
 
 
