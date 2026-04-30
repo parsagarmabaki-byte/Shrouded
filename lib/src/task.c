@@ -140,7 +140,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
 
                 if (task->input_index >= task->sequence_length)
                 {
-                    // SUCCESS → next round
+                    // next round if success
                     task->round++;
 
                     if (task->round >= 3)
@@ -165,7 +165,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
             }
             else
             {
-                // FAIL → full reset like reflex
+                // reset if failed
                 task->round = 0;
                 task->sequence_length = 4;
                 task->flash_interval = 0.6f;
@@ -827,7 +827,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
         {
             const char *arrows[] = {"UP", "DOWN", "LEFT", "RIGHT"};
 
-            // SHOWING PHASE
+            // show sequence phase
             if (task->showing_sequence)
             {
                 if (task->flash_visible && task->flash_index < task->sequence_length)
@@ -846,13 +846,13 @@ void render_task(SDL_Renderer *renderer, Task *task)
             }
             else
             {
-                // INPUT PHASE (like TYPE task)
+                // input phase
                 char buffer[16];
 
                 for (int i = 0; i < task->sequence_length; i++)
                 {
                     if (i < task->input_index)
-                        buffer[i] = 'X'; // or show correct arrows later
+                        buffer[i] = 'X';
                     else
                         buffer[i] = '_';
                 }
