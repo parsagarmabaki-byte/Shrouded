@@ -42,7 +42,8 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.emergency_button_view = loading_img(renderer, "assets/images/emergency_button_view.png");
     asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
     asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
-    asset.emergency_meeting = loading_img(renderer, "assets/images/emergency_meeting.png");
+    asset.emergency_meeting_alive = loading_img(renderer, "assets/images/emergency_meeting_alive.png");
+    asset.emergency_meeting_dead = loading_img(renderer, "assets/images/emergency_meeting_dead.png");
     asset.emergency_meeting_icon = loading_img(renderer, "assets/images/meeting-ikon.png");
 
     if (!asset.emergency_meeting_info)
@@ -53,12 +54,15 @@ GameAssets load_assets(SDL_Renderer *renderer)
     {
         snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
         asset.skins[i] = loading_img(renderer, path);
-    }
-    
-    for (int i = 0; i < PLAYER_SLOTS; i++)
-    {
+        
         snprintf(path, sizeof(path), "assets/sprites/dead_skin%d.png", i);
         asset.dead_skins[i] = loading_img(renderer, path);
+        
+        snprintf(path, sizeof(path), "assets/images/player%d_alive.png", i+1);
+        asset.players_alive_banner[i] = loading_img(renderer, path);
+        
+        snprintf(path, sizeof(path), "assets/images/player%d_dead_transparent.png", i+1);
+        asset.players_dead_banner[i] = loading_img(renderer, path);
     }
     return asset;   
 }
@@ -94,7 +98,7 @@ void destroy_assets(GameAssets *assets)
     destroy_texture(&assets->emergency_button_view);
     destroy_texture(&assets->emergency_meeting_info);
     destroy_texture(&assets->dead_body_reported_info);
-    destroy_texture(&assets->emergency_meeting);
+    destroy_texture(&assets->emergency_meeting_alive);
 }
 
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)

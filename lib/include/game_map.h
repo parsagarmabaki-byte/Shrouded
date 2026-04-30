@@ -33,8 +33,14 @@ typedef struct
     SDL_Texture *emergency_button_view;
     SDL_Texture *emergency_meeting_info;
     SDL_Texture *dead_body_reported_info;
-    SDL_Texture *emergency_meeting;
+
+    SDL_Texture *emergency_meeting_alive;
+    SDL_Texture *emergency_meeting_dead;
+    
     SDL_Texture *emergency_meeting_icon;
+    
+    SDL_Texture *players_alive_banner[PLAYER_SLOTS];
+    SDL_Texture *players_dead_banner[PLAYER_SLOTS];
     
 } GameAssets;
 

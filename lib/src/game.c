@@ -459,7 +459,7 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
 
         // SDL_RenderPresent(renderer);
         int player_reported_id = state->emergency_meeting_reported_id;
-        render_emergency_meeting(renderer, assets, player_reported_id);
+        render_emergency_meeting(renderer, assets, state, player_reported_id);
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
         return true;
@@ -477,14 +477,28 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     return false;
 }
 
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, int id_reported)
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, assets.emergency_meeting, NULL, NULL);
+    SDL_Texture *map_texture;
+    if (state->players[state->local_player_id].isAlive)
+        map_texture = assets.emergency_meeting_alive;
+    else if (!state->players[state->local_player_id].isAlive)
+    {
+        printf("\ni am dead\n");
+        map_texture = assets.emergency_meeting_dead;
+    }
+    SDL_RenderCopy(renderer, map_texture, NULL, NULL);
     render_emergency_icon(renderer, assets.emergency_meeting_icon, id_reported);
 
     SDL_RenderPresent(renderer);
+}
+
+void render_banners(SDL_Renderer *renderer, GameAssets assets, int id_reported)
+{
+    SDL_Rect banner = {240, 170, 350, 109};
+    SDL_RenderCopy(renderer, assets.players_alive_banner[1], NULL, &banner);
 }
 
 void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported)
