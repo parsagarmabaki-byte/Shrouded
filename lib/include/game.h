@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "task.h"
 #include "kill_animation.h"
 #include "imposter_ability.h"

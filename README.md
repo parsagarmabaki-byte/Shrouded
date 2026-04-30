@@ -10,31 +10,52 @@ An Among Us-inspired multiplayer game built in C with SDL2, developed for CM1008
 
 ```
 shrouded/
+├── Makefile
+├── README.md
 ├── assets/
+│   ├── SFX/
 │   ├── fonts/
 │   ├── images/
 │   ├── lobbyscreen/
 │   └── sprites/
 ├── client/
-│   └── src/client.c          ← entry point: lobby loop, then hands off to runGame()
+│   └── src/
+│       ├── client.c          ← client entry point: connection prompt, lobby loop, then runGame()
+│       └── client_network.c  ← client-side UDP init, join/leave/start/input packets, packet collection
 ├── server/
-│   └── src/server.c          ← authoritative game logic, 60fps tick, broadcasts state
+│   └── src/
+│       └── server.c          ← authoritative game logic, 60fps tick, broadcasts state
 ├── test_files/
-│   └── test_player_movement.c ← standalone movement test (no network)
+│   ├── test_game_map.c       ← standalone map/camera test
+│   └── test_player_movement.c ← standalone movement test
 └── lib/
     ├── include/
+    │   ├── SFX.h             ← audio loading/playback helpers
+    │   ├── client_network.h  ← client networking API used by client/game code
+    │   ├── emergency_meeting.h ← emergency meeting UI and request helpers
+    │   ├── game.h            ← game loop, client-side prediction, rendering, event handling
+    │   ├── game_map.h        ← map assets, rendering, camera follow
+    │   ├── imposter_ability.h ← kill/report ability logic and rendering
+    │   ├── kill_animation.h  ← kill/body animation data
+    │   ├── lobby.h           ← lobby screen and server-address prompt
+    │   ├── network.h         ← generic UDP socket/packet helpers
     │   ├── network_data.h    ← shared packet structs (both sides include this)
-    │   ├── network.h         ← UDP send/receive wrappers
-    │   ├── lobby.h           ← lobby screen (SDL init, waiting-for-players UI)
-    │   ├── game.h            ← game loop, client-side prediction, rendering
-    │   ├── game_map.h        ← map rendering, camera follow
-    │   └── player_movement.h ← Player struct, animation, renderPlayer()
+    │   ├── player_movement.h ← Player struct, movement, animation, renderPlayer()
+    │   ├── task.h            ← task ADT and task minigames
+    │   ├── text.h            ← reusable text rendering helpers
+    │   └── wall_data.h       ← collision/wall-map data
     └── src/
-        ├── network.c
-        ├── lobby.c
+        ├── SFX.c
+        ├── emergency_meeting.c
         ├── game.c
         ├── game_map.c
-        └── player_movement.c
+        ├── imposter_ability.c
+        ├── lobby.c
+        ├── network.c
+        ├── player_movement.c
+        ├── task.c
+        ├── text.c
+        └── wall_data.c
 ```
 
 ---

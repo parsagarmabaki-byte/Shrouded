@@ -52,6 +52,18 @@ struct Task {           // task ADT struct
     int next_expected_idx;
     SDL_Texture *number_textures[5];
     SDL_Rect numbers_rect[5];
+
+    // TASK_MEMORY specific
+    int sequence[8];        // directions (0–3)
+    int sequence_length;
+    int input_index;
+    int round;
+    float start_delay;
+    float flash_timer; 
+    int flash_index;
+    float flash_interval;
+    bool showing_sequence;
+    bool flash_visible;
 };
 
 // handle input events for tasks
@@ -110,6 +122,65 @@ void task_handle_key(Task *task, SDL_Keycode key)
             task->current_index++;
         else
             task->current_index = 0;
+    }
+
+    if (task->type == TASK_MEMORY && !task->showing_sequence)
+    {
+        int input = -1;
+
+        if (key == SDLK_UP) input = 0;
+        if (key == SDLK_DOWN) input = 1;
+        if (key == SDLK_LEFT) input = 2;
+        if (key == SDLK_RIGHT) input = 3;
+
+        if (input != -1)
+        {
+            if (input == task->sequence[task->input_index])
+            {
+                task->input_index++;
+
+                if (task->input_index >= task->sequence_length)
+                {
+                    // next round if success
+                    task->round++;
+
+                    if (task->round >= 3)
+                    {
+                        complete_task(task);
+                    }
+                    else
+                    {
+                        task->sequence_length++;
+                        task->flash_interval *= 0.8f;
+
+                        task->flash_index = 0;
+                        task->showing_sequence = true;
+                        task->flash_timer = task->flash_interval;
+
+                        for (int i = 0; i < task->sequence_length; i++)
+                        {
+                            task->sequence[i] = rand() % 4;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // reset if failed
+                task->round = 0;
+                task->sequence_length = 4;
+                task->flash_interval = 0.6f;
+
+                task->flash_index = 0;
+                task->showing_sequence = true;
+                task->flash_timer = task->flash_interval;
+
+                for (int i = 0; i < task->sequence_length; i++)
+                {
+                    task->sequence[i] = rand() % 4;
+                }
+            }
+        }
     }
 }
 
@@ -446,6 +517,52 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
         }
     }
 }
+
+void start_memory_task(Task *task, SDL_Renderer *renderer)
+{
+    cleanup_task(task);
+    task->type = TASK_MEMORY;
+    task->active = true;
+
+    task->round = 0;
+    task->sequence_length = 4;
+    task->start_delay = 2.0f;
+
+    task->flash_visible = false;
+    task->flash_interval = 0.6f;
+    task->flash_index = -1;
+    task->input_index = 0;
+
+    task->showing_sequence = true;
+    task->flash_timer = task->flash_interval;
+
+    // generate sequence
+    for (int i = 0; i < task->sequence_length; i++)
+    {
+        task->sequence[i] = rand() % 4;
+    }
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/twocrystals.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+    }
+
+    if (task->font)
+    {
+        task->task_text_texture = create_text_texture(
+            renderer,
+            task->font,
+            "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE)",
+            WHITE,
+            &task->task_text_w,
+            &task->task_text_h
+        );
+    }
+}
+
 void update_task(Task *task, float dt) // updates task logic every frame
 {
     if (!task->active) return;
@@ -486,6 +603,44 @@ void update_task(Task *task, float dt) // updates task logic every frame
             {
                 task->cursor_pos = 0.0f;
                 task->direction = 1;
+            }
+            break;
+        }
+        case TASK_MEMORY:
+        {
+            if (task->start_delay > 0.0f)
+            {
+                task->start_delay -= dt;
+                return;
+            }
+            if (task->showing_sequence)
+            {
+                task->flash_timer -= dt;
+
+                while (task->flash_timer <= 0.0f && task->showing_sequence)
+                {
+                    if (task->flash_visible)
+                    {
+                        // go invisible
+                        task->flash_visible = false;
+                        task->flash_timer += task->flash_interval * 0.5f;
+                    }
+                    else
+                    {
+                        // next arrow
+                        task->flash_visible = true;
+                        task->flash_index++;
+
+                        if (task->flash_index >= task->sequence_length)
+                        {
+                            task->showing_sequence = false;
+                            task->input_index = 0;
+                            break;
+                        }
+
+                        task->flash_timer += task->flash_interval;
+                    }
+                }
             }
             break;
         }
@@ -681,7 +836,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
             break;
         }
-
+        
         case TASK_LOGICAL_ORDER:
         {
             for (int i = 0; i < 5; i++)
@@ -705,6 +860,74 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 SDL_DestroyTexture(tex);
             }
     
+            break;
+        }
+
+        case TASK_MEMORY:
+        {
+            const char *arrows[] = {"UP", "DOWN", "LEFT", "RIGHT"};
+
+            // show sequence phase
+            if (task->showing_sequence)
+            {
+                if (task->flash_visible && task->flash_index < task->sequence_length)
+                {
+                    const char *symbol = arrows[task->sequence[task->flash_index]];
+
+                    SDL_Surface *surface = TTF_RenderText_Blended(task->font, symbol, WHITE);
+                    SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
+
+                    SDL_Rect r = {650, 350, surface->w, surface->h};
+                    SDL_RenderCopy(renderer, tex, NULL, &r);
+
+                    SDL_FreeSurface(surface);
+                    SDL_DestroyTexture(tex);
+                }
+            }
+            else
+            {
+                // input phase
+                char buffer[16];
+
+                for (int i = 0; i < task->sequence_length; i++)
+                {
+                    if (i < task->input_index)
+                        buffer[i] = 'X';
+                    else
+                        buffer[i] = '_';
+                }
+                buffer[task->sequence_length] = '\0';
+
+                SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
+                SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
+
+                SDL_Rect r = {600, 400, surface->w, surface->h};
+                SDL_RenderCopy(renderer, tex, NULL, &r);
+
+                SDL_FreeSurface(surface);
+                SDL_DestroyTexture(tex);
+            }
+
+            // round text
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "Round %d / 3", task->round + 1);
+
+            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
+            SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
+
+            SDL_Rect r = {520, 450, surface->w, surface->h};
+            SDL_RenderCopy(renderer, tex, NULL, &r);
+
+            SDL_FreeSurface(surface);
+            SDL_DestroyTexture(tex);
+
+            // instruction text
+            if (task->task_text_texture)
+            {
+                SDL_Rect t = {520, 300, task->task_text_w, task->task_text_h};
+                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &t);
+            }
+
             break;
         }
 

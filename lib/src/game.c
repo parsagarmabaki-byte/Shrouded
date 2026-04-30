@@ -17,6 +17,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     bool task_map_open = false;
     float accumulator = 0.0f;
     Uint64 last_tick = SDL_GetPerformanceCounter();
+    srand(time(NULL));
 
     Player *player = player_create(state, local_id);
     Task *task = create_task(renderer);
@@ -171,6 +172,9 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
         if (sc == SDL_SCANCODE_5)
             start_logical_order_task(task, renderer);
+        
+        if (sc == SDL_SCANCODE_6)
+            start_memory_task(task, renderer);
 
         // cancel task
         if (sc == SDL_SCANCODE_Q)
