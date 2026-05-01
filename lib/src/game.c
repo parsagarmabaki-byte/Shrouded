@@ -382,7 +382,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
                 }
             }
 
-            if (event->key.keysym.scancode == SDL_SCANCODE_M)
+            if (event->key.keysym.scancode == SDL_SCANCODE_M && !task_active_check(task))
             {
                 *task_map_open = !*task_map_open;
             }
