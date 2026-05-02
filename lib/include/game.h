@@ -40,6 +40,7 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
 void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player,KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
 void report_body_events(SDL_Renderer *renderer,Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player);
+void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, TaskType task_type_before_events, bool *was_task_active);
 
 
 

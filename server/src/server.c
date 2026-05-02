@@ -141,6 +141,17 @@ int designateImpostor(gameState *state)
     return -1; // alla aktiva spelare gicks igenom utan match (borde inte hända)
 }
 
+static void shuffle_tasks(TaskType *arr, int n)
+{
+    for (int i = n - 1; i > 0; i--)
+    {
+        int j = rand() % (i + 1);
+        TaskType tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
+}
+
 void check_win_condition(gameState *state)
 {
     int alive_impostor = 0;
@@ -331,6 +342,42 @@ int main(void)
 
                     state_start_time = SDL_GetTicks64(); // TIDSSTÄMPEL
 
+                    srand((unsigned int)time(NULL));
+                    // The task list, one entry per TaskType (no TASK_NONE)
+                    TaskType all_tasks[TASK_COUNT] = {
+                        TASK_TIMER,
+                        TASK_CLICK,
+                        TASK_TYPE,
+                        TASK_REFLEX,
+                        TASK_LOGICAL_ORDER,
+                        TASK_MEMORY
+                    };
+
+                    for (int i = 0; i < MAX_PLAYERS; i++)
+                    {
+                        if (!state.players[i].active) continue;
+
+                        // Copy the base list then shuffle independently for each player
+                        memcpy(state.players[i].task_order, all_tasks, sizeof(all_tasks));
+                        shuffle_tasks(state.players[i].task_order, TASK_COUNT);
+                        state.players[i].tasks_completed = 0;
+                    }
+
+                    printf("\n=== TASK ORDER ASSIGNMENT ===\n");
+                    for (int i = 0; i < MAX_PLAYERS; i++)
+                    {
+                        if (!state.players[i].active) continue;
+                        printf("Player %d: ", i);
+                        for (int j = 0; j < TASK_COUNT; j++)
+                        {
+                            printf("%d ", state.players[i].task_order[j]);
+                        }
+                        printf("\n");
+                    }
+                    printf("=============================\n");
+
+                    state.total_tasks_completed = 0;
+
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
@@ -392,6 +439,50 @@ int main(void)
                         phase_time = SDL_GetTicks64(); // TIDSSTÄMPEL
                         broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                     }
+                }    
+            }
+            else if (type == MSG_TASK_COMPLETE)
+            {
+                if (packet_has_size(receive_packet, sizeof(TaskCompleteMsg), "MSG_TASK_COMPLETE"))
+                {
+                    TaskCompleteMsg msg;
+                    memcpy(&msg, receive_packet->data, sizeof(msg));
+
+                    // identify sender
+                    int pid = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
+                    if (pid >= 0 && state.players[pid].active)
+                    {
+                        int completed = state.players[pid].tasks_completed;
+
+                        // guard against out of bounds
+                        if (completed < TASK_COUNT)
+                        {
+                            TaskType expected = state.players[pid].task_order[completed];
+                            
+                            // Validate that the task type matches expected
+                            if (msg.task_type == expected)
+                            {
+                                // track completion
+                                state.players[pid].tasks_completed++;
+                                state.total_tasks_completed++;
+
+                                // calculate total tasks needed
+                                int active_count = countActivePlayers(&state);
+                                int total_expected_tasks = TASK_COUNT * (active_count - 1);
+
+                                printf("\n=== TASK COMPLETE ===\n");
+                                printf("Player %d finished task %d/%d (TaskType %d)\n", pid, state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
+                                printf("Team progress: %d/%d\n", state.total_tasks_completed, total_expected_tasks);
+                                printf("=====================\n");
+                            }
+                            else
+                            {
+                                printf("[SERVER] Player %d sent wrong task type (got %d, expected %d)\n", pid, msg.task_type, expected);
+                            }
+                        }
+                    }
+
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
         }

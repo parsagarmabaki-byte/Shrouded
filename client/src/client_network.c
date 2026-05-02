@@ -133,6 +133,27 @@ void send_input(Client *client, gameState *state, Player *player)
 
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
+
+int send_task_complete(Client *client, int player_id, TaskType task_type)
+{
+    TaskCompleteMsg msg = {0};
+    msg.type = MSG_TASK_COMPLETE;
+    msg.player_id = player_id;
+    msg.task_type = task_type;
+
+    UDPpacket *packet = create_packet(sizeof(msg));
+    if (!packet) return 0;
+
+    if (!send_packet_data(client->socket, packet, client->serverAddr, &msg, sizeof(msg)))
+    {
+        SDLNet_FreePacket(packet);
+        return 0;
+    }
+
+    SDLNet_FreePacket(packet);
+    return 1;
+}
+
 void request_kill(Client *client, gameState *state)
 {
     clientInput input = {0};
