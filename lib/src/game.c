@@ -334,6 +334,12 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_Rect marker2 = {453, 310, 24, 24};
     SDL_Rect marker3 = {835, 310, 24, 24};
     SDL_Rect marker4 = {675, 140, 24, 24};
+    SDL_Rect marker5 = {790, 130, 24, 24};
+    SDL_Rect marker6 = {900, 130, 24, 24};
+    SDL_Rect marker7 = {825, 570, 24, 24};
+    SDL_Rect marker8 = {550, 510, 24, 24};
+    SDL_Rect marker9 = {415, 505, 24, 24};
+
 
 
     SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
@@ -341,6 +347,12 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderFillRect(renderer, &marker2);
     SDL_RenderFillRect(renderer, &marker3);
     SDL_RenderFillRect(renderer, &marker4);
+    SDL_RenderFillRect(renderer, &marker5);
+    SDL_RenderFillRect(renderer, &marker6);
+    SDL_RenderFillRect(renderer, &marker7);
+    SDL_RenderFillRect(renderer, &marker8);
+    SDL_RenderFillRect(renderer, &marker9);
+
 
 
     float scale_x = (float)map_rect.w / GAME_MAP_WIDTH;
