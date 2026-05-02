@@ -18,6 +18,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     float accumulator = 0.0f;
     Uint64 last_tick = SDL_GetPerformanceCounter();
     srand(time(NULL));
+    bool was_task_active = false;
 
     Player *player = player_create(state, local_id);
     Task *task = create_task(renderer);
@@ -39,6 +40,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         float dt = (float)(current_tick - last_tick) / (float)SDL_GetPerformanceFrequency();
         last_tick = current_tick;
 
+        TaskType task_type_before_events = task_active_check(task) ? task_get_current_type(task) : TASK_NONE;
+
         process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
 
         accumulator += dt;
@@ -48,8 +51,8 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         send_player_input(client, state, player, task_active_check(task), ui_open);
         collect_packets(client, state, bodies);
         compare_server_position(*state, player, local_id);
-        update_task(task, dt);
         update_kill_animation(bodies, dt);
+        update_task_check_completion(client, task, state, local_id, dt, task_type_before_events, &was_task_active);
         render_game(renderer, state, &cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, emergency_window_open, task_map_open);
     }
 
@@ -180,7 +183,7 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
         if (sc == SDL_SCANCODE_Q)
         {
             if (task_active_check(task))
-                cancel_task(task);
+                end_task(task, TASK_STATUS_CANCELLED);
         }
 
         // handle task input
@@ -597,4 +600,44 @@ void send_player_input(Client *client, gameState *state, Player *player, bool ta
     {
         send_input(client, state, player);
     }
+}
+
+void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, TaskType task_type_before_events, bool *was_task_active)
+{
+    update_task(task, dt);
+
+    bool task_active_now = task_active_check(task);
+    
+    // Detect transition from active to inactive
+    if (*was_task_active && !task_active_now)
+    {
+        // First check: was it cancelled?
+        if (task_get_status(task) == TASK_STATUS_CANCELLED)
+        {
+            printf("[Player %d] Cancelled task\n", local_id);
+        }
+        // Second check: was it completed?
+        else if (task_get_status(task) == TASK_STATUS_COMPLETED)
+        {
+            int expected_index = state->players[local_id].tasks_completed;
+            if (expected_index < TASK_COUNT)
+            {
+                TaskType expected = state->players[local_id].task_order[expected_index];
+
+                // Correct task completed
+                if (task_type_before_events == expected && task_type_before_events != TASK_NONE)
+                {
+                    send_task_complete(client, local_id, task_type_before_events);
+                    printf("[Player %d] Completed correct task (TaskType %d)\n", local_id, task_type_before_events);
+                }
+                // Wrong task completed
+                else
+                {
+                    printf("[Player %d] Completed wrong task (did %d, needed %d), not counted\n", local_id, task_type_before_events, expected);
+                }
+            }
+        }
+    }
+    
+    *was_task_active = task_active_now;
 }

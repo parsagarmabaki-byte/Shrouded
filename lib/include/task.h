@@ -16,6 +16,12 @@ typedef enum {
     TASK_MEMORY
 } TaskType;
 
+typedef enum {
+    TASK_STATUS_ACTIVE,
+    TASK_STATUS_COMPLETED,
+    TASK_STATUS_CANCELLED
+} TaskStatus;
+
 // constructor / destructor
 Task* create_task(SDL_Renderer *renderer);
 void destroy_task(Task *task);
@@ -29,14 +35,14 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer);
 void start_memory_task(Task *task, SDL_Renderer *renderer);
 
 void update_task(Task *task, float dt);
+void end_task(Task *task, TaskStatus status);
 void render_task(SDL_Renderer *renderer, Task *task);
-void cancel_task(Task *task);
 void cleanup_task(Task *task);
-void complete_task(Task *task);
 
 // getters
 bool task_active_check(Task *task);
-int task_get_points(Task *task);
+TaskType task_get_current_type(Task *task);
+TaskStatus task_get_status(Task *task);
 
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key);

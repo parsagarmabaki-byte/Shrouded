@@ -9,8 +9,8 @@ static const SDL_Color WHITE = {255,255,255,255};
 
 struct Task {           // task ADT struct
     TaskType type;
+    TaskStatus status;
     bool active;
-    int points;
     float timer;
     SDL_Texture *task_image;
 
@@ -95,7 +95,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
 
             if (task->success_count >= task->success_target)
             {
-                complete_task(task);
+                end_task(task, TASK_STATUS_COMPLETED);
             }
         }
         else
@@ -146,7 +146,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
 
                     if (task->round >= 3)
                     {
-                        complete_task(task);
+                        end_task(task, TASK_STATUS_COMPLETED);
                     }
                     else
                     {
@@ -230,7 +230,6 @@ Task* create_task(SDL_Renderer *renderer)
     task->type = TASK_NONE;
     task->active = false;
     task->timer = 0.0f;
-    task->points = 0;   //total innocent points from completed tasks
 
     task->font = TTF_OpenFont("assets/fonts/BebasNeue-Regular.ttf", 32);
 
@@ -258,30 +257,26 @@ Task* create_task(SDL_Renderer *renderer)
     return task;
 }
 
-bool task_active_check(Task *task) // call these 2 getter functions outside task.c to access struct variables
+bool task_active_check(Task *task) // call these 3 getter functions outside task.c to access struct variables
 {
     return task->active;
 }
 
-int task_get_points(Task *task)
+TaskType task_get_current_type(Task *task)
 {
-    return task->points;
+    return task->type;
 }
 
-void complete_task(Task *task)
+TaskStatus task_get_status(Task *task)
+{
+    return task->status;
+}
+
+void end_task(Task *task, TaskStatus status)
 {
     task->active = false;
     task->type = TASK_NONE;
-    task->points += 1;
-    cleanup_task(task);
-}
-
-void cancel_task(Task *task)
-{
-    if (!task->active) return;
-
-    task->active = false;
-    task->type = TASK_NONE;
+    task->status = status;  // Track HOW it ended
     cleanup_task(task);
 }
 
@@ -573,19 +568,19 @@ void update_task(Task *task, float dt) // updates task logic every frame
             task->timer -= dt;
             if (task->timer <= 0.0f)
             {
-                complete_task(task);
+                end_task(task, TASK_STATUS_COMPLETED);
             }
             break;
         case TASK_CLICK:
             if (task->click_count >= task->click_target)
             {
-                complete_task(task);
+                end_task(task, TASK_STATUS_COMPLETED);
             }
             break;
         case TASK_TYPE:
             if (task->current_index >= task->length)
             {
-                complete_task(task);
+                end_task(task, TASK_STATUS_COMPLETED);
             }
             break;
         case TASK_REFLEX:
@@ -957,7 +952,7 @@ void task_handle_logical_order(Task *task, int mx, int my, SDL_Renderer *rendere
 
                 if (task->next_expected_idx >= 5)
                 {
-                    complete_task(task); 
+                    end_task(task, TASK_STATUS_COMPLETED); 
                 }
             }
             else

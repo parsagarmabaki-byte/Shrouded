@@ -2,6 +2,7 @@
 #define NETWORK_DATA_H
 
 #include <stdbool.h>
+#include "task.h"
 
 #define MAX_PLAYERS 6
 #define SERVER_PORT 2000
@@ -11,6 +12,8 @@
 #define PLAYER_SPEED 200 //DELAD DATA MELLAN SERVER OCH CLIENT
 #define PLAYER_SIZE 75
 #define PLAYER_HITBOX_SIZE 30
+
+#define TASK_COUNT 6 // uppdatera  när fler tasks läggs till
 
 
 // BARA RÖRELSER OCH ROLLER IMPLEMENTERADE
@@ -32,7 +35,8 @@ typedef enum{
     MSG_KILL_REQUEST,
     MSG_KILL_EVENT,
     MSG_EMERGENCY_MEETING,
-    MSG_BODY_FOUND
+    MSG_BODY_FOUND,
+    MSG_TASK_COMPLETE
 } MessageType;
 
 
@@ -80,6 +84,9 @@ typedef struct {
 
     int current_frame;
     Direction direction;
+
+    TaskType task_order[TASK_COUNT];   // shuffled player task list
+    int tasks_completed;
 } playerState;
 
 typedef enum{
@@ -98,6 +105,8 @@ typedef struct {
     gamePhase phase;
     int local_player_id;
     int emergency_meeting_reported_id;
+
+    int total_tasks_completed;
 } gameState;
 
 typedef struct {
@@ -109,4 +118,9 @@ typedef struct{
 typedef struct{
     MessageType type;
 } startGameMessage;
+typedef struct {
+    MessageType type;
+    int player_id;
+    TaskType task_type;
+} TaskCompleteMsg;
 #endif

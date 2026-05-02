@@ -11,6 +11,7 @@ void clean_client(Client *client);
 int send_join(Client *client);
 int send_start_game(Client *client);
 void send_input(Client *client, gameState *state, Player *player);
+int send_task_complete(Client *client, int player_id, TaskType task_type);
 void request_kill(Client *client, gameState *state);
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies);
 int send_leave_message(Client *client);
