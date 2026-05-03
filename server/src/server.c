@@ -347,7 +347,7 @@ int main(void)
                     TaskType all_tasks[TASK_COUNT] = {
                         TASK_TIMER,
                         TASK_CLICK,
-                        TASK_TYPE,
+                        TASK_LETTER,
                         TASK_REFLEX,
                         TASK_LOGICAL_ORDER,
                         TASK_MEMORY};

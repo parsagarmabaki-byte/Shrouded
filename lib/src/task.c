@@ -1,5 +1,5 @@
 #include "task.h"
-#include <SDL2/SDL_ttf.h>
+#include "text.h"
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,26 +11,23 @@ struct Task {           // task ADT struct
     TaskType type;
     TaskStatus status;
     bool active;
-    float timer;
     SDL_Texture *task_image;
 
     //text
-    TTF_Font *font;
-    SDL_Texture *task_text_texture;
-    SDL_Texture *global_text_texture;
-    int task_text_w;
-    int task_text_h;
-    int global_text_w;
-    int global_text_h;
+    SDL_Renderer *renderer;
+    Text global_text;
+    Text task_text;
+    Text dynamic_text;
 
     // TASK_TIMER specific
+    float timer;
     float timer_duration;
 
     // TASK_CLICK specific
     int click_count;
     int click_target;
 
-    // TASK_TYPE specific
+    // TASK_LETTER specific
     char target_string[16]; 
     int current_index;
     int length;
@@ -50,12 +47,12 @@ struct Task {           // task ADT struct
     int numbers[5];
     int sortedNumbers[5];
     int next_expected_idx;
-    SDL_Texture *number_textures[5];
+    Text number_texts[5];
     SDL_Rect numbers_rect[5];
 
     // TASK_MEMORY specific
     int sequence[8];        // directions (0–3)
-    int sequence_length;
+    int sequence_length;    // 4-6
     int input_index;
     int round;
     float start_delay;
@@ -113,7 +110,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
         }
     }
 
-    if (task->type == TASK_TYPE)
+    if (task->type == TASK_LETTER)
     {
         char pressed = (char)SDL_toupper(key);
         char expected = task->target_string[task->current_index];
@@ -184,7 +181,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
     }
 }
 
-void task_handle_click(Task *task)
+void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
 {
     if (!task || !task->active) return;
 
@@ -192,35 +189,36 @@ void task_handle_click(Task *task)
     {
         task->click_count++;
     }
-}
 
-SDL_Texture* create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int *w, int *h)
-{
-    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color); // render text to surface
-
-    if (!surface)
+    if (task->type == TASK_LOGICAL_ORDER)
     {
-        printf("Text render error: %s\n", TTF_GetError());
-        return NULL;
+        SDL_Point mouse_pos = {mx, my};
+
+        for (int i = 0; i < 5; i++)
+        {
+            if (task->number_texts[i] != NULL && SDL_PointInRect(&mouse_pos, &task->numbers_rect[i]))
+            {
+                if (task->numbers[i] == task->sortedNumbers[task->next_expected_idx])
+                {
+                    text_destroy(task->number_texts[i]);
+                    task->number_texts[i] = NULL;
+                    task->next_expected_idx++;
+
+                    if (task->next_expected_idx >= 5)
+                    {
+                        end_task(task, TASK_STATUS_COMPLETED); 
+                    }
+                }
+                else
+                {
+                    // Reset
+                    start_logical_order_task(task, renderer);
+                }
+                break; 
+            }
+        }
     }
-
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface); // convert surface to texture
-
-    if (!texture)
-    {
-        printf("Texture creation error: %s\n", SDL_GetError());
-        SDL_FreeSurface(surface);
-        return NULL;
-    }
-
-    // store the width and height of the rendered text back in the caller’s variables
-    *w = surface->w;
-    *h = surface->h;
-
-    SDL_FreeSurface(surface); // free the surface after creating texture
-    return texture;
 }
-
 
 Task* create_task(SDL_Renderer *renderer)
 {
@@ -230,29 +228,19 @@ Task* create_task(SDL_Renderer *renderer)
     task->type = TASK_NONE;
     task->active = false;
     task->timer = 0.0f;
+    task->renderer = renderer;
 
-    task->font = TTF_OpenFont("assets/fonts/BebasNeue-Regular.ttf", 32);
+    // Initialize Text objects
+    task->global_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 32);
+    task->task_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 32);
+    task->dynamic_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 32);
 
-    if (task->font)
-    {
-        task->global_text_texture = create_text_texture(
-            renderer, task->font,
-            "PRESS Q TO CLOSE ASSIGNMENT",
-            WHITE,
-            &task->global_text_w,
-            &task->global_text_h
-        );
-    }
-    else
-    {
-        task->global_text_texture = NULL;
-    }
+    if (task->global_text)
+        text_set(task->global_text, "PRESS Q TO ABANDON ASSIGNMENT", WHITE);
 
-    task->task_text_texture = NULL;
-    task->task_image = NULL;
-
-    for(int i = 0; i < 5; i++)
-        task->number_textures[i] = NULL;
+    // Initialize number_texts array to NULL
+    for (int i = 0; i < 5; i++)
+        task->number_texts[i] = NULL;
 
     return task;
 }
@@ -282,12 +270,6 @@ void end_task(Task *task, TaskStatus status)
 
 void cleanup_task(Task *task) // cleans non specific things, used before starting a new task to free old textures and reset variables
 {
-    if (task->task_text_texture)
-    {
-        SDL_DestroyTexture(task->task_text_texture);
-        task->task_text_texture = NULL;
-    }
-
     if (task->task_image)
     {
         SDL_DestroyTexture(task->task_image);
@@ -296,10 +278,10 @@ void cleanup_task(Task *task) // cleans non specific things, used before startin
 
     for(int i = 0; i < 5; i++)
     {
-        if(task->number_textures[i])
+        if(task->number_texts[i])
         {
-            SDL_DestroyTexture(task->number_textures[i]);
-            task->number_textures[i] = NULL;
+            text_destroy(task->number_texts[i]);
+            task->number_texts[i] = NULL;
         }
     }
 }
@@ -310,16 +292,22 @@ void destroy_task(Task *task) // cleans everything, used at the end of the game
 
     cleanup_task(task);
 
-    if (task->global_text_texture)
+    if (task->global_text)
     {
-        SDL_DestroyTexture(task->global_text_texture);
-        task->global_text_texture = NULL;
+        text_destroy(task->global_text);
+        task->global_text = NULL;
     }
 
-    if (task->font)
+    if (task->dynamic_text)
     {
-        TTF_CloseFont(task->font);
-        task->font = NULL;
+        text_destroy(task->dynamic_text);
+        task->dynamic_text = NULL;
+    }
+
+    if (task->task_text)
+    {
+        text_destroy(task->task_text);
+        task->task_text = NULL;
     }
 
     free(task);
@@ -334,7 +322,7 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
     task->timer = duration;
     task->timer_duration = duration;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/mannequin.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/mannequin.png");
     if (!task->task_image)
     {
         printf("Failed to load timer task image: %s\n", IMG_GetError());
@@ -342,14 +330,8 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
         task->type = TASK_NONE;
     }
 
-    if (!task->font)
-    {
-        printf("Font not loaded, cannot create text\n");
-    }
-    else
-    {
-        task->task_text_texture = create_text_texture(renderer, task->font, "SCAN IN PROGRESS", WHITE, &task->task_text_w, &task->task_text_h);
-    }
+    if (task->task_text)
+        text_set(task->task_text, "SCAN IN PROGRESS", WHITE);
 }
 
 void start_click_task(Task *task, SDL_Renderer *renderer, int target)
@@ -361,7 +343,7 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
     task->click_count = 0;
     task->click_target = target;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/crystal.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/crystal.png");
     if (!task->task_image)
     {
         printf("Failed to load click task image: %s\n", IMG_GetError());
@@ -369,23 +351,17 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
         task->type = TASK_NONE;
     }
 
-    if (!task->font)
-    {
-        printf("Font not loaded, cannot create text\n");
-    }
-    else
-    {
-        task->task_text_texture = create_text_texture(renderer, task->font, "CLEAN THE CRYSTAL (Click!)", WHITE, &task->task_text_w, &task->task_text_h);
-    }
+    if (task->task_text)
+        text_set(task->task_text, "CLEAN THE CRYSTAL (CLICK!)", WHITE);
 }
 
-void start_type_task(Task *task, SDL_Renderer *renderer)
+void start_letter_task(Task *task, SDL_Renderer *renderer)
 {
     cleanup_task(task);
-    task->type = TASK_TYPE;
+    task->type = TASK_LETTER;
     task->active = true;
 
-    const char *letters = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
+    const char *letters = "ABCDEFGHIJKLNOPRSTUVWXYZ";
     int len = 10;
     task->length = len;
     task->current_index = 0;
@@ -393,11 +369,11 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
     // create random string of "len" letters
     for (int i = 0; i < len; i++)
     {
-        task->target_string[i] = letters[rand() % 25];
+        task->target_string[i] = letters[rand() % 24];
     }
     task->target_string[len] = '\0';
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/desk.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/desk.png");
     if (!task->task_image)
     {
         printf("Failed to load type task image: %s\n", IMG_GetError());
@@ -405,14 +381,8 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
         task->type = TASK_NONE;
     }
 
-    if (!task->font)
-    {
-        printf("Font not loaded, cannot create text\n");
-    }
-    else
-    {
-        task->task_text_texture = create_text_texture(renderer, task->font, "WRITE LETTER", WHITE, &task->task_text_w, &task->task_text_h);
-    }
+    if (task->task_text)
+        text_set(task->task_text, "WRITE THE LETTER", WHITE);
 }
 
 void start_reflex_task(Task *task, SDL_Renderer *renderer)
@@ -435,22 +405,16 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     task->base_zone_width = base_width;
     task->current_zone_width = base_width;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/fireplace.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/fireplace.png");
     if (!task->task_image)
     {
         printf("Failed to load timer task image: %s\n", IMG_GetError());
         task->active = false;
         task->type = TASK_NONE;
     }
-
-    if (!task->font)
-    {
-        printf("Font not loaded, cannot create text\n");
-    }
-    else
-    {
-        task->task_text_texture = create_text_texture(renderer, task->font, "STOKE THE FIRE (PRESS SPACE!)", WHITE, &task->task_text_w, &task->task_text_h);
-    }
+ 
+    if (task->task_text)
+        text_set(task->task_text, "STOKE THE FIRE (PRESS SPACE!)", WHITE);
 }
 
 void start_logical_order_task(Task *task, SDL_Renderer *renderer)
@@ -490,7 +454,11 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
 
         char str[4]; 
         sprintf(str, "%d", num);
-        task->number_textures[i] = create_text_texture(renderer, task->font, str, white, &task->numbers_rect[i].w, &task->numbers_rect[i].h);
+        task->number_texts[i] = text_create(task->renderer, "assets/fonts/BebasNeue-Regular.ttf", 32);
+        text_set(task->number_texts[i], str, white);
+
+        task->numbers_rect[i].w = text_get_width(task->number_texts[i]);
+        task->numbers_rect[i].h = text_get_height(task->number_texts[i]);
 
         int start_x = 450; 
         int spacing = 100; 
@@ -511,6 +479,17 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
             }
         }
     }
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/shelf.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+    }
+
+    if (task->task_text)
+        text_set(task->task_text, "ORGANIZE THE SHELF (ASCENDING ORDER)", WHITE);
 }
 
 void start_memory_task(Task *task, SDL_Renderer *renderer)
@@ -537,7 +516,7 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
         task->sequence[i] = rand() % 4;
     }
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/twocrystals.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/twocrystals.png");
     if (!task->task_image)
     {
         printf("Failed to load timer task image: %s\n", IMG_GetError());
@@ -545,17 +524,8 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
         task->type = TASK_NONE;
     }
 
-    if (task->font)
-    {
-        task->task_text_texture = create_text_texture(
-            renderer,
-            task->font,
-            "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE)",
-            WHITE,
-            &task->task_text_w,
-            &task->task_text_h
-        );
-    }
+    if (task->task_text)
+        text_set(task->task_text, "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)", WHITE);
 }
 
 void update_task(Task *task, float dt) // updates task logic every frame
@@ -577,7 +547,7 @@ void update_task(Task *task, float dt) // updates task logic every frame
                 end_task(task, TASK_STATUS_COMPLETED);
             }
             break;
-        case TASK_TYPE:
+        case TASK_LETTER:
             if (task->current_index >= task->length)
             {
                 end_task(task, TASK_STATUS_COMPLETED);
@@ -639,27 +609,34 @@ void update_task(Task *task, float dt) // updates task logic every frame
             }
             break;
         }
+        case TASK_LOGICAL_ORDER:
+            // no frame-based logic needed, just here for clarity
+            break;
+
         default:
             break;
     }
 }
 
-void render_task(SDL_Renderer *renderer, Task *task)
+void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height)
 {
     if (!task->active) return;
 
-    SDL_Rect box = {225, 150, 900, 500}; // adjust for screen size later for both text and image
+    // center and size task image
+    int box_width = (int)(screen_width * 0.70f);
+    int box_height = (int)(box_width * screen_height / screen_width);
+    int box_x = (screen_width - box_width) / 2;
+    int box_y = (screen_height - box_height) / 2;
+
+    SDL_Rect box = {box_x, box_y, box_width, box_height};
 
     if (task->task_image)
     {
         SDL_RenderCopy(renderer, task->task_image, NULL, &box);
     }
     
-    if (task->global_text_texture)
-    {
-        SDL_Rect rect = {170, 275, task->global_text_w, task->global_text_h};
-        SDL_RenderCopy(renderer, task->global_text_texture, NULL, &rect);
-    }
+    if (task->global_text)
+        text_draw_at(task->global_text, 170, 275);
     
 
     switch (task->type)
@@ -670,7 +647,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             float progress = 0.0f;
             if (task->timer_duration > 0.0f)
             {
-                progress = task->timer / task->timer_duration;
+                progress = 1.0f - (task->timer / task->timer_duration);
             }
 
             // progress bar background
@@ -684,11 +661,8 @@ void render_task(SDL_Renderer *renderer, Task *task)
             SDL_RenderFillRect(renderer, &bar_fill);
 
             // text
-            if (task->task_text_texture)
-            {
-                SDL_Rect textRect = {520, 400, task->task_text_w, task->task_text_h};
-                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &textRect);
-            }
+            if (task->task_text)
+                text_draw_at(task->task_text, 520, 400);
             break;
         }
 
@@ -698,34 +672,20 @@ void render_task(SDL_Renderer *renderer, Task *task)
             char buffer[32];
             snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target); // write string into the buffer
 
-            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE); // render text in buffer to surface
-            if (!surface) break;
-
-            SDL_Texture *textTex = SDL_CreateTextureFromSurface(renderer, surface);
-            if (!textTex)
+            if (task->dynamic_text)
             {
-                SDL_FreeSurface(surface);
-                break;
+                text_set(task->dynamic_text, buffer, WHITE);
+                text_draw_at(task->dynamic_text, 520, 400);
             }
-
-            SDL_Rect textRect = {520, 400, surface->w, surface->h};
-
-            SDL_RenderCopy(renderer, textTex, NULL, &textRect);
 
             // instruction text
-            if (task->task_text_texture)
-            {
-                SDL_Rect textRect2 = {520, 350, task->task_text_w, task->task_text_h};
-                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &textRect2);
-            }
-
-            SDL_FreeSurface(surface);
-            SDL_DestroyTexture(textTex);
+            if (task->task_text)
+                text_draw_at(task->task_text, 520, 350);
 
             break;
         }
 
-        case TASK_TYPE:
+        case TASK_LETTER:
         {
             char buffer[32];
 
@@ -739,14 +699,11 @@ void render_task(SDL_Renderer *renderer, Task *task)
             }
             buffer[task->length] = '\0';
 
-            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
-            SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
-
-            SDL_Rect r = {520, 400, surface->w, surface->h};
-            SDL_RenderCopy(renderer, tex, NULL, &r);
-
-            SDL_FreeSurface(surface);
-            SDL_DestroyTexture(tex);
+            if (task->dynamic_text)
+            {
+                text_set(task->dynamic_text, buffer, WHITE);
+                text_draw_at(task->dynamic_text, 520, 400);
+            }
 
             // show target string
             char current[2];
@@ -762,21 +719,15 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
             current[1] = '\0';
 
-            surface = TTF_RenderText_Blended(task->font, current, WHITE);
-            tex = SDL_CreateTextureFromSurface(renderer, surface);
-
-            SDL_Rect rect = {520, 300, surface->w, surface->h};
-            SDL_RenderCopy(renderer, tex, NULL, &rect);
-
-            SDL_FreeSurface(surface);
-            SDL_DestroyTexture(tex);
+            if (task->dynamic_text)
+            {
+                text_set(task->dynamic_text, current, WHITE);
+                text_draw_at(task->dynamic_text, 520, 300);
+            }
 
             // instruction text
-            if (task->task_text_texture)
-            {
-                SDL_Rect t = {520, 350, task->task_text_w, task->task_text_h};
-                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &t);
-            }
+            if (task->task_text)
+                text_draw_at(task->task_text, 520, 350);
 
             break;
         }
@@ -807,27 +758,15 @@ void render_task(SDL_Renderer *renderer, Task *task)
             char buffer[32];
             snprintf(buffer, sizeof(buffer), "%d / %d", task->success_count, task->success_target);
 
-            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
-            if (surface)
+            if (task->dynamic_text)
             {
-                SDL_Texture *textTex = SDL_CreateTextureFromSurface(renderer, surface);
-
-                if (textTex)
-                {
-                    SDL_Rect textRect = {520, 400, surface->w, surface->h};
-                    SDL_RenderCopy(renderer, textTex, NULL, &textRect);
-                    SDL_DestroyTexture(textTex);
-                }
-
-                SDL_FreeSurface(surface);
+                text_set(task->dynamic_text, buffer, WHITE);
+                text_draw_at(task->dynamic_text, 520, 400);
             }
 
             // instruction text
-            if (task->task_text_texture)
-            {
-                SDL_Rect textRect2 = {520, 300, task->task_text_w, task->task_text_h};
-                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &textRect2);
-            }
+            if (task->task_text)
+                text_draw_at(task->task_text, 520, 300);
 
             break;
         }
@@ -836,24 +775,25 @@ void render_task(SDL_Renderer *renderer, Task *task)
         {
             for (int i = 0; i < 5; i++)
             {
-                if (task->number_textures[i] != NULL)
-                {
-                    SDL_RenderCopy(renderer, task->number_textures[i], NULL, &task->numbers_rect[i]);
-                }
+                if (task->number_texts[i] != NULL)
+                    text_draw_at(task->number_texts[i], task->numbers_rect[i].x, task->numbers_rect[i].y);
             }
             
             // show score
             char progress_buf[16];
             snprintf(progress_buf, sizeof(progress_buf), "%d / 5", task->next_expected_idx);
-            SDL_Surface *surf = TTF_RenderText_Blended(task->font, progress_buf, WHITE);
-            if (surf) 
+            
+            if (task->dynamic_text)
             {
-                SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surf);
-                SDL_Rect r = {520, 450, surf->w, surf->h};
-                SDL_RenderCopy(renderer, tex, NULL, &r);
-                SDL_FreeSurface(surf);
-                SDL_DestroyTexture(tex);
+                text_set(task->dynamic_text, progress_buf, WHITE);
+                text_draw_at(task->dynamic_text, 520, 450);
             }
+
+            // instruction text
+            if (task->task_text)
+                text_draw_at(task->task_text, 520, 300);
+
+            break;
     
             break;
         }
@@ -869,14 +809,11 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 {
                     const char *symbol = arrows[task->sequence[task->flash_index]];
 
-                    SDL_Surface *surface = TTF_RenderText_Blended(task->font, symbol, WHITE);
-                    SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
-
-                    SDL_Rect r = {650, 350, surface->w, surface->h};
-                    SDL_RenderCopy(renderer, tex, NULL, &r);
-
-                    SDL_FreeSurface(surface);
-                    SDL_DestroyTexture(tex);
+                    if (task->dynamic_text)
+                    {
+                        text_set(task->dynamic_text, symbol, WHITE);
+                        text_draw_at(task->dynamic_text, 650, 350);
+                    }
                 }
             }
             else
@@ -893,74 +830,31 @@ void render_task(SDL_Renderer *renderer, Task *task)
                 }
                 buffer[task->sequence_length] = '\0';
 
-                SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
-                SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
-
-                SDL_Rect r = {600, 400, surface->w, surface->h};
-                SDL_RenderCopy(renderer, tex, NULL, &r);
-
-                SDL_FreeSurface(surface);
-                SDL_DestroyTexture(tex);
+                if (task->dynamic_text)
+                {
+                    text_set(task->dynamic_text, buffer, WHITE);
+                    text_draw_at(task->dynamic_text, 600, 400);
+                }
             }
 
             // round text
             char buffer[32];
             snprintf(buffer, sizeof(buffer), "Round %d / 3", task->round + 1);
 
-            SDL_Surface *surface = TTF_RenderText_Blended(task->font, buffer, WHITE);
-            SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
-
-            SDL_Rect r = {520, 450, surface->w, surface->h};
-            SDL_RenderCopy(renderer, tex, NULL, &r);
-
-            SDL_FreeSurface(surface);
-            SDL_DestroyTexture(tex);
+            if (task->dynamic_text)
+            {
+                text_set(task->dynamic_text, buffer, WHITE);
+                text_draw_at(task->dynamic_text, 520, 450);
+            }
 
             // instruction text
-            if (task->task_text_texture)
-            {
-                SDL_Rect t = {520, 300, task->task_text_w, task->task_text_h};
-                SDL_RenderCopy(renderer, task->task_text_texture, NULL, &t);
-            }
+            if (task->task_text)
+                text_draw_at(task->task_text, 520, 300);
 
             break;
         }
 
     default:
         break;
-    }
-}
-
-void task_handle_logical_order(Task *task, int mx, int my, SDL_Renderer *renderer)
-{
-    if (!task || !task->active || task->type != TASK_LOGICAL_ORDER)
-    {
-        return;
-    }
-
-    SDL_Point mouse_pos = {mx, my};
-
-    for (int i = 0; i < 5; i++)
-    {
-        if (task->number_textures[i] != NULL && SDL_PointInRect(&mouse_pos, &task->numbers_rect[i]))
-        {
-            if (task->numbers[i] == task->sortedNumbers[task->next_expected_idx])
-            {
-                SDL_DestroyTexture(task->number_textures[i]);
-                task->number_textures[i] = NULL;
-                task->next_expected_idx++;
-
-                if (task->next_expected_idx >= 5)
-                {
-                    end_task(task, TASK_STATUS_COMPLETED); 
-                }
-            }
-            else
-            {
-                // Reset
-                start_logical_order_task(task, renderer);
-            }
-            break; 
-        }
     }
 }

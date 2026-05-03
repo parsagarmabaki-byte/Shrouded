@@ -7,28 +7,28 @@
 typedef struct Text *Text;
 
 // Initierar SDL_ttf. Anropas EN gång vid programstart.
-bool text_initiera(void);
+bool text_init(void);
 
 // Stänger ner SDL_ttf. Anropas vid programavslut.
-void text_avsluta(void);
+void text_quit(void);
 
 // Skapar ett Text-objekt från en .ttf-fil och en storlek (pt).
-Text text_skapa(SDL_Renderer *renderare, const char *typsnittsvag, int storlek);
+Text text_create(SDL_Renderer *renderer, const char *font_path, int size);
 
 // Uppdaterar texten som ska visas. Skapar ny texture internt.
-bool text_satt(Text t, const char *innehall, SDL_Color farg);
+bool text_set(Text t, const char *content, SDL_Color color);
 
 // Ritar texten centrerad på (x, y).
-void text_rita(Text t, int x, int y);
+void text_draw(Text t, int x, int y);
 
 // Ritar texten med (x, y) som övre vänstra hörnet.
-void text_rita_vid(Text t, int x, int y);
+void text_draw_at(Text t, int x, int y);
 
 // Hämta bredd/höjd på den senast satta texten.
-int text_hamta_bredd(Text t);
-int text_hamta_hojd(Text t);
+int text_get_width(Text t);
+int text_get_height(Text t);
 
 // Frigör allt minne och texturer.
-void text_forstor(Text t);
+void text_destroy(Text t);
 
 #endif
