@@ -196,8 +196,7 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
     // handle click input
     if (event->type == SDL_MOUSEBUTTONDOWN)
     {
-        task_handle_click(task);
-        task_handle_logical_order(task, event->button.x, event->button.y, renderer);
+        task_handle_click(task, event->button.x, event->button.y, renderer);
     }
 }
 

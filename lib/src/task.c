@@ -184,13 +184,42 @@ void task_handle_key(Task *task, SDL_Keycode key)
     }
 }
 
-void task_handle_click(Task *task)
+void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
 {
     if (!task || !task->active) return;
 
     if (task->type == TASK_CLICK)
     {
         task->click_count++;
+    }
+
+    if (task->type == TASK_LOGICAL_ORDER)
+    {
+        SDL_Point mouse_pos = {mx, my};
+
+        for (int i = 0; i < 5; i++)
+        {
+            if (task->number_textures[i] != NULL && SDL_PointInRect(&mouse_pos, &task->numbers_rect[i]))
+            {
+                if (task->numbers[i] == task->sortedNumbers[task->next_expected_idx])
+                {
+                    SDL_DestroyTexture(task->number_textures[i]);
+                    task->number_textures[i] = NULL;
+                    task->next_expected_idx++;
+
+                    if (task->next_expected_idx >= 5)
+                    {
+                        end_task(task, TASK_STATUS_COMPLETED); 
+                    }
+                }
+                else
+                {
+                    // Reset
+                    start_logical_order_task(task, renderer);
+                }
+                break; 
+            }
+        }
     }
 }
 
@@ -639,6 +668,10 @@ void update_task(Task *task, float dt) // updates task logic every frame
             }
             break;
         }
+        case TASK_LOGICAL_ORDER:
+            // no frame-based logic needed, just here for clarity
+            break;
+            
         default:
             break;
     }
@@ -928,39 +961,5 @@ void render_task(SDL_Renderer *renderer, Task *task)
 
     default:
         break;
-    }
-}
-
-void task_handle_logical_order(Task *task, int mx, int my, SDL_Renderer *renderer)
-{
-    if (!task || !task->active || task->type != TASK_LOGICAL_ORDER)
-    {
-        return;
-    }
-
-    SDL_Point mouse_pos = {mx, my};
-
-    for (int i = 0; i < 5; i++)
-    {
-        if (task->number_textures[i] != NULL && SDL_PointInRect(&mouse_pos, &task->numbers_rect[i]))
-        {
-            if (task->numbers[i] == task->sortedNumbers[task->next_expected_idx])
-            {
-                SDL_DestroyTexture(task->number_textures[i]);
-                task->number_textures[i] = NULL;
-                task->next_expected_idx++;
-
-                if (task->next_expected_idx >= 5)
-                {
-                    end_task(task, TASK_STATUS_COMPLETED); 
-                }
-            }
-            else
-            {
-                // Reset
-                start_logical_order_task(task, renderer);
-            }
-            break; 
-        }
     }
 }

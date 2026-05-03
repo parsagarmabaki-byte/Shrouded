@@ -46,7 +46,6 @@ TaskStatus task_get_status(Task *task);
 
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key);
-void task_handle_click(Task *task);
-void task_handle_logical_order(Task *task, int mx, int my, SDL_Renderer *renderer);
+void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 #endif
