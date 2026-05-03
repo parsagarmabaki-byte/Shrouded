@@ -11,7 +11,6 @@ struct Task {           // task ADT struct
     TaskType type;
     TaskStatus status;
     bool active;
-    float timer;
     SDL_Texture *task_image;
 
     //text
@@ -21,6 +20,7 @@ struct Task {           // task ADT struct
     Text dynamic_text;
 
     // TASK_TIMER specific
+    float timer;
     float timer_duration;
 
     // TASK_CLICK specific
