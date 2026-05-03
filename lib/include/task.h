@@ -34,10 +34,11 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer);
 void start_logical_order_task(Task *task, SDL_Renderer *renderer);
 void start_memory_task(Task *task, SDL_Renderer *renderer);
 
-void update_task(Task *task, float dt);
 void end_task(Task *task, TaskStatus status);
-void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
 void cleanup_task(Task *task);
+void update_task(Task *task, float dt);
+void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
+
 
 // getters
 bool task_active_check(Task *task);
