@@ -52,7 +52,7 @@ struct Task {           // task ADT struct
 
     // TASK_MEMORY specific
     int sequence[8];        // directions (0–3)
-    int sequence_length;
+    int sequence_length;    // 4-6
     int input_index;
     int round;
     float start_delay;
@@ -322,7 +322,7 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
     task->timer = duration;
     task->timer_duration = duration;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/mannequin.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/mannequin.png");
     if (!task->task_image)
     {
         printf("Failed to load timer task image: %s\n", IMG_GetError());
@@ -343,7 +343,7 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
     task->click_count = 0;
     task->click_target = target;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/crystal.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/crystal.png");
     if (!task->task_image)
     {
         printf("Failed to load click task image: %s\n", IMG_GetError());
@@ -373,7 +373,7 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
     }
     task->target_string[len] = '\0';
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/desk.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/desk.png");
     if (!task->task_image)
     {
         printf("Failed to load type task image: %s\n", IMG_GetError());
@@ -405,7 +405,7 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     task->base_zone_width = base_width;
     task->current_zone_width = base_width;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/fireplace.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/fireplace.png");
     if (!task->task_image)
     {
         printf("Failed to load timer task image: %s\n", IMG_GetError());
@@ -479,6 +479,17 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
             }
         }
     }
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/shelf.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+    }
+
+    if (task->task_text)
+        text_set(task->task_text, "ORGANIZE THE SHELF (ASCENDING ORDER)", WHITE);
 }
 
 void start_memory_task(Task *task, SDL_Renderer *renderer)
@@ -505,7 +516,7 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
         task->sequence[i] = rand() % 4;
     }
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/twocrystals.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/twocrystals.png");
     if (!task->task_image)
     {
         printf("Failed to load timer task image: %s\n", IMG_GetError());
