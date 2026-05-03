@@ -30,7 +30,7 @@ struct Task {           // task ADT struct
     int click_count;
     int click_target;
 
-    // TASK_TYPE specific
+    // TASK_LETTER specific
     char target_string[16]; 
     int current_index;
     int length;
@@ -113,7 +113,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
         }
     }
 
-    if (task->type == TASK_TYPE)
+    if (task->type == TASK_LETTER)
     {
         char pressed = (char)SDL_toupper(key);
         char expected = task->target_string[task->current_index];
@@ -408,13 +408,13 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
     }
 }
 
-void start_type_task(Task *task, SDL_Renderer *renderer)
+void start_letter_task(Task *task, SDL_Renderer *renderer)
 {
     cleanup_task(task);
-    task->type = TASK_TYPE;
+    task->type = TASK_LETTER;
     task->active = true;
 
-    const char *letters = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
+    const char *letters = "ABCDEFGHIJKLNOPRSTUVWXYZ";
     int len = 10;
     task->length = len;
     task->current_index = 0;
@@ -422,7 +422,7 @@ void start_type_task(Task *task, SDL_Renderer *renderer)
     // create random string of "len" letters
     for (int i = 0; i < len; i++)
     {
-        task->target_string[i] = letters[rand() % 25];
+        task->target_string[i] = letters[rand() % 24];
     }
     task->target_string[len] = '\0';
 
@@ -606,7 +606,7 @@ void update_task(Task *task, float dt) // updates task logic every frame
                 end_task(task, TASK_STATUS_COMPLETED);
             }
             break;
-        case TASK_TYPE:
+        case TASK_LETTER:
             if (task->current_index >= task->length)
             {
                 end_task(task, TASK_STATUS_COMPLETED);
@@ -671,17 +671,23 @@ void update_task(Task *task, float dt) // updates task logic every frame
         case TASK_LOGICAL_ORDER:
             // no frame-based logic needed, just here for clarity
             break;
-            
+
         default:
             break;
     }
 }
 
-void render_task(SDL_Renderer *renderer, Task *task)
+void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height)
 {
     if (!task->active) return;
 
-    SDL_Rect box = {225, 150, 900, 500}; // adjust for screen size later for both text and image
+    // center and size task image
+    int box_width = (int)(screen_width * 0.70f);
+    int box_height = (int)(box_width * screen_height / screen_width);
+    int box_x = (screen_width - box_width) / 2;
+    int box_y = (screen_height - box_height) / 2;
+
+    SDL_Rect box = {box_x, box_y, box_width, box_height};
 
     if (task->task_image)
     {
@@ -703,7 +709,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             float progress = 0.0f;
             if (task->timer_duration > 0.0f)
             {
-                progress = task->timer / task->timer_duration;
+                progress = 1.0f - (task->timer / task->timer_duration);
             }
 
             // progress bar background
@@ -758,7 +764,7 @@ void render_task(SDL_Renderer *renderer, Task *task)
             break;
         }
 
-        case TASK_TYPE:
+        case TASK_LETTER:
         {
             char buffer[32];
 

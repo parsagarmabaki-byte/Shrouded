@@ -168,7 +168,7 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
             start_click_task(task, renderer, 25);
 
         if (sc == SDL_SCANCODE_3)
-            start_type_task(task, renderer);
+            start_letter_task(task, renderer);
 
         if (sc == SDL_SCANCODE_4)
             start_reflex_task(task, renderer);
@@ -597,7 +597,7 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
         render_imposter_ability(renderer, *state, assets.kill_button_active, assets.kill_button_deactive, player->kill_cooldown_active, local_id);
     }
 
-    render_task(renderer, task);
+    render_task(renderer, task, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
     if (emergency_window_open)
     {
         emergency_meeting_view(renderer, assets.emergency_button_view);

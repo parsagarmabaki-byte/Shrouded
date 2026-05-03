@@ -10,7 +10,7 @@ typedef enum {
     TASK_NONE,
     TASK_TIMER,
     TASK_CLICK,
-    TASK_TYPE,
+    TASK_LETTER,
     TASK_REFLEX,
     TASK_LOGICAL_ORDER,
     TASK_MEMORY
@@ -29,14 +29,14 @@ void destroy_task(Task *task);
 // behavior
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
 void start_click_task(Task *task, SDL_Renderer *renderer, int target);
-void start_type_task(Task *task, SDL_Renderer *renderer);
+void start_letter_task(Task *task, SDL_Renderer *renderer);
 void start_reflex_task(Task *task, SDL_Renderer *renderer);
 void start_logical_order_task(Task *task, SDL_Renderer *renderer);
 void start_memory_task(Task *task, SDL_Renderer *renderer);
 
 void update_task(Task *task, float dt);
 void end_task(Task *task, TaskStatus status);
-void render_task(SDL_Renderer *renderer, Task *task);
+void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
 void cleanup_task(Task *task);
 
 // getters
