@@ -9,17 +9,19 @@ void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_butto
     SDL_RenderCopy(renderer, emergency_button_view, NULL, &picture_size);
 }
 
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported)
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     render_emergency_map(renderer, assets, state->players[state->local_player_id].isAlive);
-    render_banners(renderer, assets, state);
+    render_banners(renderer, assets, state, targeted_banner_id);
     render_emergency_icon(renderer, assets.emergency_meeting_icon, id_reported);
-    SDL_RenderPresent(renderer);
+    SDL_Rect submit_button = {500, 800, 200, 200};
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(renderer, &submit_button);
 }
 
-int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive)
+int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int target_banner_id)
 {
     if (event->type == SDL_MOUSEBUTTONDOWN && player_alive)
     {
@@ -27,13 +29,31 @@ int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *eve
         {
             if (!state.players[i].isAlive)
                 continue;
+
             if (is_hovering(renderer, get_banner_rect(i)))
             {
-                return i;
+                if (target_banner_id == i)
+                    return -1; // klickade samma igen = avmarkera
+
+                return i; // klickade ny banner = välj den
             }
         }
     }
-    return -1;
+    return target_banner_id;
+}
+
+int handle_send_vote_button(SDL_Renderer *renderer, SDL_Event *event, int player_alive)
+{
+    SDL_Rect submit_button = {260, 555, 265, 75};
+    SDL_Rect skip_button = {760, 555, 265, 75};
+    if (event->type == SDL_MOUSEBUTTONDOWN && player_alive)
+    {
+        if (is_hovering(renderer,submit_button))
+            printf("\nSENDING VOTE\n");
+        else if (is_hovering(renderer,skip_button))
+            printf("\nSENDING SKIP VOTE\n");
+        //send_player_vote()
+    }
 }
 
 void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_alive)
@@ -46,17 +66,21 @@ void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_
     SDL_RenderCopy(renderer, map_texture, NULL, NULL);
 }
 
-void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state)
+void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state, int targeted_banner_id)
 {
-    int start_x = 240;
-    int start_y = 170;
-    SDL_Rect banner = {start_x, start_y, 350, 109};
+    SDL_Rect banner;
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         banner = get_banner_rect(i);
 
         if (state->players[i].isAlive)
+        {
+            if (targeted_banner_id != -1 && targeted_banner_id != i)
+                SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 155);
+
             SDL_RenderCopy(renderer, assets.players_alive_banner[i], NULL, &banner);
+            SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 255);
+        }
         else
         {
             SDL_RenderCopy(renderer, assets.players_dead_banner[i], NULL, &banner);

@@ -20,6 +20,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     srand(time(NULL));
     bool was_task_active = false;
     bool ui_open;
+    int targeted_banner_id = -1;
     float dt;
 
     Player *player = player_create(state, local_id);
@@ -35,14 +36,14 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     while (running)
     {
-        dt = calculate_delta_time(&last_tick); 
-        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
+        dt = calculate_delta_time(&last_tick);
+        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &targeted_banner_id);
         collect_packets(client, state, bodies);
         ui_open = emergency_window_open || task_map_open;
         if (state->phase == GAME_RUNNING)
             update_game(client, state, player, task, bodies, &user_input, local_id, ui_open, &was_task_active, dt, &accumulator);
 
-        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt);
+        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id);
     }
 
     // ADT: förstör spelaren (FRIGÖR MINNE PÅ HEAPEN)
@@ -389,14 +390,14 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderDrawRect(renderer, &player_marker);
 }
 
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, int *targeted_banner_id)
 {
     while (SDL_PollEvent(event))
     {
         if (state->phase == GAME_RUNNING)
             game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
         else if (state->phase == GAME_MEETING)
-            game_meeting_events(renderer, *state, event, state->players[local_id].isAlive);
+            game_meeting_events(renderer, *state, event, state->players[local_id].isAlive, targeted_banner_id);
     }
 }
 
@@ -430,16 +431,17 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
     report_body_events(renderer, client, state, event, bodies, player);
 }
 
-void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive)
+void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id)
 {
-    int banner_id = target_player_banner(renderer, state, event, player_alive);
-    if (banner_id != -1)
+    *targeted_banner_id = target_player_banner(renderer, state, event, player_alive, *targeted_banner_id);
+    if (*targeted_banner_id != -1)
     {
         printf("\nBANNER IS CLICKED\n");
     }
+    handle_send_vote_button(renderer,event,player_alive);
 }
 
-bool render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt)
+void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id)
 {
     if (state->phase == GAME_RUNNING)
     {
@@ -467,7 +469,6 @@ bool render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4;
 
         SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
-        SDL_RenderPresent(renderer);
     }
     else if (state->phase == GAME_INFO_MEETING)
     {
@@ -492,12 +493,11 @@ bool render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
             }
         }
         SDL_RenderCopy(renderer, meeting_info_texture, NULL, &meeting_info_rect);
-        SDL_RenderPresent(renderer);
     }
     else if (state->phase == GAME_MEETING)
     {
         int player_reported_id = state->emergency_meeting_reported_id;
-        render_emergency_meeting(renderer, assets, state, player_reported_id);
+        render_emergency_meeting(renderer, assets, state, player_reported_id, targeted_banner_id);
         *emergency_window_open = false;
     }
     else if (state->phase == GAME_CREWMATES_WIN)
@@ -508,6 +508,13 @@ bool render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     {
         // Rendera impostor win screen
     }
+    // SDL_Rect submit_button = {260,555,265,75};
+    // SDL_Rect skip_button = {760,555,265,75};
+    // SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
+    // SDL_RenderFillRect(renderer,&submit_button);
+    // SDL_RenderFillRect(renderer,&skip_button);
+    SDL_RenderPresent(renderer);
+
 }
 
 void update_player_direction(Player *player, clientInput *user_input)
@@ -561,7 +568,6 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     {
         render_task_map(renderer, task, assets, player);
     }
-    SDL_RenderPresent(renderer);
 }
 
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open)
