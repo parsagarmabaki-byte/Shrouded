@@ -176,6 +176,23 @@ int target_report_body(KillAnimation bodies[MAX_PLAYERS], Player player)
     return target;
 }
 
+bool find_target_report_body(Position bodies, int player_x, int player_y)
+{
+    float shortest_distance = KILL_RADIUS * KILL_RADIUS;
+
+    float player_center_x = player_x + 20 / 2.0f;
+    float player_center_y = player_y + 20 / 2.0f;
+    
+    float dx = player_center_x - bodies.x;
+    float dy = player_center_y - bodies.y;
+    float dist_sq = dx * dx + dy * dy;
+
+    if (dist_sq < shortest_distance)
+    {
+       return true;
+    }
+}
+
 void render_player_ability(SDL_Renderer *renderer, Player player, GameAssets assets, KillAnimation bodies[MAX_PLAYERS])
 {
     SDL_Rect picture_size = {940, 440, 150, 150};

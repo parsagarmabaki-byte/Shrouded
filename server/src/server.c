@@ -443,10 +443,34 @@ int main(void)
                 if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_BODY_FOUND"))
                 {
                     int local_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
-                    if (local_id >= 0 && local_id < MAX_PLAYERS && state.players[local_id].isAlive)
+
+                    clientInput report_body_request;
+                    memcpy(&report_body_request, receive_packet->data, sizeof(report_body_request));
+
+                    // printf("[SERVER] Received MSG_BODY_FOUND\n");
+                    // printf("[SERVER] packet address matched local_id=%d\n", local_id);
+                    // printf("[SERVER] request player_id=%d target_id=%d\n",
+                    //        report_body_request.player_id,
+                    //        report_body_request.target_id);
+
+                    // printf("[SERVER] request dead_body=(%d, %.d)\n",
+                    //        report_body_request.dead_body.x,
+                    //        report_body_request.dead_body.y);
+
+                    int target_id = report_body_request.target_id;
+                    Position dead_body = report_body_request.dead_body;
+                    int player_x = state.players[local_id].x;
+                    int player_y = state.players[local_id].y;
+
+                    // printf("[SERVER] player pos=(%d, %d), isAlive=%d\n",
+                    //        player_x,
+                    //        player_y,
+                    //        state.players[local_id].isAlive);
+
+                    if (local_id >= 0 && local_id < MAX_PLAYERS && state.players[local_id].isAlive && find_target_report_body(dead_body, player_x, player_y))
                     {
                         state.phase = GAME_INFO_MEETING;
-                        state.type = type;
+                        state.type = MSG_BODY_FOUND;
                         state.emergency_meeting_reported_id = local_id;
                         printf("[SERVER] Accept: player %d found a body.\n", local_id);
                         phase_time = SDL_GetTicks64(); // TIDSSTÄMPEL

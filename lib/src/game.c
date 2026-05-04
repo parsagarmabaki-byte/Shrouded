@@ -202,11 +202,12 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
 void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
 {
+    int target_id = target_report_body(bodies, *player);
     if (event->type == SDL_KEYDOWN)
     {
-        if (event->key.keysym.scancode == SDL_SCANCODE_R && target_report_body(bodies, *player) != -1 && state->players[state->local_player_id].isAlive)
+        if (event->key.keysym.scancode == SDL_SCANCODE_R && target_id != -1 && state->players[state->local_player_id].isAlive)
         {
-            request_report_body(client, state);
+            request_report_body(client, state, bodies[target_id], target_id);
         }
     }
     else if (event->type == SDL_MOUSEBUTTONDOWN)
@@ -214,7 +215,7 @@ void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state
         SDL_Rect report_button = {955, 455, 120, 120};
         if (is_hovering(renderer, report_button))
         {
-            request_report_body(client, state);
+            request_report_body(client, state, bodies[target_id], target_id);
         }
     }
 }

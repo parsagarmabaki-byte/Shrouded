@@ -16,6 +16,6 @@ void request_kill(Client *client, gameState *state);
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies);
 int send_leave_message(Client *client);
 void request_emergency_meeting(Client *client, gameState *state, int local_id);
-void request_report_body(Client *client, gameState *state);
+void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id);
 
 #endif

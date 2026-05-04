@@ -40,6 +40,13 @@ typedef enum{
 } MessageType;
 
 
+typedef struct 
+{
+    int x;
+    int y;
+} Position;
+
+
 typedef struct { // Info som användaren klickar in
     MessageType type;
     int player_id;
@@ -54,6 +61,9 @@ typedef struct { // Info som användaren klickar in
     int isAlive;
     int emergency_meeting_left;
     Direction direction;
+    Position dead_body;
+    int target_id;
+    
 } clientInput; 
 
 
