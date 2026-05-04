@@ -142,7 +142,8 @@ int send_task_complete(Client *client, int player_id, TaskType task_type)
     msg.task_type = task_type;
 
     UDPpacket *packet = create_packet(sizeof(msg));
-    if (!packet) return 0;
+    if (!packet)
+        return 0;
 
     if (!send_packet_data(client->socket, packet, client->serverAddr, &msg, sizeof(msg)))
     {
@@ -162,11 +163,19 @@ void request_kill(Client *client, gameState *state)
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
 
-void request_report_body(Client *client, gameState *state)
+void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id)
 {
     clientInput input = {0};
     input.type = MSG_BODY_FOUND;
     input.player_id = state->local_player_id;
+    input.target_id = target_id;
+    input.dead_body.x = dead_body.x;
+    input.dead_body.y = dead_body.y;
+    // printf("[CLIENT] Sending MSG_BODY_FOUND\n");
+    // printf("[CLIENT] local_player_id=%d target_id=%d\n",
+    //        input.player_id, input.target_id);
+    // printf("[CLIENT] dead_body=(%d, %d)\n",
+    //        input.dead_body.x, input.dead_body.y);
     send_client_input_packet(client->socket, client->serverAddr, &input);
 }
 

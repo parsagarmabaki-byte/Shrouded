@@ -78,7 +78,7 @@ void compare_server_position(gameState state, Player *player,int local_id)
 
 Player init_player(gameState state, int local_id)
 {
-    Player player = {{state.players[local_id].x, state.players[local_id].y, 20, 20}};
+    Player player = {{state.players[local_id].x, state.players[local_id].y, HITBOX_SIZE, HITBOX_SIZE}};
     player.current_frame = state.players[local_id].current_frame;
     player.direction = state.players[local_id].direction;
     player.animation_timer = 0.0f;
@@ -100,23 +100,19 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
     SDL_Rect dst_hitbox;
     Uint8 old_r, old_g, old_b, old_a;
 
-    // --- 1. Storleken gubben ska ha på skärmen ---
-    int visual_w = 70;
-    int visual_h = 70;
-
     src.x = player->current_frame * FRAME_SIZE;
     src.y = player->direction * FRAME_SIZE;
     src.w = FRAME_SIZE;
     src.h = FRAME_SIZE;
 
     // --- 3. Beräkna var BILDEN ska ritas ---
-    int offset_x = (visual_w - (int)player->Hitbox.w) / 2;
-    int offset_y = (visual_h - (int)player->Hitbox.h) / 2;
+    int offset_x = (PLAYER_SIZE - (int)player->Hitbox.w) / 2;
+    int offset_y = (PLAYER_SIZE - (int)player->Hitbox.h) / 2;
 
     dst_render.x = (int)(player->Hitbox.x - cam->x) - offset_x;
     dst_render.y = (int)(player->Hitbox.y - cam->y) - offset_y;
-    dst_render.w = visual_w;
-    dst_render.h = visual_h;
+    dst_render.w = PLAYER_SIZE;
+    dst_render.h = PLAYER_SIZE;
 
     // --- 4. Beräkna var HITBOXEN är (för den gula ramen) ---
     dst_hitbox.x = (int)(player->Hitbox.x - cam->x);

@@ -1,54 +1,8 @@
 #include "lobby.h"
+#include "text.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-
-static SDL_Texture *create_text_texture(SDL_Renderer *renderer, TTF_Font *font, const char *text,
-                                        SDL_Color color, int *width, int *height)
-{
-    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
-    if (!surface) return NULL;
-
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (!texture)
-    {
-        SDL_FreeSurface(surface);
-        return NULL;
-    }
-
-    if (width) *width = surface->w;
-    if (height) *height = surface->h;
-    SDL_FreeSurface(surface);
-    return texture;
-}
-
-static void draw_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, SDL_Rect dst)
-{
-    SDL_Texture *texture = create_text_texture(renderer, font, text, color, &dst.w, &dst.h);
-    if (!texture) return;
-
-    SDL_RenderCopy(renderer, texture, NULL, &dst);
-    SDL_DestroyTexture(texture);
-}
-
-static void draw_centered_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color,
-                               int center_x, int y)
-{
-    int width = 0;
-    int height = 0;
-    SDL_Texture *texture = create_text_texture(renderer, font, text, color, &width, &height);
-    if (!texture) return;
-
-    SDL_Rect dst = {
-        .x = center_x - (width / 2),
-        .y = y,
-        .w = width,
-        .h = height
-    };
-
-    SDL_RenderCopy(renderer, texture, NULL, &dst);
-    SDL_DestroyTexture(texture);
-}
 
 int initiate(waitForPlayers *pWait)
 {
@@ -66,6 +20,8 @@ int initiate(waitForPlayers *pWait)
     if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
     {
         printf("IMG_Init: %s\n", IMG_GetError());
+        TTF_Quit();
+        SDL_Quit();
         return 0;
     }
 
@@ -95,21 +51,10 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
-    pWait->Font = TTF_OpenFont("assets/fonts/BebasNeue-Regular.ttf", 60);
-    if (!pWait->Font)
-    {
-        printf("TTF_OpenFont: %s\n", TTF_GetError());
-        SDL_DestroyRenderer(pWait->renderer);
-        SDL_DestroyWindow(pWait->window);
-        IMG_Quit(); TTF_Quit(); SDL_Quit();
-        return 0;
-    }
-
     SDL_Surface *bgSurface = IMG_Load("assets/lobbyscreen/waitingforplayers.png");
     if (!bgSurface)
     {
         printf("IMG_Load: %s\n", IMG_GetError());
-        TTF_CloseFont(pWait->Font);
         SDL_DestroyRenderer(pWait->renderer);
         SDL_DestroyWindow(pWait->window);
         IMG_Quit(); TTF_Quit(); SDL_Quit();
@@ -121,21 +66,61 @@ int initiate(waitForPlayers *pWait)
     if (!pWait->background)
     {
         printf("SDL_CreateTextureFromSurface: %s\n", SDL_GetError());
-        TTF_CloseFont(pWait->Font);
         SDL_DestroyRenderer(pWait->renderer);
         SDL_DestroyWindow(pWait->window);
         IMG_Quit(); TTF_Quit(); SDL_Quit();
         return 0;
     }
+
+    // Skapa alla Text-objekt med samma font och storlek
+    const char *fontPath = "assets/fonts/BebasNeue-Regular.ttf";
+    const int fontSize = 60;
+
+    pWait->titleText     = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->subtitleText  = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->enterText     = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->escText       = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->errorText     = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->inputText     = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->connectedText = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->startText     = text_create(pWait->renderer, fontPath, fontSize);
+
+    if (!pWait->titleText || !pWait->subtitleText || !pWait->enterText ||
+        !pWait->escText || !pWait->errorText || !pWait->inputText ||
+        !pWait->connectedText || !pWait->startText)
+    {
+        printf("text_create failed for one or more Text objects\n");
+        cleanLobby(pWait);
+        return 0;
+    }
+
+    // Sätt statiska texter en gång — dessa ändras aldrig
+    SDL_Color white = {255, 255, 255, 255};
+    SDL_Color muted = {210, 210, 210, 255};
+
+    text_set(pWait->titleText,    "CONNECT TO SERVER",                white);
+    text_set(pWait->subtitleText, "Enter the server IP address below", muted);
+    text_set(pWait->enterText,    "Press Enter to connect",            muted);
+    text_set(pWait->escText,      "Esc closes the client",             muted);
+    text_set(pWait->startText,    "PRESS SPACE TO START",              white);
+
     return 1;
 }
 
 void cleanLobby(waitForPlayers *pWait)
 {
-    if (pWait->Font) TTF_CloseFont(pWait->Font);
+    text_destroy(pWait->titleText);
+    text_destroy(pWait->subtitleText);
+    text_destroy(pWait->enterText);
+    text_destroy(pWait->escText);
+    text_destroy(pWait->errorText);
+    text_destroy(pWait->inputText);
+    text_destroy(pWait->connectedText);
+    text_destroy(pWait->startText);
+
     if (pWait->background) SDL_DestroyTexture(pWait->background);
-    if (pWait->renderer) SDL_DestroyRenderer(pWait->renderer);
-    if (pWait->window) SDL_DestroyWindow(pWait->window);
+    if (pWait->renderer)   SDL_DestroyRenderer(pWait->renderer);
+    if (pWait->window)     SDL_DestroyWindow(pWait->window);
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
@@ -153,12 +138,10 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
 {
     SDL_Event event;
     SDL_Color white = {255, 255, 255, 255};
-    SDL_Color muted = {210, 210, 210, 255};
-    SDL_Color red = {255, 120, 120, 255};
-    int windowWidth;
-    int windowHeight;
-    int panel_center_x;
+    SDL_Color red   = {255, 120, 120, 255};
+    int windowWidth, windowHeight;
     int finished = 0;
+    int textChanged = 1; // Flagga så vi sätter inputText första framen
 
     SDL_StartTextInput();
 
@@ -193,6 +176,7 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
                     if (only_valid_chars)
                     {
                         strcat(buffer, event.text.text);
+                        textChanged = 1;
                     }
                 }
             }
@@ -211,6 +195,7 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
                     if (len > 0)
                     {
                         buffer[len - 1] = '\0';
+                        textChanged = 1;
                     }
                 }
 
@@ -225,10 +210,24 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
             }
         }
 
+        // Uppdatera inputText bara när texten faktiskt ändrats
+        if (textChanged)
+        {
+            if (strlen(buffer) > 0)
+                text_set(pWait->inputText, buffer, white);
+            textChanged = 0;
+        }
+
+        // Uppdatera felmeddelande (sätts en gång per anrop till promptServerAddress)
+        // Görs utanför loopen om det vore statiskt, men error_message kan vara NULL
+        // så vi sätter det här en gång (behöver egentligen bara göras en gång,
+        // men text_set är billig jämfört med att rita varje frame)
+
         SDL_RenderCopy(pWait->renderer, pWait->background, NULL, NULL);
 
         SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
 
+        // Panel
         SDL_Rect panel;
         panel.x = windowWidth / 2 - 360;
         panel.y = windowHeight / 2 - 215;
@@ -241,14 +240,14 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
         SDL_SetRenderDrawColor(pWait->renderer, 255, 255, 255, 255);
         SDL_RenderDrawRect(pWait->renderer, &panel);
 
-        panel_center_x = panel.x + (panel.w / 2);
-        draw_centered_text(pWait->renderer, pWait->Font, "CONNECT TO SERVER", white,
-                           panel_center_x, panel.y + 42);
-        draw_centered_text(pWait->renderer, pWait->Font, "Enter the server IP address below", muted,
-                           panel_center_x, panel.y + 125);
-        draw_centered_text(pWait->renderer, pWait->Font, "Press Enter to connect", muted,
-                           panel_center_x, panel.y + 180);
+        int panel_center_x = panel.x + (panel.w / 2);
 
+        // Rita statiska texter (text_draw centrerar på x och y)
+        text_draw(pWait->titleText,    panel_center_x, panel.y + 42 + text_get_height(pWait->titleText) / 2);
+        text_draw(pWait->subtitleText, panel_center_x, panel.y + 125 + text_get_height(pWait->subtitleText) / 2);
+        text_draw(pWait->enterText,    panel_center_x, panel.y + 180 + text_get_height(pWait->enterText) / 2);
+
+        // Inputruta
         SDL_Rect inputBox;
         inputBox.x = panel.x + 70;
         inputBox.y = panel.y + 255;
@@ -260,20 +259,18 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
         SDL_SetRenderDrawColor(pWait->renderer, 255, 255, 255, 255);
         SDL_RenderDrawRect(pWait->renderer, &inputBox);
 
-        SDL_Rect textRect;
-        textRect.x = inputBox.x + 24;
-        textRect.y = inputBox.y + 12;
-        textRect.w = 0;
-        textRect.h = 0;
-        draw_text(pWait->renderer, pWait->Font, buffer, white, textRect);
+        // Rita input-texten vänsterställd (text_draw_at = övre vänstra hörnet)
+        if (strlen(buffer) > 0)
+            text_draw_at(pWait->inputText, inputBox.x + 24, inputBox.y + 12);
 
-        draw_centered_text(pWait->renderer, pWait->Font, "Esc closes the client", muted,
-                           panel_center_x, panel.y + 355);
+        // Esc-text
+        text_draw(pWait->escText, panel_center_x, panel.y + 355 + text_get_height(pWait->escText) / 2);
 
+        // Felmeddelande
         if (error_message && error_message[0] != '\0')
         {
-            draw_centered_text(pWait->renderer, pWait->Font, error_message, red,
-                               panel_center_x, panel.y + 392);
+            text_set(pWait->errorText, error_message, red);
+            text_draw(pWait->errorText, panel_center_x, panel.y + 392 + text_get_height(pWait->errorText) / 2);
         }
 
         SDL_RenderPresent(pWait->renderer);
@@ -288,45 +285,20 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
     SDL_Color white = {255, 255, 255, 255};
     SDL_RenderCopy(pWait->renderer, pWait->background, NULL, NULL);
 
+    int windowWidth, windowHeight;
+    SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
+
+    // Uppdatera connected-text
     int connectedPlayers = countActivePlayers(state);
     char text[64];
     snprintf(text, sizeof(text), "%d/%d CONNECTED", connectedPlayers, MAX_PLAYERS);
-
-    int windowWidth, windowHeight;
-    SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
-    int text_w = 0;
-    int text_h = 0;
-    SDL_Texture *texture = create_text_texture(pWait->renderer, pWait->Font, text, white, &text_w, &text_h);
-    if (!texture) return;
-
-    SDL_Rect dst = {
-        .x = (windowWidth - text_w) / 2,
-        .y = windowHeight / 6,
-        .w = text_w,
-        .h = text_h
-    };
-
-    SDL_RenderCopy(pWait->renderer, texture, NULL, &dst);
-    SDL_DestroyTexture(texture);
+    text_set(pWait->connectedText, text, white);
+    text_draw(pWait->connectedText, windowWidth / 2, windowHeight / 6 + text_get_height(pWait->connectedText) / 2);
 
     if (connectedPlayers >= 1)
     {
-        SDL_Surface *startSurface = TTF_RenderText_Blended(pWait->Font, "PRESS SPACE TO START", white);
-        if (startSurface)
-        {
-            SDL_Texture *startTexture = SDL_CreateTextureFromSurface(pWait->renderer, startSurface);
-            if (startTexture)
-            {
-                SDL_Rect startRect;
-                startRect.w = startSurface->w;
-                startRect.h = startSurface->h;
-                startRect.x = (windowWidth - startRect.w) / 2;
-                startRect.y = windowHeight - 180;
-                SDL_RenderCopy(pWait->renderer, startTexture, NULL, &startRect);
-                SDL_DestroyTexture(startTexture);
-            }
-            SDL_FreeSurface(startSurface);
-        }
+        text_draw(pWait->startText, windowWidth / 2, windowHeight - 180 + text_get_height(pWait->startText) / 2);
     }
+
     SDL_RenderPresent(pWait->renderer);
 }

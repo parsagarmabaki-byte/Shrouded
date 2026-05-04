@@ -20,6 +20,7 @@ void update_kill_animation(KillAnimation bodies[MAX_PLAYERS], float dt);
 void render_kill_animation(SDL_Renderer *renderer, KillAnimation bodies[MAX_PLAYERS], GameAssets assets, Camera *cam);
 int target_report_body(KillAnimation bodies[MAX_PLAYERS], Player player);
 void render_player_ability(SDL_Renderer *renderer, Player player, GameAssets assets, KillAnimation bodies[MAX_PLAYERS]);
+bool find_target_report_body(Position bodies, int player_x, int player_y);
 
 
 #endif
