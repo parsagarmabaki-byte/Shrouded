@@ -45,7 +45,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open);
 
         accumulator += dt;
-
+        
         bool ui_open = emergency_window_open || task_map_open;
         update_player_movement(player, &user_input, task_active_check(task), ui_open, &accumulator);
         send_player_input(client, state, player, task_active_check(task), ui_open);
