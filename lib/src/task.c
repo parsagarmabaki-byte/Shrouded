@@ -52,7 +52,7 @@ struct Task {           // task ADT struct
 
     // TASK_MEMORY specific
     int sequence[8];        // directions (0–3)
-    int sequence_length;    // 4-6
+    int sequence_length;    // 3-5
     int input_index;
     int round;
     float start_delay;
@@ -165,7 +165,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
             {
                 // reset if failed
                 task->round = 0;
-                task->sequence_length = 4;
+                task->sequence_length = 3;
                 task->flash_interval = 0.6f;
 
                 task->flash_index = 0;
@@ -499,7 +499,7 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
     task->active = true;
 
     task->round = 0;
-    task->sequence_length = 4;
+    task->sequence_length = 3;
     task->start_delay = 2.0f;
 
     task->flash_visible = false;
