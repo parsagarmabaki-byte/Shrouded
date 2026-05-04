@@ -440,6 +440,7 @@ int main(void)
                 }
             }
             else if (type == MSG_BODY_FOUND)
+            {
                 if (packet_has_size(receive_packet, sizeof(clientInput), "MSG_BODY_FOUND"))
                 {
                     int local_id = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
@@ -477,50 +478,51 @@ int main(void)
                         broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                     }
                 }
-                else if (type == MSG_TASK_COMPLETE)
+            }
+            else if (type == MSG_TASK_COMPLETE)
+            {
+                if (packet_has_size(receive_packet, sizeof(TaskCompleteMsg), "MSG_TASK_COMPLETE"))
                 {
-                    if (packet_has_size(receive_packet, sizeof(TaskCompleteMsg), "MSG_TASK_COMPLETE"))
+                    TaskCompleteMsg msg;
+                    memcpy(&msg, receive_packet->data, sizeof(msg));
+
+                    // identify sender
+                    int pid = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
+                    if (pid >= 0 && state.players[pid].active)
                     {
-                        TaskCompleteMsg msg;
-                        memcpy(&msg, receive_packet->data, sizeof(msg));
+                        int completed = state.players[pid].tasks_completed;
 
-                        // identify sender
-                        int pid = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
-                        if (pid >= 0 && state.players[pid].active)
+                        // guard against out of bounds
+                        if (completed < TASK_COUNT)
                         {
-                            int completed = state.players[pid].tasks_completed;
+                            TaskType expected = state.players[pid].task_order[completed];
 
-                            // guard against out of bounds
-                            if (completed < TASK_COUNT)
+                            // Validate that the task type matches expected
+                            if (msg.task_type == expected)
                             {
-                                TaskType expected = state.players[pid].task_order[completed];
+                                // track completion
+                                state.players[pid].tasks_completed++;
+                                state.total_tasks_completed++;
 
-                                // Validate that the task type matches expected
-                                if (msg.task_type == expected)
-                                {
-                                    // track completion
-                                    state.players[pid].tasks_completed++;
-                                    state.total_tasks_completed++;
+                                // calculate total tasks needed
+                                int active_count = countActivePlayers(&state);
+                                int total_expected_tasks = TASK_COUNT * (active_count - 1);
 
-                                    // calculate total tasks needed
-                                    int active_count = countActivePlayers(&state);
-                                    int total_expected_tasks = TASK_COUNT * (active_count - 1);
-
-                                    printf("\n=== TASK COMPLETE ===\n");
-                                    printf("Player %d finished task %d/%d (TaskType %d)\n", pid, state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
-                                    printf("Team progress: %d/%d\n", state.total_tasks_completed, total_expected_tasks);
-                                    printf("=====================\n");
-                                }
-                                else
-                                {
-                                    printf("[SERVER] Player %d sent wrong task type (got %d, expected %d)\n", pid, msg.task_type, expected);
-                                }
+                                printf("\n=== TASK COMPLETE ===\n");
+                                printf("Player %d finished task %d/%d (TaskType %d)\n", pid, state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
+                                printf("Team progress: %d/%d\n", state.total_tasks_completed, total_expected_tasks);
+                                printf("=====================\n");
+                            }
+                            else
+                            {
+                                printf("[SERVER] Player %d sent wrong task type (got %d, expected %d)\n", pid, msg.task_type, expected);
                             }
                         }
-
-                        broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                     }
+
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
+            }
         }
 
         // Applicera input och broadcasta på fast 60fps
