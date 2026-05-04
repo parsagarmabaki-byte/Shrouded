@@ -33,7 +33,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     while (running)
     {
-        if (handle_game_phase(client, renderer, state, bodies, assets, local_id, &emergency_window_open))
+        if (handle_game_phase(client, renderer, state, bodies, assets, &event, local_id, &emergency_window_open))
             continue;
 
         Uint64 current_tick = SDL_GetPerformanceCounter();
@@ -175,7 +175,7 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
         if (sc == SDL_SCANCODE_5)
             start_logical_order_task(task, renderer);
-        
+
         if (sc == SDL_SCANCODE_6)
             start_memory_task(task, renderer);
 
@@ -343,8 +343,6 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_Rect marker8 = {550, 510, 24, 24};
     SDL_Rect marker9 = {415, 505, 24, 24};
 
-
-
     SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
     SDL_RenderFillRect(renderer, &marker1);
     SDL_RenderFillRect(renderer, &marker2);
@@ -355,8 +353,6 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderFillRect(renderer, &marker7);
     SDL_RenderFillRect(renderer, &marker8);
     SDL_RenderFillRect(renderer, &marker9);
-
-
 
     float scale_x = (float)map_rect.w / GAME_MAP_WIDTH;
     float scale_y = (float)map_rect.h / GAME_MAP_HEIGHT;
@@ -384,36 +380,52 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
 {
     while (SDL_PollEvent(event))
     {
-        if (event->type == SDL_QUIT)
-            *running = false;
-        if (event->type == SDL_KEYDOWN)
+        if (state->phase == GAME_RUNNING)
+            game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
+        else if (state->phase == GAME_MEETING)
+            game_meeting_events(renderer, *state, event, state->players[local_id].isAlive);
+    }
+}
+void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
+{
+    if (event->type == SDL_QUIT)
+        *running = false;
+    if (event->type == SDL_KEYDOWN)
+    {
+        if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE)
         {
-            if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+            if (*emergency_window_open)
             {
-                if (*emergency_window_open)
-                {
-                    *emergency_window_open = false;
-                }
-                else
-                {
-                    send_leave_message(client);
-                    *running = false;
-                }
+                *emergency_window_open = false;
             }
-
-            if (event->key.keysym.scancode == SDL_SCANCODE_M && !task_active_check(task))
+            else
             {
-                *task_map_open = !*task_map_open;
+                send_leave_message(client);
+                *running = false;
             }
         }
-        task_events(renderer, event, task);
-        kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
-        emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
-        report_body_events(renderer, client, state, event, bodies, player);
+
+        if (event->key.keysym.scancode == SDL_SCANCODE_M && !task_active_check(task))
+        {
+            *task_map_open = !*task_map_open;
+        }
+    }
+    task_events(renderer, event, task);
+    kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
+    emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
+    report_body_events(renderer, client, state, event, bodies, player);
+}
+
+void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive)
+{
+    int banner_id = target_player_banner(renderer, state, event, player_alive);
+    if (banner_id != -1)
+    {
+        printf("\nBANNER IS CLICKED\n");
     }
 }
 
-bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, KillAnimation bodies[MAX_PLAYERS], GameAssets assets, int local_id, bool *emergency_window_open)
+bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, KillAnimation bodies[MAX_PLAYERS], GameAssets assets, SDL_Event *event, int local_id, bool *emergency_window_open)
 {
 
     if (state->phase == GAME_SHOW_ROLE)
@@ -472,17 +484,8 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == GAME_MEETING)
     {
-        // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        // SDL_RenderClear(renderer);
-
-        // if (assets.emergency_meeting != NULL)
-        // {
-        //     SDL_RenderCopy(renderer, assets.emergency_meeting, NULL, NULL);
-        // }
-
-        // SDL_RenderPresent(renderer);
         int player_reported_id = state->emergency_meeting_reported_id;
-        render_emergency_meeting(renderer, assets, state, player_reported_id);
+        render_emergency_meeting(renderer, assets, state, event, player_reported_id);
         collect_packets(client, state, bodies);
         *emergency_window_open = false;
         return true;
@@ -498,62 +501,6 @@ bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         return true;
     }
     return false;
-}
-
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported)
-{
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_Texture *map_texture;
-    if (state->players[state->local_player_id].isAlive)
-        map_texture = assets.emergency_meeting_alive;
-    else if (!state->players[state->local_player_id].isAlive)
-        map_texture = assets.emergency_meeting_dead;
-    SDL_RenderCopy(renderer, map_texture, NULL, NULL);
-
-    render_banners(renderer,assets,state);
-    render_emergency_icon(renderer, assets.emergency_meeting_icon, id_reported);
-
-    SDL_RenderPresent(renderer);
-}
-
-void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state)
-{
-    int start_x = 240;
-    int start_y= 170;
-    SDL_Rect banner = {start_x, start_y, 350, 109};
-    for (int i = 0;i<MAX_PLAYERS;i++)
-    {
-        int col = i % 2;
-        int row = i / 2;
-
-        int x_pos = start_x + col * col_dx;
-        int y_pos = start_y + row * row_dy;
-        SDL_Rect banner = {x_pos, y_pos, 350, 109};
-
-        if (state->players[i].isAlive)
-            SDL_RenderCopy(renderer, assets.players_alive_banner[i], NULL, &banner);
-        else{
-            x_pos+=7;
-            SDL_RenderCopy(renderer, assets.players_dead_banner[i], NULL, &banner);}
-    }
-}
-
-void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported)
-{
-    int start_x = 520;
-    int start_y = 200;
-
-    if (id_reported < 0 || id_reported >= 6)
-        return;
-
-    int col = id_reported % 2;
-    int row = id_reported / 2;
-
-    int x_pos = start_x + col * col_dx;
-    int y_pos = start_y + row * row_dy;
-    SDL_Rect icon_pos = {x_pos, y_pos, 50, 50};
-    SDL_RenderCopy(renderer, icon, NULL, &icon_pos);
 }
 
 void update_player_direction(Player *player, clientInput *user_input)
@@ -623,7 +570,7 @@ void update_task_check_completion(Client *client, Task *task, gameState *state, 
     update_task(task, dt);
 
     bool task_active_now = task_active_check(task);
-    
+
     // Detect transition from active to inactive
     if (*was_task_active && !task_active_now)
     {
@@ -654,6 +601,6 @@ void update_task_check_completion(Client *client, Task *task, gameState *state, 
             }
         }
     }
-    
+
     *was_task_active = task_active_now;
 }
