@@ -10,8 +10,7 @@
 #define SERVER_TICK_INTERVAL 0.016f
 
 #define PLAYER_SPEED 200 //DELAD DATA MELLAN SERVER OCH CLIENT
-#define PLAYER_SIZE 75
-#define PLAYER_HITBOX_SIZE 30
+#define PLAYER_SIZE 70
 
 #define TASK_COUNT 6 // uppdatera  när fler tasks läggs till
 
