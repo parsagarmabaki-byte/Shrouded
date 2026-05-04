@@ -35,7 +35,7 @@ void debug_walls(SDL_Renderer *renderer, Camera cam);
 void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player);
 void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
 void update_player_direction(Player *player, clientInput *user_input);
-bool handle_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, KillAnimation bodies[MAX_PLAYERS], GameAssets assets, SDL_Event *event, int local_id, bool *emergency_window_open);
+bool render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt);
 static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open);
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
 void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
@@ -43,5 +43,7 @@ void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state
 void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, TaskType task_type_before_events, bool *was_task_active);
 void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive);
 void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
+void update_game(Client *client, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], clientInput *user_input, int local_id, bool ui_open, bool *was_task_active ,float dt, float *accumulator);
+float calculate_delta_time(Uint64 *last_tick);
 
 #endif

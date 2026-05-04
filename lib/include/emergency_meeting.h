@@ -11,7 +11,7 @@
 #define banner_y 170 
 
 void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_button_view);
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, SDL_Event *event, int id_reported);
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported);
 void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported);
 void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state);
 void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_alive);

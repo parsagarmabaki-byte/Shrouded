@@ -9,7 +9,7 @@ void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_butto
     SDL_RenderCopy(renderer, emergency_button_view, NULL, &picture_size);
 }
 
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, SDL_Event *event, int id_reported)
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
