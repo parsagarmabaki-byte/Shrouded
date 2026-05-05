@@ -193,12 +193,11 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 void update_game(Client *client, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], clientInput *user_input, int local_id, bool ui_open, bool *was_task_active, float dt, float *accumulator)
 {
     *accumulator += dt;
-    TaskType task_type_before_events = task_active_check(task) ? task_get_current_type(task) : TASK_NONE;
     update_player_movement(player, user_input, task_active_check(task), ui_open, accumulator);
     send_player_input(client, state, player, task_active_check(task), ui_open);
     compare_server_position(*state, player, local_id);
     update_kill_animation(bodies, dt);
-    update_task_check_completion(client, task, state, local_id, dt, task_type_before_events, was_task_active);
+    update_task_check_completion(client, task, state, local_id, dt, was_task_active);
 }
 
 float calculate_delta_time(Uint64 *last_tick)
@@ -583,8 +582,17 @@ void send_player_input(Client *client, gameState *state, Player *player, bool ta
     }
 }
 
-void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, TaskType task_type_before_events, bool *was_task_active)
+void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, bool *was_task_active)
 {
+    // Prefer the current task type if it's still active; if the task was ended by an event handler earlier this frame the `type` field will
+    // already be cleared. In that case use `last_completed_type` saved by `end_task()` so we know which task actually finished.
+    TaskType task_type_before_update = TASK_NONE;
+    
+    if (task_active_check(task))
+        task_type_before_update = task_get_current_type(task);
+    else
+        task_type_before_update = task_get_last_type(task);
+
     update_task(task, dt);
 
     bool task_active_now = task_active_check(task);
@@ -606,15 +614,15 @@ void update_task_check_completion(Client *client, Task *task, gameState *state, 
                 TaskType expected = state->players[local_id].task_order[expected_index];
 
                 // Correct task completed
-                if (task_type_before_events == expected && task_type_before_events != TASK_NONE)
+                if (task_type_before_update == expected && task_type_before_update != TASK_NONE)
                 {
-                    send_task_complete(client, local_id, task_type_before_events);
-                    printf("[Player %d] Completed correct task (TaskType %d)\n", local_id, task_type_before_events);
+                    send_task_complete(client, local_id, task_type_before_update);
+                    printf("[Player %d] Completed correct task (TaskType %d)\n", local_id, task_type_before_update);
                 }
                 // Wrong task completed
                 else
                 {
-                    printf("[Player %d] Completed wrong task (did %d, needed %d), not counted\n", local_id, task_type_before_events, expected);
+                    printf("[Player %d] Completed wrong task (did %d, needed %d), not counted\n", local_id, task_type_before_update, expected);
                 }
             }
         }
