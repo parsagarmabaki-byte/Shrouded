@@ -37,6 +37,7 @@ IMPOSTER_ABILITY_SRC = lib/src/imposter_ability.c
 SFX_SRC = lib/src/SFX.c
 EMERGENCY_MEETING_SRC = lib/src/emergency_meeting.c
 TEXT_SRC = lib/src/text.c
+MAIN_MENU_SRC = lib/src/main_menu.c
 PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
 GAME_MAP_SRC = lib/src/game_map.c
 NETWORK_SRC = lib/src/network.c
@@ -59,6 +60,7 @@ IMPOSTER_ABILITY_OBJ = $(OBJDIR)/imposter_ability.o
 SFX_OBJ = $(OBJDIR)/sfx.o
 EMERGENCY_MEETING_OBJ = $(OBJDIR)/emergency_meeting.o
 TEXT_OBJ = $(OBJDIR)/text.o
+MAIN_MENU_OBJ = $(OBJDIR)/main_menu.o
 PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
 GAME_MAP_OBJ = $(OBJDIR)/game_map.o
 NETWORK_OBJ = $(OBJDIR)/network.o
@@ -157,8 +159,11 @@ $(EMERGENCY_MEETING_OBJ): $(EMERGENCY_MEETING_SRC) | $(OBJDIR)
 
 $(TEXT_OBJ): $(TEXT_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@	
+
+$(MAIN_MENU_OBJ): $(MAIN_MENU_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 # ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ) $(MAIN_MENU_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ)

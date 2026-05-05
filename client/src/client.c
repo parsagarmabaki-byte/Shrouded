@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include "lobby.h"
+#include "main_menu.h"
 #include "game.h"
 #include "SFX.h"
 #include "client_network.h"
@@ -19,6 +20,15 @@ int main()
     char connection_error[128] = "";
 
     if (!initiate(&lobby)) return 1;
+
+    // Visa huvudmenyn först. Om användaren valde Exit (eller stängde fönstret)
+    // städar vi upp och avslutar utan att gå vidare till IP-prompten.
+    if (!showMainMenu(&lobby))
+    {
+        cleanLobby(&lobby);
+        return 0;
+    }
+
     while (running)
     {
         if (!promptServerAddress(&lobby, server_ip, sizeof(server_ip), connection_error))
