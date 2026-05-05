@@ -1,5 +1,6 @@
 #include "emergency_meeting.h"
 #include "game_map.h"
+#include "client_network.h"
 
 void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_button_view)
 {
@@ -42,17 +43,17 @@ int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *eve
     return target_banner_id;
 }
 
-int handle_send_vote_button(SDL_Renderer *renderer, SDL_Event *event, int player_alive)
+int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner)
 {
     SDL_Rect submit_button = {260, 555, 265, 75};
     SDL_Rect skip_button = {760, 555, 265, 75};
     if (event->type == SDL_MOUSEBUTTONDOWN && player_alive)
     {
-        if (is_hovering(renderer,submit_button))
-            printf("\nSENDING VOTE\n");
-        else if (is_hovering(renderer,skip_button))
-            printf("\nSENDING SKIP VOTE\n");
-        //send_player_vote()
+        if (is_hovering(renderer, submit_button))
+            send_vote(client, targeted_banner);
+        else if (is_hovering(renderer, skip_button))
+            send_vote(client, -1);
+        // send_player_vote()
     }
 }
 

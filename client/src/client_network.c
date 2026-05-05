@@ -103,6 +103,23 @@ static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, cli
     return 1;
 }
 
+static int send_client_vote_packet(UDPsocket socket, IPaddress server_addr, VoteRequest *vote)
+{
+    UDPpacket *packet = create_packet(512);
+    if (!packet)
+    {
+        return 0;
+    }
+
+    if (!send_packet_data(socket, packet, server_addr, vote, sizeof(*vote)))
+    {
+        SDLNet_FreePacket(packet);
+        return 0;
+    }
+
+    SDLNet_FreePacket(packet);
+    return 1;
+}
 int send_leave_message(Client *client)
 {
     leaveMessage leave = {0};
@@ -187,6 +204,15 @@ void request_emergency_meeting(Client *client, gameState *state, int local_id)
     request.isAlive = state->players[local_id].isAlive;
     request.player_id = local_id;
     send_client_input_packet(client->socket, client->serverAddr, &request);
+}
+
+void send_vote(Client *client, int targeted_banner)
+{
+    VoteRequest vote;
+    vote.type = MSG_VOTE_REQUEST;
+    vote.target_id = targeted_banner;
+    vote.has_voted = 0;
+    send_client_vote_packet(client->socket,client->serverAddr,&vote);
 }
 
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies)

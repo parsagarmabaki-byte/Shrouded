@@ -35,7 +35,8 @@ typedef enum{
     MSG_KILL_EVENT,
     MSG_EMERGENCY_MEETING,
     MSG_BODY_FOUND,
-    MSG_TASK_COMPLETE
+    MSG_TASK_COMPLETE,
+    MSG_VOTE_REQUEST
 } MessageType;
 
 
@@ -117,6 +118,23 @@ typedef struct {
 
     int total_tasks_completed;
 } gameState;
+
+typedef struct
+{
+    MessageType type;
+    int target_id;
+    int voter_id;
+    int has_voted;
+} VoteRequest;
+
+typedef struct
+{
+    int alive_players_id[MAX_PLAYERS];
+    int votes_recieved;
+    int alive_players_count;
+    VoteRequest votes[MAX_PLAYERS];
+
+} Meeting;
 
 typedef struct {
     MessageType type;

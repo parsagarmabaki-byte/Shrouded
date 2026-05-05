@@ -253,6 +253,28 @@ void handleInput(gameState *state, clientInput *input, float dt)
     apply_movement(&state->players[id].x, &state->players[id].y, *input, dt);
 }
 
+void inititate_meeting_info(Meeting *meeting_info, gameState state)
+{
+    meeting_info->alive_players_count = 0;
+    meeting_info->votes_recieved = 0;
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        meeting_info->alive_players_id[i] = -1;
+        meeting_info->votes[i].voter_id = 0;
+        meeting_info->votes[i].target_id = -1;   // inte röstat ännu
+        meeting_info->votes[i].has_voted = 0;
+    }
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (!state->players[i].isAlive || !state->players[i].active)
+            continue;
+
+        meeting_info->alive_players_id[meeting_info->alive_players_count] = i;
+        meeting_info->alive_players_count++;
+    }
+}
+
 int main(void)
 {
     srand(time(NULL));
@@ -264,6 +286,7 @@ int main(void)
     gameState state = {0};
     state.type = MSG_GAME_STATE;
     state.phase = GAME_LOBBY;
+    Meeting meeting_info;
 
     IPaddress clientAddresses[MAX_PLAYERS];
     int clientUsed[MAX_PLAYERS] = {0};
@@ -297,6 +320,7 @@ int main(void)
     Uint64 lastBroadcast = SDL_GetPerformanceCounter();
     Uint64 state_start_time = 0;
     Uint64 phase_time = 0;
+
 
     while (1)
     {
@@ -522,6 +546,19 @@ int main(void)
 
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
+            } else if (type == MSG_VOTE_REQUEST)
+            {
+               if (packet_has_size(receive_packet, sizeof(VoteRequest), "VoteRequest"))
+                {
+                    VoteRequest vote;
+                    memcpy(&vote, receive_packet->data, sizeof(vote));
+                    int pid = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
+                    if (pid == vote.voter_id && !vote.has_voted && meeting_info.votes_recieved != meeting_info.alive_players_count)
+                    {
+                        
+                    }
+
+                }
             }
         }
 
@@ -545,7 +582,7 @@ int main(void)
                 if (SDL_GetTicks64() - phase_time >= 1500) // NÄR 3 SEKUNDER GÅTT
                 {
                     state.phase = GAME_MEETING;
-                    phase_time = 0;
+                    inititate_meeting_info(&meeting_info,state);     
                     phase_time = SDL_GetTicks64();
                     printf("INFORMATION OF MEETING ENDED\n");
                 }

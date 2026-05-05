@@ -17,5 +17,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies);
 int send_leave_message(Client *client);
 void request_emergency_meeting(Client *client, gameState *state, int local_id);
 void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id);
+static int send_client_vote_packet(UDPsocket socket, IPaddress server_addr, VoteRequest *vote);
+void send_vote(Client *client, int targeted_banner);
 
 #endif

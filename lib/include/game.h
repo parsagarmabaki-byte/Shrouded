@@ -41,7 +41,7 @@ void send_player_input(Client *client, gameState *state, Player *player, bool ta
 void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, int *targeted_banner_id);
 void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player);
 void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, TaskType task_type_before_events, bool *was_task_active);
-void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id);
+void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id);
 void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
 void update_game(Client *client, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], clientInput *user_input, int local_id, bool ui_open, bool *was_task_active ,float dt, float *accumulator);
 float calculate_delta_time(Uint64 *last_tick);

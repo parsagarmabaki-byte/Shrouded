@@ -396,7 +396,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
         if (state->phase == GAME_RUNNING)
             game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
         else if (state->phase == GAME_MEETING)
-            game_meeting_events(renderer, *state, event, state->players[local_id].isAlive, targeted_banner_id);
+            game_meeting_events(client, renderer, *state, event, state->players[local_id].isAlive, targeted_banner_id);
         leave_game_event(client, event, running, emergency_window_open);
     }
 }
@@ -437,14 +437,14 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
     report_body_events(renderer, client, state, event, bodies, player);
 }
 
-void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id)
+void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id)
 {
     *targeted_banner_id = target_player_banner(renderer, state, event, player_alive, *targeted_banner_id);
     if (*targeted_banner_id != -1)
     {
         printf("\nBANNER IS CLICKED\n");
     }
-    handle_send_vote_button(renderer, event, player_alive);
+    handle_send_vote_button(client,renderer, event, player_alive, *targeted_banner_id);
 }
 
 void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id)
