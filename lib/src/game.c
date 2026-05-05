@@ -46,7 +46,6 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id);
     }
 
-    // ADT: förstör spelaren (FRIGÖR MINNE PÅ HEAPEN)
     player_destroy(player);
     destroy_task(task);
     destroy_assets(&assets);
@@ -398,13 +397,12 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
             game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
         else if (state->phase == GAME_MEETING)
             game_meeting_events(renderer, *state, event, state->players[local_id].isAlive, targeted_banner_id);
+        leave_game_event(client, event, running, emergency_window_open);
     }
 }
 
-void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
+void leave_game_event(Client *client, SDL_Event *event, bool *running, bool *emergency_window_open)
 {
-    if (event->type == SDL_QUIT)
-        *running = false;
     if (event->type == SDL_KEYDOWN)
     {
         if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE)
@@ -419,7 +417,15 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
                 *running = false;
             }
         }
+    }
+}
 
+void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
+{
+    if (event->type == SDL_QUIT)
+        *running = false;
+    if (event->type == SDL_KEYDOWN)
+    {
         if (event->key.keysym.scancode == SDL_SCANCODE_M && !task_active_check(task))
         {
             *task_map_open = !*task_map_open;
@@ -438,7 +444,7 @@ void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *eve
     {
         printf("\nBANNER IS CLICKED\n");
     }
-    handle_send_vote_button(renderer,event,player_alive);
+    handle_send_vote_button(renderer, event, player_alive);
 }
 
 void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id)
@@ -514,7 +520,6 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     // SDL_RenderFillRect(renderer,&submit_button);
     // SDL_RenderFillRect(renderer,&skip_button);
     SDL_RenderPresent(renderer);
-
 }
 
 void update_player_direction(Player *player, clientInput *user_input)

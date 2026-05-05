@@ -45,5 +45,8 @@ void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *eve
 void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open);
 void update_game(Client *client, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], clientInput *user_input, int local_id, bool ui_open, bool *was_task_active ,float dt, float *accumulator);
 float calculate_delta_time(Uint64 *last_tick);
+void leave_game_event(Client *client, SDL_Event *event, bool *running, bool *emergency_window_open);
+
+
 
 #endif
