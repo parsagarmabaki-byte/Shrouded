@@ -3,6 +3,7 @@
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 static const SDL_Color WHITE = {255,255,255,255};
@@ -12,6 +13,7 @@ struct Task {           // task ADT struct
     TaskStatus status;
     bool active;
     SDL_Texture *task_image;
+    TaskType last_completed_type;
 
     //text
     SDL_Renderer *renderer;
@@ -225,9 +227,11 @@ Task* create_task(SDL_Renderer *renderer)
     Task *task = malloc(sizeof(Task));
     if (!task) return NULL;
 
+    // Zero-initialize the entire struct to prevent garbage values
+    memset(task, 0, sizeof(Task));
+
     task->type = TASK_NONE;
     task->active = false;
-    task->timer = 0.0f;
     task->renderer = renderer;
 
     // Initialize Text objects
@@ -238,14 +242,14 @@ Task* create_task(SDL_Renderer *renderer)
     if (task->global_text)
         text_set(task->global_text, "PRESS Q TO ABANDON ASSIGNMENT", WHITE);
 
-    // Initialize number_texts array to NULL
+    // Initialize number_texts array to NULL (already done by memset, but explicit for clarity)
     for (int i = 0; i < 5; i++)
         task->number_texts[i] = NULL;
 
     return task;
 }
 
-bool task_active_check(Task *task) // call these 3 getter functions outside task.c to access struct variables
+bool task_active_check(Task *task) // call these 4 getter functions outside task.c to access struct variables
 {
     return task->active;
 }
@@ -255,6 +259,11 @@ TaskType task_get_current_type(Task *task)
     return task->type;
 }
 
+TaskType task_get_last_type(Task *task)
+{
+    return task->last_completed_type;
+}
+
 TaskStatus task_get_status(Task *task)
 {
     return task->status;
@@ -262,6 +271,8 @@ TaskStatus task_get_status(Task *task)
 
 void end_task(Task *task, TaskStatus status)
 {
+    // Save the type so other systems can see even after we clear it.
+    task->last_completed_type = task->type;
     task->active = false;
     task->type = TASK_NONE;
     task->status = status;  // Track HOW it ended
@@ -328,10 +339,19 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
         printf("Failed to load timer task image: %s\n", IMG_GetError());
         task->active = false;
         task->type = TASK_NONE;
+        return;
     }
 
-    if (task->task_text)
-        text_set(task->task_text, "SCAN IN PROGRESS", WHITE);
+    // Ensure text objects exist
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_timer_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+    
+    text_set(task->task_text, "SCAN IN PROGRESS", WHITE);
 }
 
 void start_click_task(Task *task, SDL_Renderer *renderer, int target)
@@ -349,10 +369,18 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
         printf("Failed to load click task image: %s\n", IMG_GetError());
         task->active = false;
         task->type = TASK_NONE;
+        return;
     }
 
-    if (task->task_text)
-        text_set(task->task_text, "CLEAN THE CRYSTAL (CLICK!)", WHITE);
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_click_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+    
+    text_set(task->task_text, "CLEAN THE CRYSTAL (CLICK!)", WHITE);
 }
 
 void start_letter_task(Task *task, SDL_Renderer *renderer)
@@ -376,13 +404,21 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
     task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/desk.png");
     if (!task->task_image)
     {
-        printf("Failed to load type task image: %s\n", IMG_GetError());
+        printf("Failed to load letter task image: %s\n", IMG_GetError());
         task->active = false;
         task->type = TASK_NONE;
+        return;
     }
 
-    if (task->task_text)
-        text_set(task->task_text, "WRITE THE LETTER", WHITE);
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_letter_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+    
+    text_set(task->task_text, "WRITE THE LETTER", WHITE);
 }
 
 void start_reflex_task(Task *task, SDL_Renderer *renderer)
@@ -408,13 +444,21 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
     task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/fireplace.png");
     if (!task->task_image)
     {
-        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        printf("Failed to load reflex task image: %s\n", IMG_GetError());
         task->active = false;
         task->type = TASK_NONE;
+        return;
     }
- 
-    if (task->task_text)
-        text_set(task->task_text, "STOKE THE FIRE (PRESS SPACE!)", WHITE);
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_reflex_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+    
+    text_set(task->task_text, "STOKE THE FIRE (PRESS SPACE!)", WHITE);
 }
 
 void start_logical_order_task(Task *task, SDL_Renderer *renderer)
@@ -455,6 +499,14 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
         char str[4]; 
         sprintf(str, "%d", num);
         task->number_texts[i] = text_create(task->renderer, "assets/fonts/BebasNeue-Regular.ttf", 32);
+        if (!task->number_texts[i])
+        {
+            printf("Failed to create text for logical order task\n");
+            cleanup_task(task);
+            task->active = false;
+            task->type = TASK_NONE;
+            return;
+        }
         text_set(task->number_texts[i], str, white);
 
         task->numbers_rect[i].w = text_get_width(task->number_texts[i]);
@@ -483,9 +535,11 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
     task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/shelf.png");
     if (!task->task_image)
     {
-        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        printf("Failed to load logical order task image: %s\n", IMG_GetError());
+        cleanup_task(task);
         task->active = false;
         task->type = TASK_NONE;
+        return;
     }
 
     if (task->task_text)
@@ -519,13 +573,21 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
     task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/twocrystals.png");
     if (!task->task_image)
     {
-        printf("Failed to load timer task image: %s\n", IMG_GetError());
+        printf("Failed to load memory task image: %s\n", IMG_GetError());
         task->active = false;
         task->type = TASK_NONE;
+        return;
     }
 
-    if (task->task_text)
-        text_set(task->task_text, "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)", WHITE);
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_memory_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+    
+    text_set(task->task_text, "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)", WHITE);
 }
 
 void update_task(Task *task, float dt) // updates task logic every frame
@@ -621,6 +683,13 @@ void update_task(Task *task, float dt) // updates task logic every frame
 void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height)
 {
     if (!task->active) return;
+    
+    // Safety checks for required text objects
+    if (!task->task_text || !task->dynamic_text)
+    {
+        printf("Warning: task_text or dynamic_text is NULL in render_task\n");
+        return;
+    }
 
     // center and size task image
     int box_width = (int)(screen_width * 0.70f);

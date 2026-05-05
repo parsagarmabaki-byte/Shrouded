@@ -44,6 +44,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 bool task_active_check(Task *task);
 TaskType task_get_current_type(Task *task);
 TaskStatus task_get_status(Task *task);
+TaskType task_get_last_type(Task *task);
 
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key);
