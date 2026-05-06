@@ -211,7 +211,6 @@ void send_vote(Client *client, int targeted_banner)
     VoteRequest vote;
     vote.type = MSG_VOTE_REQUEST;
     vote.target_id = targeted_banner;
-    vote.has_voted = 0;
     send_client_vote_packet(client->socket,client->serverAddr,&vote);
 }
 

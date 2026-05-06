@@ -5,6 +5,7 @@
 #include "task.h"
 
 #define MAX_PLAYERS 6
+#define VOTE_SKIP -1
 #define SERVER_PORT 2000
 
 #define SERVER_TICK_INTERVAL 0.016f
@@ -124,14 +125,16 @@ typedef struct
     MessageType type;
     int target_id;
     int voter_id;
-    int has_voted;
 } VoteRequest;
 
 typedef struct
 {
     int alive_players_id[MAX_PLAYERS];
-    int votes_recieved;
     int alive_players_count;
+
+    int has_voted[MAX_PLAYERS];
+
+    int votes_recieved;
     VoteRequest votes[MAX_PLAYERS];
 
 } Meeting;

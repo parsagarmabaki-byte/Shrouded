@@ -253,6 +253,61 @@ void handleInput(gameState *state, clientInput *input, float dt)
     apply_movement(&state->players[id].x, &state->players[id].y, *input, dt);
 }
 
+int can_cast_vote(Meeting meeting_info, int voter_id)
+{
+    if (voter_id < 0 || voter_id >= MAX_PLAYERS)
+        return 0;
+
+    if (meeting_info.has_voted[voter_id])
+        return 0;
+
+    return 1;
+}
+
+void cast_vote(Meeting *meeting_info, VoteRequest vote)
+{
+    int index = meeting_info->votes_recieved;
+    meeting_info->votes[index] = vote;
+    meeting_info->has_voted[vote.voter_id] = 1;
+    meeting_info->votes_recieved++;
+    printf("\nVote accepted: voter=%d target=%d votes=%d/%d\n",
+           vote.voter_id,
+           vote.target_id,
+           meeting_info->votes_recieved,
+           meeting_info->alive_players_count);
+}
+
+int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS])
+{
+    int votes_recieved = meeting_info.votes_recieved;
+    int max_votes = 0;
+    int player_id = -1;
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        voting_result[i] = 0;
+    }
+    for (int i = 0; i < votes_recieved; i++)
+    {
+        int target_id = meeting_info.votes[i].target_id;
+        if (target_id == VOTE_SKIP)
+            continue;
+        voting_result[target_id]++;
+    }
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (voting_result[i] > max_votes)
+        {
+            max_votes = voting_result[i];
+            player_id = i;
+        }
+        else if (voting_result[i] == max_votes)
+        {
+            player_id = -1;
+        }
+    }
+    return player_id;
+}
+
 void inititate_meeting_info(Meeting *meeting_info, gameState state)
 {
     meeting_info->alive_players_count = 0;
@@ -261,13 +316,12 @@ void inititate_meeting_info(Meeting *meeting_info, gameState state)
     {
         meeting_info->alive_players_id[i] = -1;
         meeting_info->votes[i].voter_id = 0;
-        meeting_info->votes[i].target_id = -1;   // inte röstat ännu
-        meeting_info->votes[i].has_voted = 0;
+        meeting_info->votes[i].target_id = -1; // inte röstat ännu
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (!state->players[i].isAlive || !state->players[i].active)
+        if (!state.players[i].isAlive || !state.players[i].active)
             continue;
 
         meeting_info->alive_players_id[meeting_info->alive_players_count] = i;
@@ -287,6 +341,7 @@ int main(void)
     state.type = MSG_GAME_STATE;
     state.phase = GAME_LOBBY;
     Meeting meeting_info;
+    int vote_results[MAX_PLAYERS];
 
     IPaddress clientAddresses[MAX_PLAYERS];
     int clientUsed[MAX_PLAYERS] = {0};
@@ -320,7 +375,6 @@ int main(void)
     Uint64 lastBroadcast = SDL_GetPerformanceCounter();
     Uint64 state_start_time = 0;
     Uint64 phase_time = 0;
-
 
     while (1)
     {
@@ -546,18 +600,29 @@ int main(void)
 
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
-            } else if (type == MSG_VOTE_REQUEST)
+            }
+            else if (type == MSG_VOTE_REQUEST)
             {
-               if (packet_has_size(receive_packet, sizeof(VoteRequest), "VoteRequest"))
+                if (packet_has_size(receive_packet, sizeof(VoteRequest), "VoteRequest"))
                 {
                     VoteRequest vote;
                     memcpy(&vote, receive_packet->data, sizeof(vote));
                     int pid = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
-                    if (pid == vote.voter_id && !vote.has_voted && meeting_info.votes_recieved != meeting_info.alive_players_count)
+                    vote.voter_id = pid;
+                    if (can_cast_vote(meeting_info, pid))
                     {
-                        
+                        if (meeting_info.votes_recieved < meeting_info.alive_players_count)
+                            cast_vote(&meeting_info, vote);
+                        else
+                        {
+                            int vote_result = calculate_votes(meeting_info,vote_results);
+                            if (vote_result != -1)
+                            {
+                                state.players[vote_result].isAlive = 0;
+                                state.phase = GAME_RUNNING;
+                            }
+                        }
                     }
-
                 }
             }
         }
@@ -582,7 +647,7 @@ int main(void)
                 if (SDL_GetTicks64() - phase_time >= 1500) // NÄR 3 SEKUNDER GÅTT
                 {
                     state.phase = GAME_MEETING;
-                    inititate_meeting_info(&meeting_info,state);     
+                    inititate_meeting_info(&meeting_info, state);
                     phase_time = SDL_GetTicks64();
                     printf("INFORMATION OF MEETING ENDED\n");
                 }
