@@ -120,3 +120,21 @@ void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_rep
     SDL_Rect icon_pos = {x_pos, y_pos, 50, 50};
     SDL_RenderCopy(renderer, icon, NULL, &icon_pos);
 }
+
+void render_voting_results(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result)
+{
+    render_voting_result_layer(renderer, assets, voting_result);
+}
+
+void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int target_id)
+{
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_Texture *layer = assets.players_kicked_out[target_id];
+    SDL_RenderCopy(renderer, layer, NULL, NULL);
+}
+
+void render_voting_result(SDL_Renderer *renderer, gameState *state, GameAssets assets)
+{
+    
+}

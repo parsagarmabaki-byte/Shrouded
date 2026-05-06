@@ -106,6 +106,7 @@ typedef enum{
     GAME_SHOW_ROLE,
     GAME_INFO_MEETING,
     GAME_MEETING,
+    SHOW_VOTE_RESULT,
     GAME_CREWMATES_WIN,
     GAME_IMPOSTOR_WIN
 } gamePhase;
@@ -116,7 +117,8 @@ typedef struct {
     gamePhase phase;
     int local_player_id;
     int emergency_meeting_reported_id;
-
+    int voting_results[MAX_PLAYERS];
+    int voting_result;
     int total_tasks_completed;
 } gameState;
 

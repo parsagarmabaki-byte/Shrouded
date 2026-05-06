@@ -656,10 +656,20 @@ int main(void)
             {
                 if (SDL_GetTicks64() - phase_time >= 45000 || meeting_info.votes_recieved == meeting_info.alive_players_count) // NÄR 15 SEKUNDER GÅTT
                 {
-                    state.phase = GAME_RUNNING;
-                    resolve_voting(&state, meeting_info, vote_results);
-                    spawn_players(&state);
+                    state.phase = SHOW_VOTE_RESULT;
+                    calculate_votes(meeting_info, state.voting_results);
                     printf("MEETING ENDED\n");
+                    phase_time = SDL_GetTicks64();
+                }
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            else if(state.phase == SHOW_VOTE_RESULT)
+            {
+                if (SDL_GetTicks64() - phase_time >= 30000)
+                {
+                    resolve_voting(&state, meeting_info, state.voting_results);
+                    spawn_players(&state);
+                    state.phase = GAME_RUNNING;
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }

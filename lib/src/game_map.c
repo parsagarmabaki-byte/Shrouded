@@ -63,6 +63,15 @@ GameAssets load_assets(SDL_Renderer *renderer)
         
         snprintf(path, sizeof(path), "assets/images/player%d_dead_transparent.png", i+1);
         asset.players_dead_banner[i] = loading_img(renderer, path);
+
+        snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_banner_dead.png", i+1);
+        asset.players_voting_result_dead[i] = loading_img(renderer, path);
+
+        snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_banner.png", i+1);
+        asset.players_voting_result_alive[i] = loading_img(renderer, path);
+
+        snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_Eliminated.png", i+1);
+        asset.players_kicked_out[i] = loading_img(renderer, path);
     }
     return asset;   
 }

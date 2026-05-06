@@ -514,6 +514,10 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         render_emergency_meeting(renderer, assets, state, player_reported_id, targeted_banner_id);
         *emergency_window_open = false;
     }
+    else if (state->phase == SHOW_VOTE_RESULT)
+    {
+        render_voting_result_layer(renderer,assets,state->voting_result);
+    }
     else if (state->phase == GAME_CREWMATES_WIN)
     {
         // Rendera crewmate win screen
