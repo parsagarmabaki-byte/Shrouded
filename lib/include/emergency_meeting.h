@@ -18,5 +18,8 @@ void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_
 int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int target_banner_id);
 int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner);
 void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int target_id);
+void render_voting_result_banners(SDL_Renderer *renderer, gameState *state, GameAssets assets);
+void render_voting_results(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result);
+
 
 SDL_Rect get_banner_rect(int i);

@@ -665,7 +665,7 @@ int main(void)
             }
             else if(state.phase == SHOW_VOTE_RESULT)
             {
-                if (SDL_GetTicks64() - phase_time >= 30000)
+                if (SDL_GetTicks64() - phase_time >= 10000)
                 {
                     resolve_voting(&state, meeting_info, state.voting_results);
                     spawn_players(&state);

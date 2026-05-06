@@ -124,6 +124,7 @@ void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_rep
 void render_voting_results(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result)
 {
     render_voting_result_layer(renderer, assets, voting_result);
+    render_voting_result_banners(renderer, state, assets);
 }
 
 void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int target_id)
@@ -134,7 +135,26 @@ void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int t
     SDL_RenderCopy(renderer, layer, NULL, NULL);
 }
 
-void render_voting_result(SDL_Renderer *renderer, gameState *state, GameAssets assets)
+void render_voting_result_banners(SDL_Renderer *renderer, gameState *state, GameAssets assets)
 {
+    SDL_Texture *banner;
+    SDL_Rect banner_size = {220,450,116,195};
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (i>0)
+            banner_size.x += 125; 
+        bool player_alive = state->players[i].isAlive;
+        if (player_alive)
+            banner = assets.players_voting_result_alive[i];
+        else
+            banner = assets.players_voting_result_dead[i];
+        
+        SDL_RenderCopy(renderer,banner,NULL,&banner_size);
+    }
+
+    banner_size.x += 125;
+    SDL_RenderCopy(renderer,assets.skip_vote_banner,NULL,&banner_size);
+     // SDL_RenderCopy(renderer, assets.players_voting_result_alive[0], NULL, &banner_size);
     
 }

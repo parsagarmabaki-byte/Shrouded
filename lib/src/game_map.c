@@ -46,6 +46,8 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.emergency_meeting_dead = loading_img(renderer, "assets/images/emergency_meeting_dead.png");
     asset.emergency_meeting_icon = loading_img(renderer, "assets/images/meeting-ikon.png");
 
+    asset.skip_vote_banner = loading_img(renderer, "assets/voting_result_assets/Skip_banner.png");
+
     if (!asset.emergency_meeting_info)
         printf("image not loaded");
 
