@@ -225,7 +225,7 @@ void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state
     }
     else if (event->type == SDL_MOUSEBUTTONDOWN)
     {
-        SDL_Rect report_button = {955, 455, 120, 120};
+        SDL_Rect report_button = {1075, 400, 120, 120};
         if (is_hovering(renderer, report_button) && target_id != -1 && state->players[state->local_player_id].isAlive)
         {
             request_report_body(client, state, bodies[target_id], target_id);

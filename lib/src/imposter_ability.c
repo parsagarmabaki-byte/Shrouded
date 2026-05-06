@@ -195,7 +195,7 @@ bool find_target_report_body(Position bodies, int player_x, int player_y)
 
 void render_player_ability(SDL_Renderer *renderer, Player player, GameAssets assets, KillAnimation bodies[MAX_PLAYERS])
 {
-    SDL_Rect picture_size = {940, 440, 150, 150};
+    SDL_Rect picture_size = {1075, 400, 150, 150};
     SDL_Texture *report_body = assets.report_button_deactive;
     if (target_report_body(bodies, player) != -1)
     {
