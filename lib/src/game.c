@@ -450,7 +450,7 @@ void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state
     *targeted_banner_id = target_player_banner(renderer, state, event, player_alive, *targeted_banner_id);
     if (*targeted_banner_id != -1)
     {
-        printf("\nBANNER IS CLICKED\n");
+        // printf("\nBANNER IS CLICKED\n");
     }
     handle_send_vote_button(client,renderer, event, player_alive, *targeted_banner_id);
 }
