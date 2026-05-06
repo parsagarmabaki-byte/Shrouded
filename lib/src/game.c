@@ -233,15 +233,20 @@ void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state
     }
 }
 
-void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, bool *emergency_window_open, int local_id)
+void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, Task *task, bool *emergency_window_open, int local_id)
 {
     SDL_Rect emergency_button = {(LOGICAL_SCREEN_WIDTH / 2) - 20, ((LOGICAL_SCREEN_HEIGHT) / 2) - 65, 33, 33};
     if (event->type == SDL_KEYDOWN)
     {
         if (event->key.keysym.scancode == SDL_SCANCODE_E)
         {
-            if (collides_with_wall(player->Hitbox.x, player->Hitbox.y) == 2 && state->players[local_id].isAlive)
+            int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
+            if (tile_type == 2 && state->players[local_id].isAlive)
                 *emergency_window_open = true;
+            else if (tile_type == 5 && !task_active_check(task))
+                start_reflex_task(task, renderer);
+            else if (tile_type == 3 && !task_active_check(task))
+                start_logical_order_task(task, renderer);
         }
     }
     if (*emergency_window_open && event->type == SDL_MOUSEBUTTONDOWN)
@@ -426,7 +431,7 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
     }
     task_events(renderer, event, task);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
-    emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
+    emergency_meeting_events(client, state, renderer, event, player, task, emergency_window_open, local_id);
     report_body_events(renderer, client, state, event, bodies, player);
 }
 
