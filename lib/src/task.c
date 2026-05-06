@@ -241,11 +241,7 @@ Task* create_task(SDL_Renderer *renderer)
 
     if (task->global_text)
         text_set(task->global_text, "PRESS Q TO ABANDON ASSIGNMENT", WHITE);
-
-    // Initialize number_texts array to NULL (already done by memset, but explicit for clarity)
-    for (int i = 0; i < 5; i++)
-        task->number_texts[i] = NULL;
-
+        
     return task;
 }
 
