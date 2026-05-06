@@ -13,7 +13,9 @@ typedef enum {
     TASK_LETTER,
     TASK_REFLEX,
     TASK_LOGICAL_ORDER,
-    TASK_MEMORY
+    TASK_MEMORY,
+    TASK_HOLD,       
+    TASK_ALTERNATE   
 } TaskType;
 
 typedef enum {
@@ -33,11 +35,15 @@ void start_letter_task(Task *task, SDL_Renderer *renderer);
 void start_reflex_task(Task *task, SDL_Renderer *renderer);
 void start_logical_order_task(Task *task, SDL_Renderer *renderer);
 void start_memory_task(Task *task, SDL_Renderer *renderer);
+void start_hold_task(Task *task, SDL_Renderer *renderer, float duration);
+void start_alternate_task(Task *task, SDL_Renderer *renderer, int target);
 
 void end_task(Task *task, TaskStatus status);
 void cleanup_task(Task *task);
 void update_task(Task *task, float dt);
 void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
+
+void task_handle_keyup(Task *task, SDL_Keycode key);
 
 
 // getters

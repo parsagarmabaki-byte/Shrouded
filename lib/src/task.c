@@ -6,16 +6,17 @@
 #include <string.h>
 #include <time.h>
 
-static const SDL_Color WHITE = {255,255,255,255};
+static const SDL_Color WHITE = {255, 255, 255, 255};
 
-struct Task {           // task ADT struct
+struct Task
+{ // task ADT struct
     TaskType type;
     TaskStatus status;
     bool active;
     SDL_Texture *task_image;
     TaskType last_completed_type;
 
-    //text
+    // text
     SDL_Renderer *renderer;
     Text global_text;
     Text task_text;
@@ -30,20 +31,20 @@ struct Task {           // task ADT struct
     int click_target;
 
     // TASK_LETTER specific
-    char target_string[16]; 
+    char target_string[16];
     int current_index;
     int length;
 
     // TASK_REFLEX specific
-    float cursor_pos;     // 0.0 → 1.0
+    float cursor_pos; // 0.0 → 1.0
     float cursor_speed;
-    int direction;        // 1 or -1
-    float success_min;    // cursor range for success
-    float success_max;    
-    float base_zone_width;  // success zone width for shrinking
+    int direction;     // 1 or -1
+    float success_min; // cursor range for success
+    float success_max;
+    float base_zone_width; // success zone width for shrinking
     float current_zone_width;
-    int success_count;    
-    int success_target;   // number of wins to complete task
+    int success_count;
+    int success_target; // number of wins to complete task
 
     // TASK_LOGICAL_ORDER specific
     int numbers[5];
@@ -53,22 +54,33 @@ struct Task {           // task ADT struct
     SDL_Rect numbers_rect[5];
 
     // TASK_MEMORY specific
-    int sequence[8];        // directions (0–3)
-    int sequence_length;    // 3-5
+    int sequence[8];     // directions (0–3)
+    int sequence_length; // 3-5
     int input_index;
     int round;
     float start_delay;
-    float flash_timer; 
+    float flash_timer;
     int flash_index;
     float flash_interval;
     bool showing_sequence;
     bool flash_visible;
+
+    // TASK_HOLD specific
+    float hold_timer;
+    float hold_duration;
+    bool hold_key_down;
+
+    // TASK_ALTERNATE specific
+    int alternate_count;
+    int alternate_target;
+    SDL_Keycode alternate_last_key; // senast tryckt tangent
 };
 
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key)
 {
-    if (!task->active) return;
+    if (!task->active)
+        return;
 
     if (task->type == TASK_REFLEX && key == SDLK_SPACE)
     {
@@ -127,10 +139,14 @@ void task_handle_key(Task *task, SDL_Keycode key)
     {
         int input = -1;
 
-        if (key == SDLK_UP) input = 0;
-        if (key == SDLK_DOWN) input = 1;
-        if (key == SDLK_LEFT) input = 2;
-        if (key == SDLK_RIGHT) input = 3;
+        if (key == SDLK_UP)
+            input = 0;
+        if (key == SDLK_DOWN)
+            input = 1;
+        if (key == SDLK_LEFT)
+            input = 2;
+        if (key == SDLK_RIGHT)
+            input = 3;
 
         if (input != -1)
         {
@@ -181,11 +197,42 @@ void task_handle_key(Task *task, SDL_Keycode key)
             }
         }
     }
+    if (task->type == TASK_HOLD)
+    {
+        if (key == SDLK_SPACE)
+            task->hold_key_down = true;
+    }
+
+    if (task->type == TASK_ALTERNATE)
+    {
+        if (key == SDLK_a || key == SDLK_d)
+        {
+            // Måste växla – inte trycka samma knapp två gånger
+            if (key != task->alternate_last_key)
+            {
+                task->alternate_count++;
+                task->alternate_last_key = key;
+            }
+        }
+    }
+}
+
+void task_handle_keyup(Task *task, SDL_Keycode key)
+{
+    if (!task->active)
+        return;
+
+    if (task->type == TASK_HOLD && key == SDLK_SPACE)
+    {
+        task->hold_key_down = false;
+        task->hold_timer = 0.0f; // reset om man släpper
+    }
 }
 
 void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
 {
-    if (!task || !task->active) return;
+    if (!task || !task->active)
+        return;
 
     if (task->type == TASK_CLICK)
     {
@@ -208,7 +255,7 @@ void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
 
                     if (task->next_expected_idx >= 5)
                     {
-                        end_task(task, TASK_STATUS_COMPLETED); 
+                        end_task(task, TASK_STATUS_COMPLETED);
                     }
                 }
                 else
@@ -216,16 +263,17 @@ void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
                     // Reset
                     start_logical_order_task(task, renderer);
                 }
-                break; 
+                break;
             }
         }
     }
 }
 
-Task* create_task(SDL_Renderer *renderer)
+Task *create_task(SDL_Renderer *renderer)
 {
     Task *task = malloc(sizeof(Task));
-    if (!task) return NULL;
+    if (!task)
+        return NULL;
 
     // Zero-initialize the entire struct to prevent garbage values
     memset(task, 0, sizeof(Task));
@@ -275,7 +323,7 @@ void end_task(Task *task, TaskStatus status)
     task->last_completed_type = task->type;
     task->active = false;
     task->type = TASK_NONE;
-    task->status = status;  // Track HOW it ended
+    task->status = status; // Track HOW it ended
     cleanup_task(task);
 }
 
@@ -287,9 +335,9 @@ void cleanup_task(Task *task) // cleans non specific things, used before startin
         task->task_image = NULL;
     }
 
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
     {
-        if(task->number_texts[i])
+        if (task->number_texts[i])
         {
             text_destroy(task->number_texts[i]);
             task->number_texts[i] = NULL;
@@ -299,7 +347,8 @@ void cleanup_task(Task *task) // cleans non specific things, used before startin
 
 void destroy_task(Task *task) // cleans everything, used at the end of the game
 {
-    if (!task) return;
+    if (!task)
+        return;
 
     cleanup_task(task);
 
@@ -350,8 +399,68 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
         task->type = TASK_NONE;
         return;
     }
-    
+
     text_set(task->task_text, "SCAN IN PROGRESS", WHITE);
+}
+
+void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
+{
+    cleanup_task(task);
+    task->type = TASK_HOLD;
+    task->active = true;
+
+    task->hold_timer = 0.0f;
+    task->hold_duration = duration;
+    task->hold_key_down = false;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/fireplace.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load hold task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_hold_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    text_set(task->task_text, "HOLD SPACE TO CHARGE!", WHITE);
+}
+
+void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
+{
+    cleanup_task(task);
+    task->type = TASK_ALTERNATE;
+    task->active = true;
+
+    task->alternate_count = 0;
+    task->alternate_target = target;
+    task->alternate_last_key = SDLK_UNKNOWN;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/crystal.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load alternate task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_alternate_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    text_set(task->task_text, "MASH A AND D ALTERNATING!", WHITE);
 }
 
 void start_click_task(Task *task, SDL_Renderer *renderer, int target)
@@ -379,7 +488,7 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
         task->type = TASK_NONE;
         return;
     }
-    
+
     text_set(task->task_text, "CLEAN THE CRYSTAL (CLICK!)", WHITE);
 }
 
@@ -417,7 +526,7 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
         task->type = TASK_NONE;
         return;
     }
-    
+
     text_set(task->task_text, "WRITE THE LETTER", WHITE);
 }
 
@@ -433,10 +542,10 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
 
     task->success_count = 0;
     task->success_target = 5;
-    
+
     // success zone size
     float base_width = 0.2f;
-    task->success_min = 0.4f; 
+    task->success_min = 0.4f;
     task->success_max = 0.6f;
     task->base_zone_width = base_width;
     task->current_zone_width = base_width;
@@ -457,13 +566,13 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
         task->type = TASK_NONE;
         return;
     }
-    
+
     text_set(task->task_text, "STOKE THE FIRE (PRESS SPACE!)", WHITE);
 }
 
 void start_logical_order_task(Task *task, SDL_Renderer *renderer)
 {
-    srand(time(NULL)); 
+    srand(time(NULL));
 
     cleanup_task(task);
 
@@ -473,7 +582,7 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
 
     SDL_Color white = {255, 255, 255, 255};
 
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
     {
         int num;
         bool unique;
@@ -483,20 +592,20 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
             unique = true;
             num = (rand() % 100) + 1;
 
-            for(int j = 0; j < i; j++)
+            for (int j = 0; j < i; j++)
             {
-                if(task->numbers[j] == num)
+                if (task->numbers[j] == num)
                 {
                     unique = false;
                     break;
                 }
             }
-        } while(!unique);
+        } while (!unique);
 
         task->numbers[i] = num;
         task->sortedNumbers[i] = num;
 
-        char str[4]; 
+        char str[4];
         sprintf(str, "%d", num);
         task->number_texts[i] = text_create(task->renderer, "assets/fonts/BebasNeue-Regular.ttf", 32);
         if (!task->number_texts[i])
@@ -512,18 +621,18 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
         task->numbers_rect[i].w = text_get_width(task->number_texts[i]);
         task->numbers_rect[i].h = text_get_height(task->number_texts[i]);
 
-        int start_x = 450; 
-        int spacing = 100; 
+        int start_x = 450;
+        int spacing = 100;
 
         task->numbers_rect[i].x = start_x + (i * spacing);
         task->numbers_rect[i].y = 350;
     }
 
-    for(int i = 0; i < 5 - 1; i++)
+    for (int i = 0; i < 5 - 1; i++)
     {
-        for(int j = 0; j < 5 - i - 1; j++)
+        for (int j = 0; j < 5 - i - 1; j++)
         {
-            if(task->sortedNumbers[j] > task->sortedNumbers[j + 1])
+            if (task->sortedNumbers[j] > task->sortedNumbers[j + 1])
             {
                 int tmp = task->sortedNumbers[j];
                 task->sortedNumbers[j] = task->sortedNumbers[j + 1];
@@ -586,104 +695,133 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
         task->type = TASK_NONE;
         return;
     }
-    
+
     text_set(task->task_text, "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)", WHITE);
 }
 
 void update_task(Task *task, float dt) // updates task logic every frame
 {
-    if (!task->active) return;
+    if (!task->active)
+        return;
 
     switch (task->type)
     {
-        case TASK_TIMER:
-            task->timer -= dt;
-            if (task->timer <= 0.0f)
-            {
-                end_task(task, TASK_STATUS_COMPLETED);
-            }
-            break;
-        case TASK_CLICK:
-            if (task->click_count >= task->click_target)
-            {
-                end_task(task, TASK_STATUS_COMPLETED);
-            }
-            break;
-        case TASK_LETTER:
-            if (task->current_index >= task->length)
-            {
-                end_task(task, TASK_STATUS_COMPLETED);
-            }
-            break;
-        case TASK_REFLEX:
+    case TASK_TIMER:
+        task->timer -= dt;
+        if (task->timer <= 0.0f)
         {
-            // move cursor
-            task->cursor_pos += task->direction * task->cursor_speed * dt;
-
-            // bounce at edges
-            if (task->cursor_pos >= 1.0f)
-            {
-                task->cursor_pos = 1.0f;
-                task->direction = -1;
-            }
-            else if (task->cursor_pos <= 0.0f)
-            {
-                task->cursor_pos = 0.0f;
-                task->direction = 1;
-            }
-            break;
+            end_task(task, TASK_STATUS_COMPLETED);
         }
-        case TASK_MEMORY:
+        break;
+    case TASK_CLICK:
+        if (task->click_count >= task->click_target)
         {
-            if (task->start_delay > 0.0f)
-            {
-                task->start_delay -= dt;
-                return;
-            }
-            if (task->showing_sequence)
-            {
-                task->flash_timer -= dt;
+            end_task(task, TASK_STATUS_COMPLETED);
+        }
+        break;
+    case TASK_LETTER:
+        if (task->current_index >= task->length)
+        {
+            end_task(task, TASK_STATUS_COMPLETED);
+        }
+        break;
+    case TASK_REFLEX:
+    {
+        // move cursor
+        task->cursor_pos += task->direction * task->cursor_speed * dt;
 
-                while (task->flash_timer <= 0.0f && task->showing_sequence)
+        // bounce at edges
+        if (task->cursor_pos >= 1.0f)
+        {
+            task->cursor_pos = 1.0f;
+            task->direction = -1;
+        }
+        else if (task->cursor_pos <= 0.0f)
+        {
+            task->cursor_pos = 0.0f;
+            task->direction = 1;
+        }
+        break;
+    }
+    case TASK_MEMORY:
+    {
+        if (task->start_delay > 0.0f)
+        {
+            task->start_delay -= dt;
+            return;
+        }
+        if (task->showing_sequence)
+        {
+            task->flash_timer -= dt;
+
+            while (task->flash_timer <= 0.0f && task->showing_sequence)
+            {
+                if (task->flash_visible)
                 {
-                    if (task->flash_visible)
-                    {
-                        // go invisible
-                        task->flash_visible = false;
-                        task->flash_timer += task->flash_interval * 0.5f;
-                    }
-                    else
-                    {
-                        // next arrow
-                        task->flash_visible = true;
-                        task->flash_index++;
+                    // go invisible
+                    task->flash_visible = false;
+                    task->flash_timer += task->flash_interval * 0.5f;
+                }
+                else
+                {
+                    // next arrow
+                    task->flash_visible = true;
+                    task->flash_index++;
 
-                        if (task->flash_index >= task->sequence_length)
-                        {
-                            task->showing_sequence = false;
-                            task->input_index = 0;
-                            break;
-                        }
-
-                        task->flash_timer += task->flash_interval;
+                    if (task->flash_index >= task->sequence_length)
+                    {
+                        task->showing_sequence = false;
+                        task->input_index = 0;
+                        break;
                     }
+
+                    task->flash_timer += task->flash_interval;
                 }
             }
-            break;
         }
-        case TASK_LOGICAL_ORDER:
-            // no frame-based logic needed, just here for clarity
-            break;
+        break;
+    }
+    case TASK_HOLD:
+    {
+        if (task->hold_key_down)
+        {
+            task->hold_timer += dt;
+            if (task->hold_timer >= task->hold_duration)
+            {
+                end_task(task, TASK_STATUS_COMPLETED);
+            }
+        }
+        else
+        {
+            // Sjunker tillbaka om man inte håller
+            task->hold_timer -= dt * 0.5f;
+            if (task->hold_timer < 0.0f)
+                task->hold_timer = 0.0f;
+        }
+        break;
+    }
+    case TASK_ALTERNATE:
+    {
+        if (task->alternate_count >= task->alternate_target)
+        {
+            end_task(task, TASK_STATUS_COMPLETED);
+        }
+        break;
+    }
+    case TASK_LOGICAL_ORDER:
+        // no frame-based logic needed, just here for clarity
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 }
 
 void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height)
 {
-    if (!task->active) return;
-    
+    if (!task->active)
+        return;
+
     // Safety checks for required text objects
     if (!task->task_text || !task->dynamic_text)
     {
@@ -703,225 +841,274 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     {
         SDL_RenderCopy(renderer, task->task_image, NULL, &box);
     }
-    
+
     if (task->global_text)
         text_draw_at(task->global_text, 170, 275);
-    
 
     switch (task->type)
     {
-        case TASK_TIMER:
+    case TASK_TIMER:
+    {
+        // progress bar calculation
+        float progress = 0.0f;
+        if (task->timer_duration > 0.0f)
         {
-            // progress bar calculation
-            float progress = 0.0f;
-            if (task->timer_duration > 0.0f)
-            {
-                progress = 1.0f - (task->timer / task->timer_duration);
-            }
-
-            // progress bar background
-            SDL_Rect bar_bg = {520, 350, 200, 40};
-            SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
-            SDL_RenderFillRect(renderer, &bar_bg);
-
-            // progress bar green fill
-            SDL_Rect bar_fill = {520, 350, (int)(200 * progress), 40};
-            SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
-            SDL_RenderFillRect(renderer, &bar_fill);
-
-            // text
-            if (task->task_text)
-                text_draw_at(task->task_text, 520, 400);
-            break;
+            progress = 1.0f - (task->timer / task->timer_duration);
         }
 
-        case TASK_CLICK:
+        // progress bar background
+        SDL_Rect bar_bg = {520, 350, 200, 40};
+        SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+        SDL_RenderFillRect(renderer, &bar_bg);
+
+        // progress bar green fill
+        SDL_Rect bar_fill = {520, 350, (int)(200 * progress), 40};
+        SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+        SDL_RenderFillRect(renderer, &bar_fill);
+
+        // text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 400);
+        break;
+    }
+
+    case TASK_CLICK:
+    {
+        // click counter dynamic text
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target); // write string into the buffer
+
+        if (task->dynamic_text)
         {
-            // click counter dynamic text
-            char buffer[32];
-            snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target); // write string into the buffer
-
-            if (task->dynamic_text)
-            {
-                text_set(task->dynamic_text, buffer, WHITE);
-                text_draw_at(task->dynamic_text, 520, 400);
-            }
-
-            // instruction text
-            if (task->task_text)
-                text_draw_at(task->task_text, 520, 350);
-
-            break;
+            text_set(task->dynamic_text, buffer, WHITE);
+            text_draw_at(task->dynamic_text, 520, 400);
         }
 
-        case TASK_LETTER:
+        // instruction text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 350);
+
+        break;
+    }
+
+    case TASK_LETTER:
+    {
+        char buffer[32];
+
+        // show progress
+        for (int i = 0; i < task->length; i++)
         {
-            char buffer[32];
-
-            // show progress
-            for (int i = 0; i < task->length; i++)
-            {
-                if (i < task->current_index)                // everything before current index is shown, rest is hidden
-                    buffer[i] = task->target_string[i];
-                else
-                    buffer[i] = '_';
-            }
-            buffer[task->length] = '\0';
-
-            if (task->dynamic_text)
-            {
-                text_set(task->dynamic_text, buffer, WHITE);
-                text_draw_at(task->dynamic_text, 520, 400);
-            }
-
-            // show target string
-            char current[2];
-
-            if (task->current_index < task->length)        // if within defined text length, show next letter
-            {
-                current[0] = task->target_string[task->current_index];
-            }
+            if (i < task->current_index) // everything before current index is shown, rest is hidden
+                buffer[i] = task->target_string[i];
             else
-            {
-                current[0] = ' ';
-            }
+                buffer[i] = '_';
+        }
+        buffer[task->length] = '\0';
 
-            current[1] = '\0';
-
-            if (task->dynamic_text)
-            {
-                text_set(task->dynamic_text, current, WHITE);
-                text_draw_at(task->dynamic_text, 520, 300);
-            }
-
-            // instruction text
-            if (task->task_text)
-                text_draw_at(task->task_text, 520, 350);
-
-            break;
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, buffer, WHITE);
+            text_draw_at(task->dynamic_text, 520, 400);
         }
 
-        case TASK_REFLEX:
+        // show target string
+        char current[2];
+
+        if (task->current_index < task->length) // if within defined text length, show next letter
         {
-            // bar background
-            SDL_Rect bar_bg = {520, 350, 300, 40};
-            SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
-            SDL_RenderFillRect(renderer, &bar_bg);
-
-            // success zone
-            int success_x = 520 + (int)(task->success_min * 300);
-            int success_w = (int)((task->success_max - task->success_min) * 300);
-
-            SDL_Rect success_zone = {success_x, 350, success_w, 40};
-            SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
-            SDL_RenderFillRect(renderer, &success_zone);
-
-            // moving cursor
-            int cursor_x = 520 + (int)(task->cursor_pos * 300);
-
-            SDL_Rect cursor = {cursor_x - 5, 345, 10, 50};
-            SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
-            SDL_RenderFillRect(renderer, &cursor);
-
-            // progress text (success count)
-            char buffer[32];
-            snprintf(buffer, sizeof(buffer), "%d / %d", task->success_count, task->success_target);
-
-            if (task->dynamic_text)
-            {
-                text_set(task->dynamic_text, buffer, WHITE);
-                text_draw_at(task->dynamic_text, 520, 400);
-            }
-
-            // instruction text
-            if (task->task_text)
-                text_draw_at(task->task_text, 520, 300);
-
-            break;
+            current[0] = task->target_string[task->current_index];
         }
-        
-        case TASK_LOGICAL_ORDER:
+        else
         {
-            for (int i = 0; i < 5; i++)
-            {
-                if (task->number_texts[i] != NULL)
-                    text_draw_at(task->number_texts[i], task->numbers_rect[i].x, task->numbers_rect[i].y);
-            }
-            
-            // show score
-            char progress_buf[16];
-            snprintf(progress_buf, sizeof(progress_buf), "%d / 5", task->next_expected_idx);
-            
-            if (task->dynamic_text)
-            {
-                text_set(task->dynamic_text, progress_buf, WHITE);
-                text_draw_at(task->dynamic_text, 520, 450);
-            }
-
-            // instruction text
-            if (task->task_text)
-                text_draw_at(task->task_text, 520, 300);
-
-            break;
-    
-            break;
+            current[0] = ' ';
         }
 
-        case TASK_MEMORY:
+        current[1] = '\0';
+
+        if (task->dynamic_text)
         {
-            const char *arrows[] = {"UP", "DOWN", "LEFT", "RIGHT"};
+            text_set(task->dynamic_text, current, WHITE);
+            text_draw_at(task->dynamic_text, 520, 300);
+        }
 
-            // show sequence phase
-            if (task->showing_sequence)
+        // instruction text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 350);
+
+        break;
+    }
+
+    case TASK_REFLEX:
+    {
+        // bar background
+        SDL_Rect bar_bg = {520, 350, 300, 40};
+        SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+        SDL_RenderFillRect(renderer, &bar_bg);
+
+        // success zone
+        int success_x = 520 + (int)(task->success_min * 300);
+        int success_w = (int)((task->success_max - task->success_min) * 300);
+
+        SDL_Rect success_zone = {success_x, 350, success_w, 40};
+        SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+        SDL_RenderFillRect(renderer, &success_zone);
+
+        // moving cursor
+        int cursor_x = 520 + (int)(task->cursor_pos * 300);
+
+        SDL_Rect cursor = {cursor_x - 5, 345, 10, 50};
+        SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
+        SDL_RenderFillRect(renderer, &cursor);
+
+        // progress text (success count)
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%d / %d", task->success_count, task->success_target);
+
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, buffer, WHITE);
+            text_draw_at(task->dynamic_text, 520, 400);
+        }
+
+        // instruction text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 300);
+
+        break;
+    }
+
+    case TASK_LOGICAL_ORDER:
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            if (task->number_texts[i] != NULL)
+                text_draw_at(task->number_texts[i], task->numbers_rect[i].x, task->numbers_rect[i].y);
+        }
+
+        // show score
+        char progress_buf[16];
+        snprintf(progress_buf, sizeof(progress_buf), "%d / 5", task->next_expected_idx);
+
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, progress_buf, WHITE);
+            text_draw_at(task->dynamic_text, 520, 450);
+        }
+
+        // instruction text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 300);
+
+        break;
+
+        break;
+    }
+
+    case TASK_MEMORY:
+    {
+        const char *arrows[] = {"UP", "DOWN", "LEFT", "RIGHT"};
+
+        // show sequence phase
+        if (task->showing_sequence)
+        {
+            if (task->flash_visible && task->flash_index < task->sequence_length)
             {
-                if (task->flash_visible && task->flash_index < task->sequence_length)
-                {
-                    const char *symbol = arrows[task->sequence[task->flash_index]];
-
-                    if (task->dynamic_text)
-                    {
-                        text_set(task->dynamic_text, symbol, WHITE);
-                        text_draw_at(task->dynamic_text, 650, 350);
-                    }
-                }
-            }
-            else
-            {
-                // input phase
-                char buffer[16];
-
-                for (int i = 0; i < task->sequence_length; i++)
-                {
-                    if (i < task->input_index)
-                        buffer[i] = 'X';
-                    else
-                        buffer[i] = '_';
-                }
-                buffer[task->sequence_length] = '\0';
+                const char *symbol = arrows[task->sequence[task->flash_index]];
 
                 if (task->dynamic_text)
                 {
-                    text_set(task->dynamic_text, buffer, WHITE);
-                    text_draw_at(task->dynamic_text, 600, 400);
+                    text_set(task->dynamic_text, symbol, WHITE);
+                    text_draw_at(task->dynamic_text, 650, 350);
                 }
             }
+        }
+        else
+        {
+            // input phase
+            char buffer[16];
 
-            // round text
-            char buffer[32];
-            snprintf(buffer, sizeof(buffer), "Round %d / 3", task->round + 1);
+            for (int i = 0; i < task->sequence_length; i++)
+            {
+                if (i < task->input_index)
+                    buffer[i] = 'X';
+                else
+                    buffer[i] = '_';
+            }
+            buffer[task->sequence_length] = '\0';
 
             if (task->dynamic_text)
             {
                 text_set(task->dynamic_text, buffer, WHITE);
-                text_draw_at(task->dynamic_text, 520, 450);
+                text_draw_at(task->dynamic_text, 600, 400);
             }
-
-            // instruction text
-            if (task->task_text)
-                text_draw_at(task->task_text, 520, 300);
-
-            break;
         }
+
+        // round text
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "Round %d / 3", task->round + 1);
+
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, buffer, WHITE);
+            text_draw_at(task->dynamic_text, 520, 450);
+        }
+
+        // instruction text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 300);
+
+        break;
+    }
+    case TASK_HOLD:
+    {
+        float progress = task->hold_timer / task->hold_duration;
+
+        // Bakgrund
+        SDL_Rect bar_bg = {520, 350, 300, 40};
+        SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+        SDL_RenderFillRect(renderer, &bar_bg);
+
+        // Fyllnad
+        SDL_Rect bar_fill = {520, 350, (int)(300 * progress), 40};
+        SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+        SDL_RenderFillRect(renderer, &bar_fill);
+
+        // Text
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 300);
+
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%.1f / %.1f s", task->hold_timer, task->hold_duration);
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, buffer, WHITE);
+            text_draw_at(task->dynamic_text, 520, 400);
+        }
+        break;
+    }
+    case TASK_ALTERNATE:
+    {
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%d / %d", task->alternate_count, task->alternate_target);
+
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, buffer, WHITE);
+            text_draw_at(task->dynamic_text, 520, 400);
+        }
+
+        // Visa vilken knapp som ska tryckas härnäst
+        const char *next_key = (task->alternate_last_key == SDLK_a) ? "D" : "A";
+        if (task->dynamic_text)
+        {
+            text_set(task->dynamic_text, next_key, WHITE);
+            text_draw_at(task->dynamic_text, 650, 350);
+        }
+
+        if (task->task_text)
+            text_draw_at(task->task_text, 520, 300);
+        break;
+    }
 
     default:
         break;
