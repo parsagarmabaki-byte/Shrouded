@@ -1,105 +1,106 @@
 #include "main_menu.h"
-#include "text.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-// ── Knapp-layout ────────────────────────────────────────
-#define BTN_W 360
-#define BTN_H 90
-#define BTN_GAP 30           // vertikalt avstånd mellan knappar
+// ─────────────────────────────────────────────────────────────────
+//  KNAPP-PLACERING I DEFAULT-BILDEN
+// ─────────────────────────────────────────────────────────────────
+// Procent av fönstrets storlek (0.0 till 1.0) — fungerar oavsett
+// fönsterstorlek. Samma rektangel används både för:
+//   • Var knapp-on-bilden ska ritas (dst-rect)
+//   • Var musen "räknas som över" knappen (hit-zon)
+//
+// Värdena är kalibrerade för mainmenu_default.png. Om du byter
+// bakgrundsbild behöver de mätas om.
 
-// Hjälpfunktion: kolla om en punkt ligger inuti en SDL_Rect.
+// Start-knappen
+#define START_X_PCT 0.29f
+#define START_Y_PCT 0.61f
+#define START_W_PCT 0.341f
+#define START_H_PCT 0.092f
+
+// Exit-knappen
+#define EXIT_X_PCT  0.29f
+#define EXIT_Y_PCT  0.745f
+#define EXIT_W_PCT  0.341f
+#define EXIT_H_PCT  0.092f
+
+// ─────────────────────────────────────────────────────────────────
+
+// Kolla om en punkt ligger inuti en SDL_Rect.
 static int point_in_rect(int x, int y, const SDL_Rect *r)
 {
-    return x >= r->x && x < r->x + r->w && y >= r->y && y < r->y + r->h;
+    return x >= r->x && x < r->x + r->w &&
+           y >= r->y && y < r->y + r->h;
 }
 
-// Rita en knapp med fyllning, kantlinje och centrerad text.
-// `hovered` styr färgen så användaren ser vilken knapp som är aktiv.
-static void draw_button(SDL_Renderer *renderer, Text label, const SDL_Rect *rect, int hovered)
+// Räkna ut en SDL_Rect från procent-värden + en referensstorlek.
+static SDL_Rect rect_from_pct(float xPct, float yPct, float wPct, float hPct,
+                              int refW, int refH)
 {
-    if (hovered)
+    SDL_Rect r = {
+        (int)(xPct * refW),
+        (int)(yPct * refH),
+        (int)(wPct * refW),
+        (int)(hPct * refH)
+    };
+    return r;
+}
+
+// Ladda en bildfil till en SDL_Texture. Returnerar NULL vid fel.
+static SDL_Texture *load_texture(SDL_Renderer *renderer, const char *path)
+{
+    SDL_Surface *surface = IMG_Load(path);
+    if (!surface)
     {
-        SDL_SetRenderDrawColor(renderer, 240, 200, 90, 255);   // bright gold
+        printf("IMG_Load (%s): %s\n", path, IMG_GetError());
+        return NULL;
     }
-    else
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+    if (!texture)
     {
-        SDL_SetRenderDrawColor(renderer, 180, 140, 50, 220);   // darker gold
+        printf("SDL_CreateTextureFromSurface (%s): %s\n", path, SDL_GetError());
     }
-
-    SDL_RenderFillRect(renderer, rect);
-
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, rect);
-
-    // Centrerad text i knappen
-    int cx = rect->x + rect->w / 2;
-    int cy = rect->y + rect->h / 2;
-    text_draw(label, cx, cy);
+    return texture;
 }
 
 int showMainMenu(waitForPlayers *pWait)
 {
     SDL_Event event;
-    SDL_Color white  = {255, 255, 255, 255};
 
-    // Försök ladda menyspecifik bakgrund. Om det misslyckas använder vi
-    // lobby-bakgrunden istället så menyn fortfarande fungerar.
-    SDL_Texture *menuBackground = NULL;
-    SDL_Surface *bgSurface = IMG_Load("assets/lobbyscreen/mainmenu.png");
-    if (bgSurface)
+    // ── Ladda bakgrund + två "lit" knapp-bilder ──
+    SDL_Texture *bgDefault   = load_texture(pWait->renderer, "assets/lobbyscreen/mainmenu_default.png");
+    SDL_Texture *startButton = load_texture(pWait->renderer, "assets/lobbyscreen/start_button_on.png");
+    SDL_Texture *exitButton  = load_texture(pWait->renderer, "assets/lobbyscreen/exit_button_on.png");
+
+    if (!bgDefault || !startButton || !exitButton)
     {
-        menuBackground = SDL_CreateTextureFromSurface(pWait->renderer, bgSurface);
-        SDL_FreeSurface(bgSurface);
+        printf("Kunde inte ladda en eller flera menybilder — avbryter menyn.\n");
+        if (bgDefault)   SDL_DestroyTexture(bgDefault);
+        if (startButton) SDL_DestroyTexture(startButton);
+        if (exitButton)  SDL_DestroyTexture(exitButton);
+        return 0;
     }
-    else
-    {
-        printf("IMG_Load (mainmenu.png): %s — använder lobby-bakgrund\n", IMG_GetError());
-    }
-    SDL_Texture *backgroundToDraw = menuBackground ? menuBackground : pWait->background;
 
-    // Skapa lokala texter för menyn (städas upp innan vi returnerar)
-    const char *fontPath = "assets/fonts/BebasNeue-Regular.ttf";
-
-    Text startText = text_create(pWait->renderer, fontPath, 60);
-    Text exitText  = text_create(pWait->renderer, fontPath, 60);
-    Text hintText  = text_create(pWait->renderer, fontPath, 22);
-
-    text_set(startText, "START", white);
-    text_set(exitText,  "EXIT", white);
-    text_set(hintText,  "Made by: Alexander, Alvin, Gergo, Hedi, Parsa och Marcus",white);
-
-    // Spelaren styr menyn med musen. Esc fungerar alltid som genväg
-    // för att stänga menyn (samma som Exit-knappen).
     int finished = 0;
     int result = 0;
 
-    SDL_SetRenderDrawBlendMode(pWait->renderer, SDL_BLENDMODE_BLEND);
-
     while (!finished)
     {
-        // ── Layout: räknas om varje frame ifall fönsterstorlek ändras ──
+        // ── Räkna ut knapp-rektangeln baserat på fönsterstorlek varje frame ──
         int windowWidth, windowHeight;
         SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
 
-        int centerX = windowWidth / 2;
-        int centerY = windowHeight / 2;
+        SDL_Rect startRect = rect_from_pct(START_X_PCT, START_Y_PCT,
+                                           START_W_PCT, START_H_PCT,
+                                           windowWidth, windowHeight);
+        SDL_Rect exitRect  = rect_from_pct(EXIT_X_PCT, EXIT_Y_PCT,
+                                           EXIT_W_PCT, EXIT_H_PCT,
+                                           windowWidth, windowHeight);
 
-        SDL_Rect startRect = {
-            centerX - BTN_W / 2,
-            centerY - BTN_H - BTN_GAP / 2,
-            BTN_W,
-            BTN_H
-        };
-        SDL_Rect exitRect = {
-            centerX - BTN_W / 2,
-            centerY + BTN_GAP / 2,
-            BTN_W,
-            BTN_H
-        };
-
-        // ── Mus-position för hover-detektion ──
+        // ── Var är musen? ──
         int mx, my;
         SDL_GetMouseState(&mx, &my);
         int hoverStart = point_in_rect(mx, my, &startRect);
@@ -115,8 +116,6 @@ int showMainMenu(waitForPlayers *pWait)
                 break;
             }
 
-            // Endast Esc lyssnas på från tangentbordet — fungerar som
-            // snabb genväg för att stänga menyn.
             if (event.type == SDL_KEYDOWN &&
                 event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
             {
@@ -144,28 +143,27 @@ int showMainMenu(waitForPlayers *pWait)
         if (finished) break;
 
         // ── Render ──
-        SDL_RenderCopy(pWait->renderer, backgroundToDraw, NULL, NULL);
+        // 1. Default-bakgrunden (innehåller "släckta" knappar)
+        SDL_RenderCopy(pWait->renderer, bgDefault, NULL, NULL);
 
-        // Lätt mörk overlay så texten syns tydligt även mot ljusa bakgrunder.
-        // Sänk alpha (3:e arg från sista) om bilden ska synas mer, eller ta
-        // bort dessa två rader helt om bilden redan har bra kontrast.
-        SDL_SetRenderDrawColor(pWait->renderer, 0, 0, 0, 80);
-        SDL_RenderFillRect(pWait->renderer, NULL);
-
-        // Knappar — markera den som musen är över
-        draw_button(pWait->renderer, startText, &startRect, hoverStart);
-        draw_button(pWait->renderer, exitText,  &exitRect,  hoverExit);
-
-        // Hjälptext längst ner
-        text_draw(hintText, centerX, windowHeight - 60);
+        // 2. Om musen är över en knapp: rita "lit"-bilden ovanpå.
+        //    NULL som srcRect = använd hela knapp-bilden.
+        //    startRect/exitRect som dstRect = lägg den exakt på knappens plats.
+        if (hoverStart)
+        {
+            SDL_RenderCopy(pWait->renderer, startButton, NULL, &startRect);
+        }
+        else if (hoverExit)
+        {
+            SDL_RenderCopy(pWait->renderer, exitButton, NULL, &exitRect);
+        }
 
         SDL_RenderPresent(pWait->renderer);
     }
 
-    text_destroy(startText);
-    text_destroy(exitText);
-    text_destroy(hintText);
-    if (menuBackground) SDL_DestroyTexture(menuBackground);
+    SDL_DestroyTexture(bgDefault);
+    SDL_DestroyTexture(startButton);
+    SDL_DestroyTexture(exitButton);
 
     return result;
 }
