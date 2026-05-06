@@ -420,66 +420,6 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
     text_set(task->task_text, "SCAN IN PROGRESS", WHITE);
 }
 
-void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
-{
-    cleanup_task(task);
-    task->type = TASK_HOLD;
-    task->active = true;
-
-    task->hold_timer = 0.0f;
-    task->hold_duration = duration;
-    task->hold_key_down = false;
-
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/fireplace.png");
-    if (!task->task_image)
-    {
-        printf("Failed to load hold task image: %s\n", IMG_GetError());
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    if (!task->task_text)
-    {
-        printf("Error: task_text is NULL in start_hold_task\n");
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    text_set(task->task_text, "HOLD SPACE TO CHARGE!", WHITE);
-}
-
-void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
-{
-    cleanup_task(task);
-    task->type = TASK_ALTERNATE;
-    task->active = true;
-
-    task->alternate_count = 0;
-    task->alternate_target = target;
-    task->alternate_last_key = SDLK_UNKNOWN;
-
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/crystal.png");
-    if (!task->task_image)
-    {
-        printf("Failed to load alternate task image: %s\n", IMG_GetError());
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    if (!task->task_text)
-    {
-        printf("Error: task_text is NULL in start_alternate_task\n");
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    text_set(task->task_text, "MASH A AND D ALTERNATING!", WHITE);
-}
-
 void start_click_task(Task *task, SDL_Renderer *renderer, int target)
 {
     cleanup_task(task);
@@ -714,6 +654,66 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
     }
 
     text_set(task->task_text, "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)", WHITE);
+}
+
+void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
+{
+    cleanup_task(task);
+    task->type = TASK_HOLD;
+    task->active = true;
+
+    task->hold_timer = 0.0f;
+    task->hold_duration = duration;
+    task->hold_key_down = false;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/craft.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load hold task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_hold_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    text_set(task->task_text, "ASSEMBLE TOOLS (HOLD SPACE!)", WHITE);
+}
+
+void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
+{
+    cleanup_task(task);
+    task->type = TASK_ALTERNATE;
+    task->active = true;
+
+    task->alternate_count = 0;
+    task->alternate_target = target;
+    task->alternate_last_key = SDLK_UNKNOWN;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/bulb.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load alternate task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_alternate_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    text_set(task->task_text, "REPLACE THE LIGHTBULB (MASH A AND D ALTERNATING!)", WHITE);
 }
 
 void update_task(Task *task, float dt) // updates task logic every frame
