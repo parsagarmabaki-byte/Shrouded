@@ -8,6 +8,27 @@
 
 static const SDL_Color WHITE = {255, 255, 255, 255};
 
+// Relative positioning system
+typedef struct {
+    float x_ratio;  // relative to box center (0.5 = center, 0 = left, 1 = right)
+    float y_ratio;  // relative to box top (0 = top, 1 = bottom)
+} UIPosition;
+
+// Calculate screen position from box-relative position
+void get_relative_position(int box_x, int box_y, int box_width, int box_height, UIPosition rel_pos, int *out_x, int *out_y)
+{
+    *out_x = box_x + (int)(box_width * rel_pos.x_ratio);
+    *out_y = box_y + (int)(box_height * rel_pos.y_ratio);
+}
+
+// Position constants for each task type
+// Format: x_ratio (0.5 = center), y_ratio (0 = top, 1 = bottom)
+static const UIPosition TITLE_POS = {0.5f, 0.3f};
+static const UIPosition PROGRESS_POS = {0.5f, 0.45f};
+static const UIPosition SECONDARY_POS = {0.5f, 0.55f};
+static const UIPosition THIRD_POS = {0.5f, 0.20f};
+static const UIPosition CORNER_POS = {0.02f, 0.91f};
+
 struct Task
 { // task ADT struct
     TaskType type;
@@ -289,11 +310,7 @@ Task *create_task(SDL_Renderer *renderer)
 
     if (task->global_text)
         text_set(task->global_text, "PRESS Q TO ABANDON ASSIGNMENT", WHITE);
-
-    // Initialize number_texts array to NULL (already done by memset, but explicit for clarity)
-    for (int i = 0; i < 5; i++)
-        task->number_texts[i] = NULL;
-
+        
     return task;
 }
 
@@ -401,66 +418,6 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
     }
 
     text_set(task->task_text, "SCAN IN PROGRESS", WHITE);
-}
-
-void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
-{
-    cleanup_task(task);
-    task->type = TASK_HOLD;
-    task->active = true;
-
-    task->hold_timer = 0.0f;
-    task->hold_duration = duration;
-    task->hold_key_down = false;
-
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/fireplace.png");
-    if (!task->task_image)
-    {
-        printf("Failed to load hold task image: %s\n", IMG_GetError());
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    if (!task->task_text)
-    {
-        printf("Error: task_text is NULL in start_hold_task\n");
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    text_set(task->task_text, "HOLD SPACE TO CHARGE!", WHITE);
-}
-
-void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
-{
-    cleanup_task(task);
-    task->type = TASK_ALTERNATE;
-    task->active = true;
-
-    task->alternate_count = 0;
-    task->alternate_target = target;
-    task->alternate_last_key = SDLK_UNKNOWN;
-
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/crystal.png");
-    if (!task->task_image)
-    {
-        printf("Failed to load alternate task image: %s\n", IMG_GetError());
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    if (!task->task_text)
-    {
-        printf("Error: task_text is NULL in start_alternate_task\n");
-        task->active = false;
-        task->type = TASK_NONE;
-        return;
-    }
-
-    text_set(task->task_text, "MASH A AND D ALTERNATING!", WHITE);
 }
 
 void start_click_task(Task *task, SDL_Renderer *renderer, int target)
@@ -699,6 +656,66 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
     text_set(task->task_text, "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)", WHITE);
 }
 
+void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
+{
+    cleanup_task(task);
+    task->type = TASK_HOLD;
+    task->active = true;
+
+    task->hold_timer = 0.0f;
+    task->hold_duration = duration;
+    task->hold_key_down = false;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/craft.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load hold task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_hold_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    text_set(task->task_text, "ASSEMBLE TOOLS (HOLD SPACE!)", WHITE);
+}
+
+void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
+{
+    cleanup_task(task);
+    task->type = TASK_ALTERNATE;
+    task->active = true;
+
+    task->alternate_count = 0;
+    task->alternate_target = target;
+    task->alternate_last_key = SDLK_UNKNOWN;
+
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/bulb.png");
+    if (!task->task_image)
+    {
+        printf("Failed to load alternate task image: %s\n", IMG_GetError());
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    if (!task->task_text)
+    {
+        printf("Error: task_text is NULL in start_alternate_task\n");
+        task->active = false;
+        task->type = TASK_NONE;
+        return;
+    }
+
+    text_set(task->task_text, "REPLACE THE LIGHTBULB (MASH A AND D ALTERNATING!)", WHITE);
+}
+
 void update_task(Task *task, float dt) // updates task logic every frame
 {
     if (!task->active)
@@ -843,7 +860,11 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     }
 
     if (task->global_text)
-        text_draw_at(task->global_text, 170, 275);
+        {
+            int global_x, global_y;
+            get_relative_position(box_x, box_y, box_width, box_height, CORNER_POS, &global_x, &global_y);
+            text_draw_at(task->global_text, global_x, global_y);
+        }
 
     switch (task->type)
     {
@@ -856,19 +877,31 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             progress = 1.0f - (task->timer / task->timer_duration);
         }
 
-        // progress bar background
-        SDL_Rect bar_bg = {520, 350, 200, 40};
+        // progress bar background - relative positioning
+        int bar_x, bar_y;
+        get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &bar_x, &bar_y);
+        
+        int bar_width = (int)(box_width * 0.28f);
+        int bar_height = (int)(box_height * 0.08f);
+        bar_x -= bar_width / 2;  // center the bar
+
+        SDL_Rect bar_bg = {bar_x, bar_y, bar_width, bar_height};
         SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
         SDL_RenderFillRect(renderer, &bar_bg);
 
         // progress bar green fill
-        SDL_Rect bar_fill = {520, 350, (int)(200 * progress), 40};
+        SDL_Rect bar_fill = {bar_x, bar_y, (int)(bar_width * progress), bar_height};
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
         SDL_RenderFillRect(renderer, &bar_fill);
 
-        // text
+        // instruction text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 400);
+        {
+            int text_x, text_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &text_x, &text_y);
+            text_x -= text_get_width(task->task_text) / 2; // center text
+            text_draw_at(task->task_text, text_x, text_y);
+        }
         break;
     }
 
@@ -876,17 +909,26 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     {
         // click counter dynamic text
         char buffer[32];
-        snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target); // write string into the buffer
+        snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target);
 
         if (task->dynamic_text)
         {
+            int counter_x, counter_y;
+            get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &counter_x, &counter_y);
+            counter_x -= text_get_width(task->dynamic_text) / 2;
+            
             text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, 520, 400);
+            text_draw_at(task->dynamic_text, counter_x, counter_y);
         }
 
         // instruction text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 350);
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
 
         break;
     }
@@ -898,7 +940,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         // show progress
         for (int i = 0; i < task->length; i++)
         {
-            if (i < task->current_index) // everything before current index is shown, rest is hidden
+            if (i < task->current_index)
                 buffer[i] = task->target_string[i];
             else
                 buffer[i] = '_';
@@ -908,13 +950,17 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, 520, 400);
+            
+            int prog_x, prog_y;
+            get_relative_position(box_x, box_y, box_width, box_height, SECONDARY_POS, &prog_x, &prog_y);
+            prog_x -= text_get_width(task->dynamic_text) / 2;
+            
+            text_draw_at(task->dynamic_text, prog_x, prog_y);
         }
 
-        // show target string
+        // show target string (next letter)
         char current[2];
-
-        if (task->current_index < task->length) // if within defined text length, show next letter
+        if (task->current_index < task->length)
         {
             current[0] = task->target_string[task->current_index];
         }
@@ -922,18 +968,29 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         {
             current[0] = ' ';
         }
-
         current[1] = '\0';
 
         if (task->dynamic_text)
         {
+            // SET TEXT FIRST
             text_set(task->dynamic_text, current, WHITE);
-            text_draw_at(task->dynamic_text, 520, 300);
+            
+            // THEN get width and calculate position
+            int next_x, next_y;
+            get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &next_x, &next_y);
+            next_x -= text_get_width(task->dynamic_text) / 2;
+            
+            text_draw_at(task->dynamic_text, next_x, next_y);
         }
 
         // instruction text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 350);
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
 
         break;
     }
@@ -941,22 +998,29 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     case TASK_REFLEX:
     {
         // bar background
-        SDL_Rect bar_bg = {520, 350, 300, 40};
+        int bar_x, bar_y;
+        get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &bar_x, &bar_y);
+        
+        int bar_width = (int)(box_width * 0.42f);
+        int bar_height = (int)(box_height * 0.08f);
+        bar_x -= bar_width / 2;
+
+        SDL_Rect bar_bg = {bar_x, bar_y, bar_width, bar_height};
         SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
         SDL_RenderFillRect(renderer, &bar_bg);
 
         // success zone
-        int success_x = 520 + (int)(task->success_min * 300);
-        int success_w = (int)((task->success_max - task->success_min) * 300);
+        int success_x = bar_x + (int)(task->success_min * bar_width);
+        int success_w = (int)((task->success_max - task->success_min) * bar_width);
 
-        SDL_Rect success_zone = {success_x, 350, success_w, 40};
+        SDL_Rect success_zone = {success_x, bar_y, success_w, bar_height};
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
         SDL_RenderFillRect(renderer, &success_zone);
 
         // moving cursor
-        int cursor_x = 520 + (int)(task->cursor_pos * 300);
+        int cursor_x = bar_x + (int)(task->cursor_pos * bar_width);
 
-        SDL_Rect cursor = {cursor_x - 5, 345, 10, 50};
+        SDL_Rect cursor = {cursor_x - 5, bar_y - 5, 10, bar_height + 10};
         SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
         SDL_RenderFillRect(renderer, &cursor);
 
@@ -966,23 +1030,41 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
+            int counter_x, counter_y;
+            get_relative_position(box_x, box_y, box_width, box_height, THIRD_POS, &counter_x, &counter_y);
+            counter_x -= text_get_width(task->dynamic_text) / 2;
+            
             text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, 520, 400);
+            text_draw_at(task->dynamic_text, counter_x, counter_y);
         }
 
         // instruction text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 300);
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
 
         break;
     }
 
     case TASK_LOGICAL_ORDER:
     {
+        // Calculate number positions relative to box
+        int num_start_x = box_x + (int)(box_width * 0.20f);  // 20% from left edge
+        int num_spacing = (int)(box_width * 0.14f);          // 14% spacing
+        int num_y = box_y + (int)(box_height * 0.45f);       // 45% down
+
         for (int i = 0; i < 5; i++)
         {
             if (task->number_texts[i] != NULL)
+            {
+                task->numbers_rect[i].x = num_start_x + (i * num_spacing);
+                task->numbers_rect[i].y = num_y;
                 text_draw_at(task->number_texts[i], task->numbers_rect[i].x, task->numbers_rect[i].y);
+            }
         }
 
         // show score
@@ -991,15 +1073,22 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
+            int score_x, score_y;
+            get_relative_position(box_x, box_y, box_width, box_height, THIRD_POS, &score_x, &score_y);
+            score_x -= text_get_width(task->dynamic_text) / 2;
+            
             text_set(task->dynamic_text, progress_buf, WHITE);
-            text_draw_at(task->dynamic_text, 520, 450);
+            text_draw_at(task->dynamic_text, score_x, score_y);
         }
 
         // instruction text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 300);
-
-        break;
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
 
         break;
     }
@@ -1018,7 +1107,12 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
                 if (task->dynamic_text)
                 {
                     text_set(task->dynamic_text, symbol, WHITE);
-                    text_draw_at(task->dynamic_text, 650, 350);
+
+                    int seq_x, seq_y;
+                    get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &seq_x, &seq_y);
+                    seq_x -= text_get_width(task->dynamic_text) / 2;
+                    
+                    text_draw_at(task->dynamic_text, seq_x, seq_y);
                 }
             }
         }
@@ -1039,7 +1133,12 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             if (task->dynamic_text)
             {
                 text_set(task->dynamic_text, buffer, WHITE);
-                text_draw_at(task->dynamic_text, 600, 400);
+
+                int input_x, input_y;
+                get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &input_x, &input_y);
+                input_x -= text_get_width(task->dynamic_text) / 2;
+                
+                text_draw_at(task->dynamic_text, input_x, input_y);
             }
         }
 
@@ -1050,12 +1149,22 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, 520, 450);
+
+            int round_x, round_y;
+            get_relative_position(box_x, box_y, box_width, box_height, THIRD_POS, &round_x, &round_y);
+            round_x -= text_get_width(task->dynamic_text) / 2;
+            
+            text_draw_at(task->dynamic_text, round_x, round_y);
         }
 
         // instruction text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 300);
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
 
         break;
     }
@@ -1063,26 +1172,42 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     {
         float progress = task->hold_timer / task->hold_duration;
 
-        // Bakgrund
-        SDL_Rect bar_bg = {520, 350, 300, 40};
+        // Bar background
+        int bar_x, bar_y;
+        get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &bar_x, &bar_y);
+        
+        int bar_width = (int)(box_width * 0.42f);
+        int bar_height = (int)(box_height * 0.08f);
+        bar_x -= bar_width / 2;
+
+        SDL_Rect bar_bg = {bar_x, bar_y, bar_width, bar_height};
         SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
         SDL_RenderFillRect(renderer, &bar_bg);
 
-        // Fyllnad
-        SDL_Rect bar_fill = {520, 350, (int)(300 * progress), 40};
+        // Bar fill
+        SDL_Rect bar_fill = {bar_x, bar_y, (int)(bar_width * progress), bar_height};
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
         SDL_RenderFillRect(renderer, &bar_fill);
 
         // Text
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 300);
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
 
         char buffer[32];
         snprintf(buffer, sizeof(buffer), "%.1f / %.1f s", task->hold_timer, task->hold_duration);
         if (task->dynamic_text)
         {
+            int timer_x, timer_y;
+            get_relative_position(box_x, box_y, box_width, box_height, SECONDARY_POS, &timer_x, &timer_y);
+            timer_x -= text_get_width(task->dynamic_text) / 2;
+            
             text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, 520, 400);
+            text_draw_at(task->dynamic_text, timer_x, timer_y);
         }
         break;
     }
@@ -1094,19 +1219,34 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, 520, 400);
+
+            int counter_x, counter_y;
+            get_relative_position(box_x, box_y, box_width, box_height, SECONDARY_POS, &counter_x, &counter_y);
+            counter_x -= text_get_width(task->dynamic_text) / 2;
+            
+            text_draw_at(task->dynamic_text, counter_x, counter_y);
         }
 
-        // Visa vilken knapp som ska tryckas härnäst
+        // Show which button to press next
         const char *next_key = (task->alternate_last_key == SDLK_a) ? "D" : "A";
         if (task->dynamic_text)
         {
             text_set(task->dynamic_text, next_key, WHITE);
-            text_draw_at(task->dynamic_text, 650, 350);
+            
+            int key_x, key_y;
+            get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &key_x, &key_y);
+            key_x -= text_get_width(task->dynamic_text) / 2;
+            
+            text_draw_at(task->dynamic_text, key_x, key_y);
         }
 
         if (task->task_text)
-            text_draw_at(task->task_text, 520, 300);
+        {
+            int instr_x, instr_y;
+            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            instr_x -= text_get_width(task->task_text) / 2;
+            text_draw_at(task->task_text, instr_x, instr_y);
+        }
         break;
     }
 
