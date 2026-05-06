@@ -170,6 +170,12 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
         if (sc == SDL_SCANCODE_6)
             start_memory_task(task, renderer);
 
+        if (sc == SDL_SCANCODE_7)
+            start_hold_task(task, renderer, 3.0f); // 3 sekunder
+
+        if (sc == SDL_SCANCODE_8)
+            start_alternate_task(task, renderer, 20); // 20 växlingar
+
         // cancel task
         if (sc == SDL_SCANCODE_Q)
         {
@@ -225,7 +231,7 @@ void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state
     }
     else if (event->type == SDL_MOUSEBUTTONDOWN)
     {
-        SDL_Rect report_button = {955, 455, 120, 120};
+        SDL_Rect report_button = {1075, 400, 120, 120};
         if (is_hovering(renderer, report_button) && target_id != -1 && state->players[state->local_player_id].isAlive)
         {
             request_report_body(client, state, bodies[target_id], target_id);
@@ -393,6 +399,9 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
 {
     while (SDL_PollEvent(event))
     {
+        if (event->type == SDL_KEYUP)
+            task_handle_keyup(task, event->key.keysym.sym);
+
         if (state->phase == GAME_RUNNING)
             game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
         else if (state->phase == GAME_MEETING)
@@ -437,7 +446,7 @@ void game_meeting_events(SDL_Renderer *renderer, gameState state, SDL_Event *eve
     {
         printf("\nBANNER IS CLICKED\n");
     }
-    handle_send_vote_button(renderer,event,player_alive);
+    handle_send_vote_button(renderer, event, player_alive);
 }
 
 void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id)
@@ -513,7 +522,6 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     // SDL_RenderFillRect(renderer,&submit_button);
     // SDL_RenderFillRect(renderer,&skip_button);
     SDL_RenderPresent(renderer);
-
 }
 
 void update_player_direction(Player *player, clientInput *user_input)
@@ -582,7 +590,7 @@ void update_task_check_completion(Client *client, Task *task, gameState *state, 
     // Prefer the current task type if it's still active; if the task was ended by an event handler earlier this frame the `type` field will
     // already be cleared. In that case use `last_completed_type` saved by `end_task()` so we know which task actually finished.
     TaskType task_type_before_update = TASK_NONE;
-    
+
     if (task_active_check(task))
         task_type_before_update = task_get_current_type(task);
     else
