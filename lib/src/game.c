@@ -171,10 +171,10 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
             start_memory_task(task, renderer);
 
         if (sc == SDL_SCANCODE_7)
-            start_hold_task(task, renderer, 3.0f); // 3 sekunder
+            start_hold_task(task, renderer, 5.0f);
 
         if (sc == SDL_SCANCODE_8)
-            start_alternate_task(task, renderer, 20); // 20 växlingar
+            start_alternate_task(task, renderer, 30);
 
         // cancel task
         if (sc == SDL_SCANCODE_Q)
