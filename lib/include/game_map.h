@@ -48,7 +48,13 @@ typedef struct
     SDL_Texture *skip_vote_banner;
     SDL_Texture *no_one_eliminated;
 
+
+    // Pausmeny
+    SDL_Texture *pause_bg;
+    SDL_Texture *pause_resume;
+    SDL_Texture *pause_exit;
 } GameAssets;
+
 
 typedef struct {
     float x, y;
