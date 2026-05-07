@@ -49,9 +49,9 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.skip_vote_banner = loading_img(renderer, "assets/voting_result_assets/Skip_banner.png");
 
     // Pausmeny-bilder
-    asset.pause_bg     = loading_img(renderer, "assets/Images/quit?.png");
-    asset.pause_resume = loading_img(renderer, "assets/Images/resume_quit?.png");
-    asset.pause_exit   = loading_img(renderer, "assets/Images/exit_quit?.png");
+    asset.pause_bg     = loading_img(renderer, "assets/Images/quit.png");
+    asset.pause_resume = loading_img(renderer, "assets/Images/resume_quit.png");
+    asset.pause_exit   = loading_img(renderer, "assets/Images/exit_quit.png");
 
     if (!asset.emergency_meeting_info)
         printf("image not loaded");
