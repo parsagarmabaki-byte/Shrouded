@@ -48,6 +48,11 @@ GameAssets load_assets(SDL_Renderer *renderer)
 
     asset.skip_vote_banner = loading_img(renderer, "assets/voting_result_assets/Skip_banner.png");
 
+    // Pausmeny-bilder
+    asset.pause_bg     = loading_img(renderer, "assets/Images/quit?.png");
+    asset.pause_resume = loading_img(renderer, "assets/Images/resume_quit?.png");
+    asset.pause_exit   = loading_img(renderer, "assets/Images/exit_quit?.png");
+
     if (!asset.emergency_meeting_info)
         printf("image not loaded");
 
@@ -110,6 +115,9 @@ void destroy_assets(GameAssets *assets)
     destroy_texture(&assets->emergency_meeting_info);
     destroy_texture(&assets->dead_body_reported_info);
     destroy_texture(&assets->emergency_meeting_alive);
+    destroy_texture(&assets->pause_bg);
+    destroy_texture(&assets->pause_resume);
+    destroy_texture(&assets->pause_exit);
 }
 
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)

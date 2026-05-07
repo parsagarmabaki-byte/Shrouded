@@ -15,6 +15,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     bool is_local_impostor = state->players[local_id].isImpostor != 0;
     bool running = true;
     bool task_map_open = false;
+    bool pause_menu_open = false;
     float accumulator = 0.0f;
     Uint64 last_tick = SDL_GetPerformanceCounter();
     srand(time(NULL));
@@ -37,13 +38,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     while (running)
     {
         dt = calculate_delta_time(&last_tick);
-        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &targeted_banner_id);
+        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &targeted_banner_id, &pause_menu_open, assets);
         collect_packets(client, state, bodies);
-        ui_open = emergency_window_open || task_map_open;
+        ui_open = emergency_window_open || task_map_open || pause_menu_open;
         if (state->phase == GAME_RUNNING)
             update_game(client, state, player, task, bodies, &user_input, local_id, ui_open, &was_task_active, dt, &accumulator);
 
-        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id);
+        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id, pause_menu_open);
     }
 
     player_destroy(player);
@@ -394,36 +395,65 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderDrawRect(renderer, &player_marker);
 }
 
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, int *targeted_banner_id)
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, int *targeted_banner_id, bool *pause_menu_open, GameAssets assets)
 {
     while (SDL_PollEvent(event))
     {
         if (event->type == SDL_KEYUP)
             task_handle_keyup(task, event->key.keysym.sym);
 
+        // Pausmenyn fångar ESC och klick, resten av spelet ska inte reagera
+        if (*pause_menu_open)
+        {
+            leave_game_event(client, renderer, event, running, emergency_window_open, pause_menu_open, assets);
+            continue;
+        }
+
         if (state->phase == GAME_RUNNING)
             game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
         else if (state->phase == GAME_MEETING)
             game_meeting_events(client, renderer, *state, event, state->players[local_id].isAlive, targeted_banner_id);
-        leave_game_event(client, event, running, emergency_window_open);
+        leave_game_event(client, renderer, event, running, emergency_window_open, pause_menu_open, assets);
     }
 }
 
-void leave_game_event(Client *client, SDL_Event *event, bool *running, bool *emergency_window_open)
+void leave_game_event(Client *client, SDL_Renderer *renderer, SDL_Event *event, bool *running, bool *emergency_window_open, bool *pause_menu_open, GameAssets assets)
 {
-    if (event->type == SDL_KEYDOWN)
+    if (event->type == SDL_QUIT)
     {
-        if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+        send_leave_message(client);
+        *running = false;
+        return;
+    }
+
+    if (event->type == SDL_KEYDOWN && event->key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+    {
+        if (*emergency_window_open)
         {
-            if (*emergency_window_open)
-            {
-                *emergency_window_open = false;
-            }
-            else
-            {
-                send_leave_message(client);
-                *running = false;
-            }
+            *emergency_window_open = false;
+        }
+        else
+        {
+            // Toggla pausmenyn
+            *pause_menu_open = !(*pause_menu_open);
+        }
+        return;
+    }
+
+    // Hantera klick på Resume / Exit-knapparna
+    if (*pause_menu_open && event->type == SDL_MOUSEBUTTONDOWN)
+    {
+        SDL_Rect resume_rect = {(LOGICAL_SCREEN_WIDTH / 2) - 228, 352, 208, 82};
+        SDL_Rect exit_rect   = {(LOGICAL_SCREEN_WIDTH / 2) + 20,  352, 208, 82};
+
+        if (is_hovering(renderer, resume_rect))
+        {
+            *pause_menu_open = false;
+        }
+        else if (is_hovering(renderer, exit_rect))
+        {
+            send_leave_message(client);
+            *running = false;
         }
     }
 }
@@ -455,7 +485,7 @@ void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state
     handle_send_vote_button(client,renderer, event, player_alive, *targeted_banner_id);
 }
 
-void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id)
+void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open)
 {
     if (state->phase == GAME_RUNNING)
     {
@@ -477,7 +507,7 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         }
 
         SDL_Rect role_rect;
-        role_rect.w = 400;
+        role_rect.w = 380;
         role_rect.h = 200;
         role_rect.x = (LOGICAL_SCREEN_WIDTH - role_rect.w) / 2;
         role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4;
@@ -526,11 +556,31 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     {
         // Rendera impostor win screen
     }
-    // SDL_Rect submit_button = {260,555,265,75};
-    // SDL_Rect skip_button = {760,555,265,75};
-    // SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
-    // SDL_RenderFillRect(renderer,&submit_button);
-    // SDL_RenderFillRect(renderer,&skip_button);
+    // Rendera pausmeny ovanpå allt annat
+    if (pause_menu_open)
+    {
+        // Halvtransparent svart backdrop
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
+        SDL_Rect full = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+        SDL_RenderFillRect(renderer, &full);
+
+        // Bakgrundsbild (har redan Resume/Exit inritade)
+        SDL_Rect bg_rect = {265, 112, 750, 456};
+        if (assets.pause_bg)
+            SDL_RenderCopy(renderer, assets.pause_bg, NULL, &bg_rect);
+
+        // Hover-glow: visa den upplysta knappen bara när musen hovrar
+        SDL_Rect resume_rect = {(LOGICAL_SCREEN_WIDTH / 2) - 228, 352, 208, 82};
+        SDL_Rect exit_rect   = {(LOGICAL_SCREEN_WIDTH / 2) + 20,  352, 208, 82};
+
+        if (assets.pause_resume && is_hovering(renderer, resume_rect))
+            SDL_RenderCopy(renderer, assets.pause_resume, NULL, &resume_rect);
+
+        if (assets.pause_exit && is_hovering(renderer, exit_rect))
+            SDL_RenderCopy(renderer, assets.pause_exit, NULL, &exit_rect);
+    }
+
     SDL_RenderPresent(renderer);
 }
 
