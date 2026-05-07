@@ -24,7 +24,7 @@ int init_client(Client *client, const char *server_ip, char *error_message, size
         return 0;
     }
 
-    client->recievepacket = create_packet(512);
+    client->recievepacket = create_packet(1024);
     if (!client->recievepacket)
     {
         snprintf(error_message, error_size, "Could not allocate receive packet");

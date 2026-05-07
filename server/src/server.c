@@ -9,7 +9,7 @@
 #include "network_data.h"
 #include "player_movement.h"
 #include "imposter_ability.h"
-#define PACKET_SIZE 512
+#define PACKET_SIZE 1024
 
 static int init_server(UDPsocket *socket)
 {
