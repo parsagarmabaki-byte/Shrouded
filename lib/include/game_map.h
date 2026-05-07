@@ -46,6 +46,8 @@ typedef struct
     SDL_Texture *players_voting_result_alive[PLAYER_SLOTS];
     SDL_Texture *players_voting_result_dead[PLAYER_SLOTS];
     SDL_Texture *skip_vote_banner;
+    SDL_Texture *no_one_eliminated;
+
 } GameAssets;
 
 typedef struct {

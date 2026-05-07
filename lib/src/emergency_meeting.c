@@ -121,40 +121,68 @@ void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_rep
     SDL_RenderCopy(renderer, icon, NULL, &icon_pos);
 }
 
-void render_voting_results(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result)
+void render_voting_screen(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result)
 {
     render_voting_result_layer(renderer, assets, voting_result);
-    render_voting_result_banners(renderer, state, assets);
+    render_voting_banners(renderer, state, assets);
+    render_voting_results(renderer, state, state->voting_results);
 }
 
 void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int target_id)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_Texture *layer = assets.players_kicked_out[target_id];
+    SDL_Texture *layer = NULL;
+    if (target_id != -1)
+        layer = assets.players_kicked_out[target_id];
+    else
+        layer = assets.no_one_eliminated;
     SDL_RenderCopy(renderer, layer, NULL, NULL);
 }
 
-void render_voting_result_banners(SDL_Renderer *renderer, gameState *state, GameAssets assets)
+void render_voting_banners(SDL_Renderer *renderer, gameState *state, GameAssets assets)
 {
     SDL_Texture *banner;
-    SDL_Rect banner_size = {220,450,116,195};
+    SDL_Rect banner_size = {220, 450, 116, 195};
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (i>0)
-            banner_size.x += 125; 
+        if (i > 0)
+            banner_size.x += 125;
         bool player_alive = state->players[i].isAlive;
         if (player_alive)
             banner = assets.players_voting_result_alive[i];
         else
             banner = assets.players_voting_result_dead[i];
-        
-        SDL_RenderCopy(renderer,banner,NULL,&banner_size);
+
+        SDL_RenderCopy(renderer, banner, NULL, &banner_size);
     }
 
     banner_size.x += 125;
-    SDL_RenderCopy(renderer,assets.skip_vote_banner,NULL,&banner_size);
-     // SDL_RenderCopy(renderer, assets.players_voting_result_alive[0], NULL, &banner_size);
-    
+    SDL_RenderCopy(renderer, assets.skip_vote_banner, NULL, &banner_size);
+    // SDL_RenderCopy(renderer, assets.players_voting_result_alive[0], NULL, &banner_size);
+}
+
+void render_voting_results(SDL_Renderer *renderer, gameState *state, int voting_results[MAX_PLAYERS])
+{
+    Text Font_texture = text_create(renderer, "Fonts/Cinzel_Decorative/CinzelDecorative-Bold.ttf", 32);
+    int x_postion = 153;
+    SDL_Color color = {0, 0, 0, 255};
+    char buffer[4];
+
+    // SDL_RenderFillRect(renderer, &font_size);
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        x_postion += 125;
+        if (state->players[i].isAlive)
+        {
+            snprintf(buffer, sizeof(buffer), "%d", voting_results[i]);
+            text_set(Font_texture, buffer, color);
+            text_draw(Font_texture, x_postion, 597);
+        };
+    }
+    x_postion += 125;
+    snprintf(buffer, sizeof(buffer), "%d", voting_results[MAX_PLAYERS]);
+    text_set(Font_texture, buffer, color);
+    text_draw(Font_texture, x_postion, 597);
 }

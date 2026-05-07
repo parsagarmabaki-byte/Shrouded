@@ -117,7 +117,7 @@ typedef struct {
     gamePhase phase;
     int local_player_id;
     int emergency_meeting_reported_id;
-    int voting_results[MAX_PLAYERS];
+    int voting_results[MAX_PLAYERS+1];
     int voting_result;
     int total_tasks_completed;
 } gameState;

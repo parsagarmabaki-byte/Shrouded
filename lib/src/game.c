@@ -516,7 +516,7 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == SHOW_VOTE_RESULT)
     {
-        render_voting_results(renderer,state,assets,state->voting_result);
+        render_voting_screen(renderer,state,assets,state->voting_result);
     }
     else if (state->phase == GAME_CREWMATES_WIN)
     {

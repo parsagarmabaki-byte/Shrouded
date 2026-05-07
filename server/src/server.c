@@ -282,7 +282,7 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS])
     int votes_recieved = meeting_info.votes_recieved;
     int max_votes = 0;
     int player_id = -1;
-    for (int i = 0; i < MAX_PLAYERS; i++)
+    for (int i = 0; i < MAX_PLAYERS + 1; i++)
     {
         voting_result[i] = 0;
     }
@@ -290,7 +290,10 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS])
     {
         int target_id = meeting_info.votes[i].target_id;
         if (target_id == VOTE_SKIP)
+        {
+            voting_result[MAX_PLAYERS] += 1;
             continue;
+        }
         voting_result[target_id]++;
     }
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -657,13 +660,13 @@ int main(void)
                 if (SDL_GetTicks64() - phase_time >= 45000 || meeting_info.votes_recieved == meeting_info.alive_players_count) // NÄR 15 SEKUNDER GÅTT
                 {
                     state.phase = SHOW_VOTE_RESULT;
-                    calculate_votes(meeting_info, state.voting_results);
+                    state.voting_result = calculate_votes(meeting_info, state.voting_results);
                     printf("MEETING ENDED\n");
                     phase_time = SDL_GetTicks64();
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
-            else if(state.phase == SHOW_VOTE_RESULT)
+            else if (state.phase == SHOW_VOTE_RESULT)
             {
                 if (SDL_GetTicks64() - phase_time >= 10000)
                 {
