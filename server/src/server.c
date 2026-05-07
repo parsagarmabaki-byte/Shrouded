@@ -442,7 +442,9 @@ int main(void)
                         TASK_LETTER,
                         TASK_REFLEX,
                         TASK_LOGICAL_ORDER,
-                        TASK_MEMORY};
+                        TASK_MEMORY,
+                        TASK_HOLD,
+                        TASK_ALTERNATE};
 
                     for (int i = 0; i < MAX_PLAYERS; i++)
                     {

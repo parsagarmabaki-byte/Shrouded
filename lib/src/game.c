@@ -31,6 +31,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     SDL_Event event;
     clientInput user_input;
     GameAssets assets = load_assets(renderer);
+    Text panel_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 18);
 
     SDL_RaiseWindow(lobby->window);
     SDL_SetWindowInputFocus(lobby->window);
@@ -44,8 +45,10 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_RUNNING)
             update_game(client, state, player, task, bodies, &user_input, local_id, ui_open, &was_task_active, dt, &accumulator);
 
-        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id, pause_menu_open);
+        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id, pause_menu_open, panel_text);
     }
+    if (panel_text)
+        text_destroy(panel_text);
 
     player_destroy(player);
     destroy_task(task);
@@ -116,6 +119,90 @@ void render_all_players(gameState *state, Player *player, GameAssets assets, Cam
         SDL_SetTextureAlphaMod(assets.skins[i], alpha);
         renderPlayer(renderer, &p, assets.skins[i], cam);
         SDL_SetTextureAlphaMod(assets.skins[i], 255);
+    }
+}
+
+static const char *task_type_name(TaskType t)
+{
+    switch (t)
+    {
+    case TASK_TIMER:
+        return "Timer";
+    case TASK_CLICK:
+        return "Click";
+    case TASK_LETTER:
+        return "Letter";
+    case TASK_REFLEX:
+        return "Reflex";
+    case TASK_LOGICAL_ORDER:
+        return "Order";
+    case TASK_MEMORY:
+        return "Memory";
+    case TASK_HOLD:
+        return "Hold";
+    case TASK_ALTERNATE:
+        return "Alternate";
+    default:
+        return "Unknown";
+    }
+}
+
+static void render_task_panel(SDL_Renderer *renderer, GameAssets assets, gameState *state, int local_id, Task *task, Text panel_text, bool emergency_window_open, bool task_map_open, bool pause_menu_open)
+{
+    if (local_id < 0 || !state->players[local_id].active)
+        return;
+
+    if (emergency_window_open || task_map_open || pause_menu_open || task_active_check(task))
+        return;
+
+    const int panel_x = 10;
+    const int panel_y = 10;
+    const int panel_w = 260;
+    const int item_h = 26;
+    const int panel_h = 16 + (TASK_COUNT * item_h);
+
+    SDL_Rect panel = {panel_x, panel_y, panel_w, panel_h};
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
+    SDL_RenderFillRect(renderer, &panel);
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 60);
+    SDL_RenderDrawRect(renderer, &panel);
+
+    SDL_Color white = {255, 255, 255, 255};
+
+    for (int i = 0; i < TASK_COUNT; ++i)
+    {
+        int y = panel_y + 8 + i * item_h;
+        SDL_Rect icon = {panel_x + 8, y, 18, 18};
+
+        bool completed = (i < state->players[local_id].tasks_completed);
+        if (completed)
+            SDL_SetRenderDrawColor(renderer, 90, 90, 90, 220);
+        else
+            SDL_SetRenderDrawColor(renderer, 80, 200, 120, 220);
+
+        SDL_RenderFillRect(renderer, &icon);
+
+        char label[64];
+        TaskType t = state->players[local_id].task_order[i];
+        snprintf(label, sizeof(label), "%d. %s", i + 1, task_type_name(t));
+
+        if (panel_text)
+        {
+            text_set(panel_text, label, white);
+            int text_x = panel_x + 34;
+            int text_y = y;
+            text_draw_at(panel_text, text_x, text_y);
+        }
+
+        if (!completed)
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 225, 100, 200);
+            SDL_Rect outline = {panel_x + 6, y - 2, panel_w - 16, item_h};
+            if (i == state->players[local_id].tasks_completed)
+                SDL_RenderDrawRect(renderer, &outline);
+        }
     }
 }
 
@@ -485,11 +572,18 @@ void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state
     handle_send_vote_button(client,renderer, event, player_alive, *targeted_banner_id);
 }
 
-void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open)
+void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text)
 {
     if (state->phase == GAME_RUNNING)
     {
         render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, *emergency_window_open, task_map_open);
+        render_task_panel(renderer, assets, state, local_id, task, panel_text, *emergency_window_open, task_map_open, pause_menu_open);
+
+        // Show small task panel only when nothing else covers the main view:
+        if (!task_map_open && !(*emergency_window_open) && !pause_menu_open && !task_active_check(task))
+        {
+            render_task_panel(renderer, assets, state, local_id, task, panel_text, *emergency_window_open, task_map_open, pause_menu_open);
+        }
     }
     else if (state->phase == GAME_SHOW_ROLE)
     {
