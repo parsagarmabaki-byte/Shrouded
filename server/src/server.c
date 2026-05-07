@@ -277,7 +277,7 @@ void cast_vote(Meeting *meeting_info, VoteRequest vote)
            meeting_info->alive_players_count);
 }
 
-int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS])
+int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
 {
     int votes_recieved = meeting_info.votes_recieved;
     int max_votes = 0;
@@ -291,7 +291,7 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS])
         int target_id = meeting_info.votes[i].target_id;
         if (target_id == VOTE_SKIP)
         {
-            voting_result[MAX_PLAYERS] += 1;
+            voting_result[6] += 1;
             continue;
         }
         voting_result[target_id]++;
@@ -308,7 +308,9 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS])
             player_id = -1;
         }
     }
-    printf("\nVOTING RESULT IS TO KICK OUT player id %d", player_id);
+    if (max_votes <= voting_result[6])
+        player_id = -1;
+    printf("\nVOTING RESULT IS TO KICK OUT player id %d\n", player_id);
     return player_id;
 }
 
