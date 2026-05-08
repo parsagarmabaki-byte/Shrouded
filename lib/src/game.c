@@ -148,6 +148,50 @@ static const char *task_type_name(TaskType t)
     }
 }
 
+static void render_global_progress_bar(SDL_Renderer *renderer, gameState *state)
+{
+    int active_players = 0;
+    for(int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if(state->players[i].active)
+        {
+            active_players++;
+        }
+    }
+
+    int total_tasks_required = TASK_COUNT * (active_players - 1);
+    if(total_tasks_required <= 0)
+    {
+        return;
+    }
+
+    float progress = (float)state->total_tasks_completed / total_tasks_required;
+    if(progress > 1.0f)
+    {
+        progress = 1.0f;
+    }
+
+    int bar_w = 260; 
+    int bar_h = 20;
+    int margin = 20;
+
+    int bar_x = LOGICAL_SCREEN_WIDTH - bar_w - margin;
+    int bar_y = margin;
+
+    SDL_Rect bg = { bar_x, bar_y, bar_w, bar_h };
+    SDL_Rect fill = { bar_x, bar_y, (int)(bar_w * progress), bar_h };
+
+    if(progress > 0)
+    {
+        SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
+        SDL_RenderFillRect(renderer, &fill);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 100);
+    SDL_RenderDrawRect(renderer, &bg);
+}
+
+
 static void render_task_panel(SDL_Renderer *renderer, GameAssets assets, gameState *state, int local_id, Task *task, Text panel_text, bool emergency_window_open, bool task_map_open, bool pause_menu_open)
 {
     if (local_id < 0 || !state->players[local_id].active)
@@ -728,6 +772,8 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     {
         render_task_map(renderer, task, assets, player);
     }
+
+    render_global_progress_bar(renderer, state);
 
     if (task_panel_visible)
     {
