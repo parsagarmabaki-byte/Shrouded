@@ -151,31 +151,6 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *p
     {
         SDL_Scancode sc = event->key.keysym.scancode;
 
-        // start tasks
-        if (sc == SDL_SCANCODE_1)
-            start_timer_task(task, renderer, 10.0f);
-
-        if (sc == SDL_SCANCODE_2)
-            start_click_task(task, renderer, 25);
-
-        if (sc == SDL_SCANCODE_3)
-            start_letter_task(task, renderer);
-
-        if (sc == SDL_SCANCODE_4)
-            start_reflex_task(task, renderer);
-
-        if (sc == SDL_SCANCODE_5)
-            start_logical_order_task(task, renderer);
-
-        if (sc == SDL_SCANCODE_6)
-            start_memory_task(task, renderer);
-
-        if (sc == SDL_SCANCODE_7)
-            start_hold_task(task, renderer, 5.0f);
-
-        if (sc == SDL_SCANCODE_8)
-            start_alternate_task(task, renderer, 30);
-
         if (sc == SDL_SCANCODE_E && player && !task_active_check(task))
         {
             int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
