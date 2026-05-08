@@ -127,21 +127,21 @@ static const char *task_type_name(TaskType t)
     switch (t)
     {
     case TASK_TIMER:
-        return "Timer";
+        return "Mannequin Scan";
     case TASK_CLICK:
-        return "Click";
+        return "Clean Crystal";
     case TASK_LETTER:
-        return "Letter";
+        return "Write Letter";
     case TASK_REFLEX:
-        return "Reflex";
+        return "Stoke Fire";
     case TASK_LOGICAL_ORDER:
-        return "Order";
+        return "Organize Shelf";
     case TASK_MEMORY:
-        return "Memory";
+        return "Look Into Crystals";
     case TASK_HOLD:
-        return "Hold";
+        return "Assemble Tools";
     case TASK_ALTERNATE:
-        return "Alternate";
+        return "Change Lightbulb";
     default:
         return "Unknown";
     }
@@ -152,7 +152,7 @@ static void render_task_panel(SDL_Renderer *renderer, GameAssets assets, gameSta
     if (local_id < 0 || !state->players[local_id].active)
         return;
 
-    if (emergency_window_open || task_map_open || pause_menu_open || task_active_check(task))
+    if (emergency_window_open || task_map_open || pause_menu_open || task_active_check(task))   // only show if no other ui is open
         return;
 
     const int panel_x = 10;
@@ -163,11 +163,11 @@ static void render_task_panel(SDL_Renderer *renderer, GameAssets assets, gameSta
 
     SDL_Rect panel = {panel_x, panel_y, panel_w, panel_h};
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
-    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawColor(renderer, 40, 40, 40, 100);
+    SDL_RenderFillRect(renderer, &panel);   //inner fill
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 60);
-    SDL_RenderDrawRect(renderer, &panel);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 30);
+    SDL_RenderDrawRect(renderer, &panel);  //border
 
     SDL_Color white = {255, 255, 255, 255};
 
@@ -176,14 +176,16 @@ static void render_task_panel(SDL_Renderer *renderer, GameAssets assets, gameSta
         int y = panel_y + 8 + i * item_h;
         SDL_Rect icon = {panel_x + 8, y, 18, 18};
 
+        // completion status square coloring
         bool completed = (i < state->players[local_id].tasks_completed);
         if (completed)
-            SDL_SetRenderDrawColor(renderer, 90, 90, 90, 220);
-        else
             SDL_SetRenderDrawColor(renderer, 80, 200, 120, 220);
+        else
+            SDL_SetRenderDrawColor(renderer, 90, 90, 90, 220);
 
         SDL_RenderFillRect(renderer, &icon);
 
+        // task label
         char label[64];
         TaskType t = state->players[local_id].task_order[i];
         snprintf(label, sizeof(label), "%d. %s", i + 1, task_type_name(t));
@@ -196,10 +198,11 @@ static void render_task_panel(SDL_Renderer *renderer, GameAssets assets, gameSta
             text_draw_at(panel_text, text_x, text_y);
         }
 
+        // current task outline
         if (!completed)
         {
-            SDL_SetRenderDrawColor(renderer, 255, 225, 100, 200);
-            SDL_Rect outline = {panel_x + 6, y - 2, panel_w - 16, item_h};
+            SDL_SetRenderDrawColor(renderer, 180, 180, 180, 200);
+            SDL_Rect outline = {panel_x + 6, y - 4, panel_w - 16, item_h};
             if (i == state->players[local_id].tasks_completed)
                 SDL_RenderDrawRect(renderer, &outline);
         }
@@ -576,14 +579,7 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
 {
     if (state->phase == GAME_RUNNING)
     {
-        render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, *emergency_window_open, task_map_open);
-        render_task_panel(renderer, assets, state, local_id, task, panel_text, *emergency_window_open, task_map_open, pause_menu_open);
-
-        // Show small task panel only when nothing else covers the main view:
-        if (!task_map_open && !(*emergency_window_open) && !pause_menu_open && !task_active_check(task))
-        {
-            render_task_panel(renderer, assets, state, local_id, task, panel_text, *emergency_window_open, task_map_open, pause_menu_open);
-        }
+        render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, *emergency_window_open, task_map_open, pause_menu_open, panel_text);
     }
     else if (state->phase == GAME_SHOW_ROLE)
     {
@@ -701,7 +697,7 @@ void update_player_movement(Player *player, clientInput *user_input, bool task_i
     }
 }
 
-static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open)
+static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open, bool pause_menu_open, Text panel_text)
 {
     run_animations(&player->animation_timer, &player->current_frame, user_input, dt);
     camera_follow(cam, player->Hitbox.x, player->Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
@@ -729,6 +725,14 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     {
         render_task_map(renderer, task, assets, player);
     }
+
+    render_task_panel(renderer, assets, state, local_id, task, panel_text, emergency_window_open, task_map_open, pause_menu_open);
+
+        // Show small task panel only when nothing else covers the main view:
+        if (!task_map_open && !(emergency_window_open) && !pause_menu_open && !task_active_check(task))
+        {
+            render_task_panel(renderer, assets, state, local_id, task, panel_text, emergency_window_open, task_map_open, pause_menu_open);
+        }
 }
 
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open)
