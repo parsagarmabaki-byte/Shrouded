@@ -141,7 +141,7 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
     }
 }
 
-void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
+void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player)
 {
     // printf("\nIN TASKS EVENT\n");
     if (!task)
@@ -175,6 +175,28 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task)
 
         if (sc == SDL_SCANCODE_8)
             start_alternate_task(task, renderer, 30);
+
+        if (sc == SDL_SCANCODE_E && player && !task_active_check(task))
+        {
+            int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
+
+            if (tile_type == 7)
+                start_reflex_task(task, renderer);
+            else if (tile_type == 3)
+                start_hold_task(task, renderer, 10);
+            else if (tile_type == 4)
+                start_memory_task(task, renderer);
+            else if (tile_type == 5)
+                start_logical_order_task(task, renderer);
+            else if (tile_type == 6)
+                start_click_task(task, renderer, 25);
+            else if (tile_type == 8)
+                start_timer_task(task, renderer, 15);
+            else if (tile_type == 9)
+                start_letter_task(task, renderer);
+            else if (tile_type == 10)
+                start_alternate_task(task, renderer, 25);
+        }
 
         // cancel task
         if (sc == SDL_SCANCODE_Q)
@@ -246,7 +268,8 @@ void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *re
     {
         if (event->key.keysym.scancode == SDL_SCANCODE_E)
         {
-            if (collides_with_wall(player->Hitbox.x, player->Hitbox.y) == 2 && state->players[local_id].isAlive)
+            int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
+            if (tile_type == 2 && state->players[local_id].isAlive)
                 *emergency_window_open = true;
         }
     }
@@ -359,8 +382,7 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_Rect marker5 = {790, 130, 24, 24};
     SDL_Rect marker6 = {900, 130, 24, 24};
     SDL_Rect marker7 = {825, 570, 24, 24};
-    SDL_Rect marker8 = {550, 510, 24, 24};
-    SDL_Rect marker9 = {415, 505, 24, 24};
+    SDL_Rect marker8 = {415, 505, 24, 24};
 
     SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
     SDL_RenderFillRect(renderer, &marker1);
@@ -371,7 +393,7 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderFillRect(renderer, &marker6);
     SDL_RenderFillRect(renderer, &marker7);
     SDL_RenderFillRect(renderer, &marker8);
-    SDL_RenderFillRect(renderer, &marker9);
+    SDL_RenderFillRect(renderer, &marker8);
 
     float scale_x = (float)map_rect.w / GAME_MAP_WIDTH;
     float scale_y = (float)map_rect.h / GAME_MAP_HEIGHT;
@@ -469,7 +491,7 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
             *task_map_open = !*task_map_open;
         }
     }
-    task_events(renderer, event, task);
+    task_events(renderer, event, task, player);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
     emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
     report_body_events(renderer, client, state, event, bodies, player);
