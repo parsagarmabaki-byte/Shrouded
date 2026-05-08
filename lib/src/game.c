@@ -243,10 +243,20 @@ void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *re
             int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
             if (tile_type == 2 && state->players[local_id].isAlive)
                 *emergency_window_open = true;
-            else if (tile_type == 5 && !task_active_check(task))
+            else if (tile_type == 7 && !task_active_check(task))
                 start_reflex_task(task, renderer);
             else if (tile_type == 3 && !task_active_check(task))
+                start_letter_task(task, renderer); // fel task
+            else if (tile_type == 4 && !task_active_check(task))
+                start_memory_task(task, renderer);
+            else if (tile_type == 5 && !task_active_check(task))
                 start_logical_order_task(task, renderer);
+            else if (tile_type == 6 && !task_active_check(task))
+                start_click_task(task, renderer, 25);
+            else if (tile_type == 8 && !task_active_check(task))
+                start_timer_task(task, renderer, 15);
+            else if (tile_type == 9 && !task_active_check(task))
+                start_letter_task(task, renderer);
         }
     }
     if (*emergency_window_open && event->type == SDL_MOUSEBUTTONDOWN)
