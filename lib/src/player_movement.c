@@ -7,7 +7,6 @@
 #include "wall_data.h"
 #include <math.h>
 
-
 Player *player_create(gameState *state, int local_id)
 {
     Player *p = malloc(sizeof(Player));
@@ -19,7 +18,6 @@ Player *player_create(gameState *state, int local_id)
     *p = init_player(*state, local_id);
     return p;
 }
-
 
 void player_destroy(Player *p)
 {
@@ -118,7 +116,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
     SDL_RenderCopy(renderer, texture, &src, &dst_render);
 
     SDL_GetRenderDrawColor(renderer, &old_r, &old_g, &old_b, &old_a);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 100); // ÄNdra 100 till 0 för att ta bort gula ramen 
     SDL_RenderDrawRect(renderer, &dst_hitbox);
     SDL_SetRenderDrawColor(renderer, old_r, old_g, old_b, old_a);
 }
