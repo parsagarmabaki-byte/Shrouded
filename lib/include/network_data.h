@@ -13,7 +13,7 @@
 #define PLAYER_SPEED 200 //DELAD DATA MELLAN SERVER OCH CLIENT
 #define PLAYER_SIZE 70
 
-#define TASK_COUNT 6 // uppdatera  när fler tasks läggs till
+#define TASK_COUNT 8 // uppdatera  när fler tasks läggs till
 
 
 // BARA RÖRELSER OCH ROLLER IMPLEMENTERADE
