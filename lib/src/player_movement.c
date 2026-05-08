@@ -7,13 +7,7 @@
 #include "wall_data.h"
 #include <math.h>
 
-// ADT: konstruktör
 
-/* 
-    player_create() allokerar minne på heapen med malloc, anropar befintliga init_player() för att fylla structen, 
-    och returnerar en pekare, 
-    medan player_destroy() frigor minnet med free.
-*/
 Player *player_create(gameState *state, int local_id)
 {
     Player *p = malloc(sizeof(Player));
@@ -26,7 +20,7 @@ Player *player_create(gameState *state, int local_id)
     return p;
 }
 
-// ADT: destruktör
+
 void player_destroy(Player *p)
 {
     if (p)
