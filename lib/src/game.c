@@ -16,6 +16,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     bool running = true;
     bool task_map_open = false;
     bool pause_menu_open = false;
+    bool task_panel_visible = true;
     float accumulator = 0.0f;
     Uint64 last_tick = SDL_GetPerformanceCounter();
     srand(time(NULL));
@@ -39,13 +40,13 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     while (running)
     {
         dt = calculate_delta_time(&last_tick);
-        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &targeted_banner_id, &pause_menu_open, assets);
+        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &task_panel_visible, &targeted_banner_id, &pause_menu_open, assets);
         collect_packets(client, state, bodies);
         ui_open = emergency_window_open || task_map_open || pause_menu_open;
         if (state->phase == GAME_RUNNING)
             update_game(client, state, player, task, bodies, &user_input, local_id, ui_open, &was_task_active, dt, &accumulator);
 
-        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, &emergency_window_open, dt, targeted_banner_id, pause_menu_open, panel_text);
+        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, task_panel_visible, &emergency_window_open, dt, targeted_banner_id, pause_menu_open, panel_text);
     }
     if (panel_text)
         text_destroy(panel_text);
@@ -485,7 +486,7 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderDrawRect(renderer, &player_marker);
 }
 
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, int *targeted_banner_id, bool *pause_menu_open, GameAssets assets)
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, bool *task_panel_visible, int *targeted_banner_id, bool *pause_menu_open, GameAssets assets)
 {
     while (SDL_PollEvent(event))
     {
@@ -500,7 +501,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
         }
 
         if (state->phase == GAME_RUNNING)
-            game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open);
+            game_running_events(client, renderer, state, task, event, player, bodies, local_id, running, emergency_window_open, is_local_impostor, task_map_open, task_panel_visible);
         else if (state->phase == GAME_MEETING)
             game_meeting_events(client, renderer, *state, event, state->players[local_id].isAlive, targeted_banner_id);
         leave_game_event(client, renderer, event, running, emergency_window_open, pause_menu_open, assets);
@@ -548,7 +549,7 @@ void leave_game_event(Client *client, SDL_Renderer *renderer, SDL_Event *event, 
     }
 }
 
-void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open)
+void game_running_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open,bool is_local_impostor, bool *task_map_open, bool *task_panel_visible)
 {
     if (event->type == SDL_QUIT)
         *running = false;
@@ -558,7 +559,12 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
         {
             *task_map_open = !*task_map_open;
         }
+        if (event->key.keysym.scancode == SDL_SCANCODE_TAB)
+        {
+            *task_panel_visible = !(*task_panel_visible);
+        }
     }
+
     task_events(renderer, event, task);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
     emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
@@ -575,11 +581,11 @@ void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state
     handle_send_vote_button(client,renderer, event, player_alive, *targeted_banner_id);
 }
 
-void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text)
+void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool task_panel_visible, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text)
 {
     if (state->phase == GAME_RUNNING)
     {
-        render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, *emergency_window_open, task_map_open, pause_menu_open, panel_text);
+        render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, *emergency_window_open, task_map_open, pause_menu_open, task_panel_visible, panel_text);
     }
     else if (state->phase == GAME_SHOW_ROLE)
     {
@@ -697,7 +703,7 @@ void update_player_movement(Player *player, clientInput *user_input, bool task_i
     }
 }
 
-static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open, bool pause_menu_open, Text panel_text)
+static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open, bool pause_menu_open, bool task_panel_visible, Text panel_text)
 {
     run_animations(&player->animation_timer, &player->current_frame, user_input, dt);
     camera_follow(cam, player->Hitbox.x, player->Hitbox.y, PLAYER_SIZE, PLAYER_SIZE);
@@ -726,13 +732,10 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
         render_task_map(renderer, task, assets, player);
     }
 
-    render_task_panel(renderer, assets, state, local_id, task, panel_text, emergency_window_open, task_map_open, pause_menu_open);
-
-        // Show small task panel only when nothing else covers the main view:
-        if (!task_map_open && !(emergency_window_open) && !pause_menu_open && !task_active_check(task))
-        {
-            render_task_panel(renderer, assets, state, local_id, task, panel_text, emergency_window_open, task_map_open, pause_menu_open);
-        }
+    if (task_panel_visible)
+    {
+        render_task_panel(renderer, assets, state, local_id, task, panel_text, emergency_window_open, task_map_open, pause_menu_open);
+    }
 }
 
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open)
