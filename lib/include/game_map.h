@@ -48,6 +48,8 @@ typedef struct
     SDL_Texture *players_voting_result_dead[PLAYER_SLOTS];
     SDL_Texture *skip_vote_banner;
     SDL_Texture *no_one_eliminated;
+    SDL_Texture *killer_win_screens[PLAYER_SLOTS];
+    SDL_Texture *crewmates_win_screen;
 
 
     // Pausmeny

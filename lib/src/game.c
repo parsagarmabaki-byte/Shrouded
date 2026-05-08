@@ -547,11 +547,28 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == GAME_CREWMATES_WIN)
     {
-        // Rendera crewmate win screen
+        if (assets.crewmates_win_screen)
+        {
+            SDL_RenderCopy(renderer, assets.crewmates_win_screen, NULL, NULL);
+        }
     }
     else if (state->phase == GAME_IMPOSTOR_WIN)
     {
-        // Rendera impostor win screen
+        int killer_id = -1;
+
+        for (int i = 0; i < MAX_PLAYERS; i++)
+        {
+            if (state->players[i].isImpostor)
+            {
+                killer_id = i;
+                break;
+            }
+        }
+
+        if (killer_id >= 0 && killer_id < PLAYER_SLOTS && assets.killer_win_screens[killer_id])
+        {
+            SDL_RenderCopy(renderer, assets.killer_win_screens[killer_id], NULL, NULL);
+        }
     }
     // Rendera pausmeny ovanpå allt annat
     if (pause_menu_open)
