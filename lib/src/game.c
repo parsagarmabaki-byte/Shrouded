@@ -629,7 +629,7 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     render_task(renderer, task, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);
     if (emergency_window_open)
     {
-        emergency_meeting_view(renderer, assets.emergency_button_view);
+        emergency_meeting_view(renderer, assets.emergency_button_view, assets.emergency_button_hover);
     }
     if (task_map_open)
     {

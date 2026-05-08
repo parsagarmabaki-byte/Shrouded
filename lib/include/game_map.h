@@ -31,6 +31,7 @@ typedef struct
     SDL_Texture *report_button_active;
 
     SDL_Texture *emergency_button_view;
+    SDL_Texture *emergency_button_hover;
     SDL_Texture *emergency_meeting_info;
     SDL_Texture *dead_body_reported_info;
 

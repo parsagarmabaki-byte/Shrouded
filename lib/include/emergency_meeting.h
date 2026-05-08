@@ -10,7 +10,7 @@
 #define banner_x 250
 #define banner_y 170
 
-void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_button_view);
+void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_button_view, SDL_Texture *emergency_button_hover);
 void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id);
 void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported);
 void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state, int targeted_banner_id);

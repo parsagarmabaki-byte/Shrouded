@@ -40,6 +40,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.report_button_active = loading_img(renderer, "assets/images/report_button_active.png");
 
     asset.emergency_button_view = loading_img(renderer, "assets/images/emergency_button_view.png");
+    asset.emergency_button_hover = loading_img(renderer, "assets/images/Emergencybutton_light_up.png");
     asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
     asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
     asset.emergency_meeting_alive = loading_img(renderer, "assets/images/emergency_meeting_alive.png");
@@ -120,6 +121,7 @@ void destroy_assets(GameAssets *assets)
     destroy_texture(&assets->pause_bg);
     destroy_texture(&assets->pause_resume);
     destroy_texture(&assets->pause_exit);
+    destroy_texture(&assets->emergency_button_hover);
 }
 
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)
