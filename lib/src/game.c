@@ -351,11 +351,16 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
     }
 }
 
-void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player)
+void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player, bool is_local_impostor)
 {
     // printf("\nIN TASKS EVENT\n");
     if (!task)
         return;
+    
+    if(is_local_impostor)
+    {
+        return;
+    }
 
     if (event->type == SDL_KEYDOWN)
     {
@@ -683,7 +688,7 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
             *controls_visible = !(*controls_visible);
     }
 
-    task_events(renderer, event, task, player);
+    task_events(renderer, event, task, player, is_local_impostor);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
     emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
     report_body_events(renderer, client, state, event, bodies, player, task);

@@ -35,7 +35,7 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
 void render_all_players(gameState *state, Player *player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id);
 void kill_events(Client *client, SDL_Renderer *renderer, gameState *state, SDL_Event *event, bool kill_cooldown, bool is_local_impostor);
 void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, bool *emergency_window_open, int local_id);
-void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player);
+void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player, bool is_local_impostor);
 void debug_walls(SDL_Renderer *renderer, Camera cam);
 void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player);
 void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
