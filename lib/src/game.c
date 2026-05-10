@@ -351,7 +351,7 @@ void run_animations(float *animation_timer, int *current_frame, clientInput inpu
     }
 }
 
-void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player, bool is_local_impostor)
+void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player, bool is_local_impostor, gameState *state, int local_id)
 {
     // printf("\nIN TASKS EVENT\n");
     if (!task)
@@ -370,22 +370,44 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *p
         {
             int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
 
-            if (tile_type == 7)
-                start_reflex_task(task, renderer);
-            else if (tile_type == 3)
-                start_hold_task(task, renderer, 10);
-            else if (tile_type == 4)
-                start_memory_task(task, renderer);
-            else if (tile_type == 5)
-                start_logical_order_task(task, renderer);
-            else if (tile_type == 6)
-                start_click_task(task, renderer, 25);
-            else if (tile_type == 8)
-                start_timer_task(task, renderer, 15);
-            else if (tile_type == 9)
-                start_letter_task(task, renderer);
-            else if (tile_type == 10)
+            TaskType required_task = state->players[local_id].task_order[state->players[local_id].tasks_completed];
+
+            switch (required_task)
+            {
+            case TASK_REFLEX:
+                if (tile_type == 7)
+                    start_reflex_task(task, renderer);
+                break;
+            case TASK_HOLD:
+                if (tile_type == 3)
+                    start_hold_task(task, renderer, 10);
+                break;
+            case TASK_MEMORY:
+                if (tile_type == 4)
+                    start_memory_task(task, renderer);
+                break;
+            case TASK_LOGICAL_ORDER:
+                if (tile_type == 5)
+                    start_logical_order_task(task, renderer);
+                break;
+            case TASK_CLICK:
+                if (tile_type == 6)
+                    start_click_task(task, renderer, 25);
+                break;
+            case TASK_TIMER:
+                if (tile_type == 8)
+                    start_timer_task(task, renderer, 15);
+                break;
+            case TASK_LETTER:
+                if (tile_type == 9)
+                    start_letter_task(task, renderer);
+                break;
+            case TASK_ALTERNATE:
                 start_alternate_task(task, renderer, 25);
+                break;
+            default:
+                break;
+            }
         }
 
         // cancel task
@@ -688,7 +710,7 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
             *controls_visible = !(*controls_visible);
     }
 
-    task_events(renderer, event, task, player, is_local_impostor);
+    task_events(renderer, event, task, player, is_local_impostor, state, local_id);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
     emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
     report_body_events(renderer, client, state, event, bodies, player, task);
