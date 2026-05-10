@@ -23,11 +23,11 @@ void get_relative_position(int box_x, int box_y, int box_width, int box_height, 
 
 // Position constants for each task type
 // Format: x_ratio (0.5 = center), y_ratio (0 = top, 1 = bottom)
-static const UIPosition TITLE_POS = {0.5f, 0.3f};
-static const UIPosition PROGRESS_POS = {0.5f, 0.45f};
-static const UIPosition SECONDARY_POS = {0.5f, 0.55f};
-static const UIPosition THIRD_POS = {0.5f, 0.20f};
-static const UIPosition CORNER_POS = {0.02f, 0.91f};
+static const UIPosition POS1 = {0.5f, 0.3f};
+static const UIPosition POS2 = {0.5f, 0.45f};
+static const UIPosition POS3 = {0.5f, 0.55f};
+static const UIPosition POS4 = {0.5f, 0.20f};
+static const UIPosition POS5 = {0.02f, 0.91f};
 
 struct Task
 { // task ADT struct
@@ -666,7 +666,7 @@ void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
     task->hold_duration = duration;
     task->hold_key_down = false;
 
-    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/craft.png");
+    task->task_image = IMG_LoadTexture(renderer, "assets/images/tasks/mess.png");
     if (!task->task_image)
     {
         printf("Failed to load hold task image: %s\n", IMG_GetError());
@@ -683,7 +683,7 @@ void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
         return;
     }
 
-    text_set(task->task_text, "ASSEMBLE TOOLS (HOLD SPACE!)", WHITE);
+    text_set(task->task_text, "CLEAN THE MESS (HOLD SPACE!)", WHITE);
 }
 
 void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
@@ -862,7 +862,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     if (task->global_text)
         {
             int global_x, global_y;
-            get_relative_position(box_x, box_y, box_width, box_height, CORNER_POS, &global_x, &global_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS5, &global_x, &global_y);
             text_draw_at(task->global_text, global_x, global_y);
         }
 
@@ -879,7 +879,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         // progress bar background - relative positioning
         int bar_x, bar_y;
-        get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &bar_x, &bar_y);
+        get_relative_position(box_x, box_y, box_width, box_height, POS2, &bar_x, &bar_y);
         
         int bar_width = (int)(box_width * 0.28f);
         int bar_height = (int)(box_height * 0.08f);
@@ -898,7 +898,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int text_x, text_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &text_x, &text_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &text_x, &text_y);
             text_x -= text_get_width(task->task_text) / 2; // center text
             text_draw_at(task->task_text, text_x, text_y);
         }
@@ -914,7 +914,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             int counter_x, counter_y;
-            get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &counter_x, &counter_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS2, &counter_x, &counter_y);
             counter_x -= text_get_width(task->dynamic_text) / 2;
             
             text_set(task->dynamic_text, buffer, WHITE);
@@ -925,7 +925,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }
@@ -952,7 +952,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             text_set(task->dynamic_text, buffer, WHITE);
             
             int prog_x, prog_y;
-            get_relative_position(box_x, box_y, box_width, box_height, SECONDARY_POS, &prog_x, &prog_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS3, &prog_x, &prog_y);
             prog_x -= text_get_width(task->dynamic_text) / 2;
             
             text_draw_at(task->dynamic_text, prog_x, prog_y);
@@ -977,7 +977,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             
             // THEN get width and calculate position
             int next_x, next_y;
-            get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &next_x, &next_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS2, &next_x, &next_y);
             next_x -= text_get_width(task->dynamic_text) / 2;
             
             text_draw_at(task->dynamic_text, next_x, next_y);
@@ -987,7 +987,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }
@@ -999,7 +999,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
     {
         // bar background
         int bar_x, bar_y;
-        get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &bar_x, &bar_y);
+        get_relative_position(box_x, box_y, box_width, box_height, POS2, &bar_x, &bar_y);
         
         int bar_width = (int)(box_width * 0.42f);
         int bar_height = (int)(box_height * 0.08f);
@@ -1031,7 +1031,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             int counter_x, counter_y;
-            get_relative_position(box_x, box_y, box_width, box_height, THIRD_POS, &counter_x, &counter_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS4, &counter_x, &counter_y);
             counter_x -= text_get_width(task->dynamic_text) / 2;
             
             text_set(task->dynamic_text, buffer, WHITE);
@@ -1042,7 +1042,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }
@@ -1074,7 +1074,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             int score_x, score_y;
-            get_relative_position(box_x, box_y, box_width, box_height, THIRD_POS, &score_x, &score_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS4, &score_x, &score_y);
             score_x -= text_get_width(task->dynamic_text) / 2;
             
             text_set(task->dynamic_text, progress_buf, WHITE);
@@ -1085,7 +1085,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }
@@ -1109,7 +1109,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
                     text_set(task->dynamic_text, symbol, WHITE);
 
                     int seq_x, seq_y;
-                    get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &seq_x, &seq_y);
+                    get_relative_position(box_x, box_y, box_width, box_height, POS2, &seq_x, &seq_y);
                     seq_x -= text_get_width(task->dynamic_text) / 2;
                     
                     text_draw_at(task->dynamic_text, seq_x, seq_y);
@@ -1135,7 +1135,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
                 text_set(task->dynamic_text, buffer, WHITE);
 
                 int input_x, input_y;
-                get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &input_x, &input_y);
+                get_relative_position(box_x, box_y, box_width, box_height, POS2, &input_x, &input_y);
                 input_x -= text_get_width(task->dynamic_text) / 2;
                 
                 text_draw_at(task->dynamic_text, input_x, input_y);
@@ -1151,7 +1151,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             text_set(task->dynamic_text, buffer, WHITE);
 
             int round_x, round_y;
-            get_relative_position(box_x, box_y, box_width, box_height, THIRD_POS, &round_x, &round_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS4, &round_x, &round_y);
             round_x -= text_get_width(task->dynamic_text) / 2;
             
             text_draw_at(task->dynamic_text, round_x, round_y);
@@ -1161,7 +1161,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }
@@ -1174,7 +1174,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         // Bar background
         int bar_x, bar_y;
-        get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &bar_x, &bar_y);
+        get_relative_position(box_x, box_y, box_width, box_height, POS2, &bar_x, &bar_y);
         
         int bar_width = (int)(box_width * 0.42f);
         int bar_height = (int)(box_height * 0.08f);
@@ -1193,7 +1193,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }
@@ -1203,7 +1203,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->dynamic_text)
         {
             int timer_x, timer_y;
-            get_relative_position(box_x, box_y, box_width, box_height, SECONDARY_POS, &timer_x, &timer_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS3, &timer_x, &timer_y);
             timer_x -= text_get_width(task->dynamic_text) / 2;
             
             text_set(task->dynamic_text, buffer, WHITE);
@@ -1221,7 +1221,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             text_set(task->dynamic_text, buffer, WHITE);
 
             int counter_x, counter_y;
-            get_relative_position(box_x, box_y, box_width, box_height, SECONDARY_POS, &counter_x, &counter_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS3, &counter_x, &counter_y);
             counter_x -= text_get_width(task->dynamic_text) / 2;
             
             text_draw_at(task->dynamic_text, counter_x, counter_y);
@@ -1234,7 +1234,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
             text_set(task->dynamic_text, next_key, WHITE);
             
             int key_x, key_y;
-            get_relative_position(box_x, box_y, box_width, box_height, PROGRESS_POS, &key_x, &key_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS2, &key_x, &key_y);
             key_x -= text_get_width(task->dynamic_text) / 2;
             
             text_draw_at(task->dynamic_text, key_x, key_y);
@@ -1243,7 +1243,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         if (task->task_text)
         {
             int instr_x, instr_y;
-            get_relative_position(box_x, box_y, box_width, box_height, TITLE_POS, &instr_x, &instr_y);
+            get_relative_position(box_x, box_y, box_width, box_height, POS1, &instr_x, &instr_y);
             instr_x -= text_get_width(task->task_text) / 2;
             text_draw_at(task->task_text, instr_x, instr_y);
         }

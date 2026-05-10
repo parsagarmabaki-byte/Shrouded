@@ -144,7 +144,7 @@ static const char *task_type_name(TaskType t)
     case TASK_MEMORY:
         return "Look Into Crystals";
     case TASK_HOLD:
-        return "Assemble Tools";
+        return "Clean Mess";
     case TASK_ALTERNATE:
         return "Change Lightbulb";
     default:
@@ -294,7 +294,8 @@ static void render_task_panel(SDL_Renderer *renderer, gameState *state, int loca
         }
 
         // current task outline
-        if (!completed)
+        bool is_impostor = state->players[state->local_player_id].isImpostor;
+        if (!completed && !is_impostor)
         {
             SDL_SetRenderDrawColor(renderer, 180, 180, 180, 200);
             SDL_Rect outline = {panel_x + 6, y - 4, panel_w - 16, item_h};
