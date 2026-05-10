@@ -392,6 +392,46 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_RenderDrawRect(renderer, &player_marker);
 }
 
+static SDL_Rect win_play_again_rect(void)
+{
+    return (SDL_Rect){315, 600, 260, 70};
+}
+
+static SDL_Rect win_exit_rect(void)
+{
+    return (SDL_Rect){695, 600, 260, 70};
+}
+
+static void win_screen_events(Client *client, SDL_Renderer *renderer, SDL_Event *event, bool *running)
+{
+    if (event->type == SDL_QUIT)
+    {
+        send_leave_message(client);
+        *running = false;
+        return;
+    }
+
+    if (event->type == SDL_KEYDOWN && event->key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+    {
+        send_leave_message(client);
+        *running = false;
+        return;
+    }
+
+    if (event->type == SDL_MOUSEBUTTONDOWN)
+    {
+        if (is_hovering(renderer, win_play_again_rect()))
+        {
+            send_play_again(client);
+        }
+        else if (is_hovering(renderer, win_exit_rect()))
+        {
+            send_leave_message(client);
+            *running = false;
+        }
+    }
+}
+
 void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, int *targeted_banner_id, bool *pause_menu_open, GameAssets assets)
 {
     while (SDL_PollEvent(event))
@@ -403,6 +443,12 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
         if (*pause_menu_open)
         {
             leave_game_event(client, renderer, event, running, emergency_window_open, pause_menu_open, assets);
+            continue;
+        }
+
+        if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_IMPOSTOR_WIN)
+        {
+            win_screen_events(client, renderer, event, running);
             continue;
         }
 
@@ -465,6 +511,14 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
         {
             *task_map_open = !*task_map_open;
         }
+        else if (event->key.keysym.scancode == SDL_SCANCODE_F1)
+        {
+            send_debug_win(client, MSG_DEBUG_CREWMATES_WIN);
+        }
+        else if (event->key.keysym.scancode == SDL_SCANCODE_F2)
+        {
+            send_debug_win(client, MSG_DEBUG_IMPOSTOR_WIN);
+        }
     }
     task_events(renderer, event, task, player);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
@@ -484,6 +538,26 @@ void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state
 
 void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open)
 {
+    static gamePhase previous_phase = GAME_LOBBY;
+    static Uint32 win_fade_start = 0;
+    const Uint32 win_fade_duration = 1500;
+
+    if (state->phase != previous_phase)
+    {
+        if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_IMPOSTOR_WIN)
+        {
+            win_fade_start = SDL_GetTicks();
+        }
+        else if (state->phase == GAME_SHOW_ROLE)
+        {
+            for (int i = 0; i < MAX_PLAYERS; i++)
+            {
+                bodies[i].active = false;
+            }
+        }
+        previous_phase = state->phase;
+    }
+
     if (state->phase == GAME_RUNNING)
     {
         render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, *emergency_window_open, task_map_open);
@@ -547,9 +621,20 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     }
     else if (state->phase == GAME_CREWMATES_WIN)
     {
-        if (assets.crewmates_win_screen)
+        int impostor_id = -1;
+
+        for (int i = 0; i < MAX_PLAYERS; i++)
         {
-            SDL_RenderCopy(renderer, assets.crewmates_win_screen, NULL, NULL);
+            if (state->players[i].isImpostor)
+            {
+                impostor_id = i;
+                break;
+            }
+        }
+
+        if (impostor_id >= 0 && impostor_id < PLAYER_SLOTS && assets.crewmates_win_screens[impostor_id])
+        {
+            SDL_RenderCopy(renderer, assets.crewmates_win_screens[impostor_id], NULL, NULL);
         }
     }
     else if (state->phase == GAME_IMPOSTOR_WIN)
@@ -570,6 +655,20 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
             SDL_RenderCopy(renderer, assets.killer_win_screens[killer_id], NULL, NULL);
         }
     }
+
+    if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_IMPOSTOR_WIN)
+    {
+        Uint32 elapsed = SDL_GetTicks() - win_fade_start;
+        if (elapsed < win_fade_duration)
+        {
+            Uint8 alpha = (Uint8)(255 - (elapsed * 255 / win_fade_duration));
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, alpha);
+            SDL_Rect full_screen = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+            SDL_RenderFillRect(renderer, &full_screen);
+        }
+    }
+
     // Rendera pausmeny ovanpå allt annat
     if (pause_menu_open)
     {

@@ -85,6 +85,11 @@ int send_start_game(Client *client)
     return send_client_message(client->socket, client->serverAddr, start.type);
 }
 
+int send_play_again(Client *client)
+{
+    return send_client_message(client->socket, client->serverAddr, MSG_PLAY_AGAIN);
+}
+
 static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, clientInput *input)
 {
     UDPpacket *packet = create_packet(512);
@@ -163,6 +168,25 @@ int send_task_complete(Client *client, int player_id, TaskType task_type)
         return 0;
 
     if (!send_packet_data(client->socket, packet, client->serverAddr, &msg, sizeof(msg)))
+    {
+        SDLNet_FreePacket(packet);
+        return 0;
+    }
+
+    SDLNet_FreePacket(packet);
+    return 1;
+}
+
+int send_debug_win(Client *client, MessageType type)
+{
+    if (type != MSG_DEBUG_CREWMATES_WIN && type != MSG_DEBUG_IMPOSTOR_WIN)
+        return 0;
+
+    UDPpacket *packet = create_packet(sizeof(type));
+    if (!packet)
+        return 0;
+
+    if (!send_packet_data(client->socket, packet, client->serverAddr, &type, sizeof(type)))
     {
         SDLNet_FreePacket(packet);
         return 0;

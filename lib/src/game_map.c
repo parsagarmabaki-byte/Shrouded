@@ -49,7 +49,6 @@ GameAssets load_assets(SDL_Renderer *renderer)
 
     asset.skip_vote_banner = loading_img(renderer, "assets/voting_result_assets/Skip_banner.png");
     asset.no_one_eliminated = loading_img(renderer, "assets/voting_result_assets/No_one_eliminated.png");
-    asset.crewmates_win_screen = loading_img(renderer, "assets/win_screens/CREWMATES_WINS.png");
     
 
     // Pausmeny-bilder
@@ -68,6 +67,14 @@ GameAssets load_assets(SDL_Renderer *renderer)
         "assets/win_screens/PURPLE_KILLER_WINS.png",
         "assets/win_screens/YELLOW_KILLER_WINS.png",
         "assets/win_screens/BLACK_KILLER_WINS.png"
+    };
+    const char *crewmates_win_screen_paths[PLAYER_SLOTS] = {
+        "assets/win_screens/W_OUTGREEN.png",
+        "assets/win_screens/W_OUTRED.png",
+        "assets/win_screens/W_OUTBLUE.png",
+        "assets/win_screens/W_OUTPURPLE.png",
+        "assets/win_screens/W_OUTYELLOW.png",
+        "assets/win_screens/W_OUTBLACK.png"
     };
 
     for (int i = 0; i < PLAYER_SLOTS; i++)
@@ -94,6 +101,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
         asset.players_kicked_out[i] = loading_img(renderer, path);
 
         asset.killer_win_screens[i] = loading_img(renderer, killer_win_screen_paths[i]);
+        asset.crewmates_win_screens[i] = loading_img(renderer, crewmates_win_screen_paths[i]);
     }
     return asset;   
 }
@@ -116,6 +124,7 @@ void destroy_assets(GameAssets *assets)
         destroy_texture(&assets->skins[i]);
         destroy_texture(&assets->dead_skins[i]);
         destroy_texture(&assets->killer_win_screens[i]);
+        destroy_texture(&assets->crewmates_win_screens[i]);
     }
 
     destroy_texture(&assets->map_texture);
@@ -131,7 +140,6 @@ void destroy_assets(GameAssets *assets)
     destroy_texture(&assets->emergency_meeting_info);
     destroy_texture(&assets->dead_body_reported_info);
     destroy_texture(&assets->emergency_meeting_alive);
-    destroy_texture(&assets->crewmates_win_screen);
     destroy_texture(&assets->pause_bg);
     destroy_texture(&assets->pause_resume);
     destroy_texture(&assets->pause_exit);

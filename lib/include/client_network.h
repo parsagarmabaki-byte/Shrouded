@@ -10,6 +10,7 @@ int init_client(Client *client, const char *server_ip, char *error_message, size
 void clean_client(Client *client);
 int send_join(Client *client);
 int send_start_game(Client *client);
+int send_play_again(Client *client);
 void send_input(Client *client, gameState *state, Player *player);
 int send_task_complete(Client *client, int player_id, TaskType task_type);
 void request_kill(Client *client, gameState *state);
@@ -19,5 +20,6 @@ void request_emergency_meeting(Client *client, gameState *state, int local_id);
 void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id);
 static int send_client_vote_packet(UDPsocket socket, IPaddress server_addr, VoteRequest *vote);
 void send_vote(Client *client, int targeted_banner);
+int send_debug_win(Client *client, MessageType type);
 
 #endif
