@@ -455,7 +455,7 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
     task->type = TASK_LETTER;
     task->active = true;
 
-    const char *letters = "ABCDEFGHIJKLNOPRSTUVWXYZ";
+    const char *letters = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
     int len = 10;
     task->length = len;
     task->current_index = 0;
@@ -463,7 +463,7 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
     // create random string of "len" letters
     for (int i = 0; i < len; i++)
     {
-        task->target_string[i] = letters[rand() % 24];
+        task->target_string[i] = letters[rand() % 25];
     }
     task->target_string[len] = '\0';
 

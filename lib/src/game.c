@@ -426,12 +426,12 @@ float calculate_delta_time(Uint64 *last_tick)
     return dt;
 }
 
-void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player)
+void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player, Task *task)
 {
     int target_id = target_report_body(bodies, *player);
     if (event->type == SDL_KEYDOWN)
     {
-        if (event->key.keysym.scancode == SDL_SCANCODE_R && target_id != -1 && state->players[state->local_player_id].isAlive)
+        if (event->key.keysym.scancode == SDL_SCANCODE_R && target_id != -1 && state->players[state->local_player_id].isAlive && !task_active_check(task))
         {
             request_report_body(client, state, bodies[target_id], target_id);
         }
@@ -439,7 +439,7 @@ void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state
     else if (event->type == SDL_MOUSEBUTTONDOWN)
     {
         SDL_Rect report_button = {1075, 400, 120, 120};
-        if (is_hovering(renderer, report_button) && target_id != -1 && state->players[state->local_player_id].isAlive)
+        if (is_hovering(renderer, report_button) && target_id != -1 && state->players[state->local_player_id].isAlive && !task_active_check(task))
         {
             request_report_body(client, state, bodies[target_id], target_id);
         }
@@ -686,7 +686,7 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
     task_events(renderer, event, task, player);
     kill_events(client, renderer, state, event, player->kill_cooldown_active, is_local_impostor);
     emergency_meeting_events(client, state, renderer, event, player, emergency_window_open, local_id);
-    report_body_events(renderer, client, state, event, bodies, player);
+    report_body_events(renderer, client, state, event, bodies, player, task);
 }
 
 void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id)
