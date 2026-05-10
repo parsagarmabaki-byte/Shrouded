@@ -60,6 +60,23 @@ GameAssets load_assets(SDL_Renderer *renderer)
         printf("image not loaded");
 
     char path[64];
+    const char *killer_win_screen_paths[PLAYER_SLOTS] = {
+        "assets/win_screens/GREEN_KILLER_WINS.png",
+        "assets/win_screens/RED_KILLER_WINS.png",
+        "assets/win_screens/BLUE_KILLER_WINS.png",
+        "assets/win_screens/PURPLE_KILLER_WINS.png",
+        "assets/win_screens/YELLOW_KILLER_WINS.png",
+        "assets/win_screens/BLACK_KILLER_WINS.png"
+    };
+    const char *crewmates_win_screen_paths[PLAYER_SLOTS] = {
+        "assets/win_screens/W_OUTGREEN.png",
+        "assets/win_screens/W_OUTRED.png",
+        "assets/win_screens/W_OUTBLUE.png",
+        "assets/win_screens/W_OUTPURPLE.png",
+        "assets/win_screens/W_OUTYELLOW.png",
+        "assets/win_screens/W_OUTBLACK.png"
+    };
+
     for (int i = 0; i < PLAYER_SLOTS; i++)
     {
         snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
@@ -82,6 +99,9 @@ GameAssets load_assets(SDL_Renderer *renderer)
 
         snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_Eliminated.png", i+1);
         asset.players_kicked_out[i] = loading_img(renderer, path);
+
+        asset.killer_win_screens[i] = loading_img(renderer, killer_win_screen_paths[i]);
+        asset.crewmates_win_screens[i] = loading_img(renderer, crewmates_win_screen_paths[i]);
     }
     return asset;   
 }
@@ -103,6 +123,8 @@ void destroy_assets(GameAssets *assets)
     {
         destroy_texture(&assets->skins[i]);
         destroy_texture(&assets->dead_skins[i]);
+        destroy_texture(&assets->killer_win_screens[i]);
+        destroy_texture(&assets->crewmates_win_screens[i]);
     }
 
     destroy_texture(&assets->map_texture);

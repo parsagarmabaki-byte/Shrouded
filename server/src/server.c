@@ -152,6 +152,58 @@ static void shuffle_tasks(TaskType *arr, int n)
     }
 }
 
+void start_new_round(gameState *state, Uint64 *state_start_time)
+{
+    TaskType all_tasks[TASK_COUNT] = {
+        TASK_TIMER,
+        TASK_CLICK,
+        TASK_LETTER,
+        TASK_REFLEX,
+        TASK_LOGICAL_ORDER,
+        TASK_MEMORY};
+
+    srand((unsigned int)time(NULL));
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        state->players[i].isImpostor = 0;
+
+        if (!state->players[i].active)
+            continue;
+
+        state->players[i].isAlive = 1;
+        state->players[i].emergency_meeting = 1;
+        state->players[i].tasks_completed = 0;
+        memcpy(state->players[i].task_order, all_tasks, sizeof(all_tasks));
+        shuffle_tasks(state->players[i].task_order, TASK_COUNT);
+    }
+
+    spawn_players(state);
+
+    int active_chosen_player = designateImpostor(state);
+    printf("Player %d is impostor\n", active_chosen_player);
+
+    printf("\n=== TASK ORDER ASSIGNMENT ===\n");
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (!state->players[i].active)
+            continue;
+
+        printf("Player %d: ", i);
+        for (int j = 0; j < TASK_COUNT; j++)
+        {
+            printf("%d ", state->players[i].task_order[j]);
+        }
+        printf("\n");
+    }
+    printf("=============================\n");
+
+    state->emergency_meeting_reported_id = -1;
+    state->total_tasks_completed = 0;
+    state->phase = GAME_SHOW_ROLE;
+    *state_start_time = SDL_GetTicks64();
+}
+
 void check_win_condition(gameState *state)
 {
     int alive_impostor = 0;
@@ -429,9 +481,7 @@ int main(void)
             {
                 if (state.phase == GAME_LOBBY)
                 {
-                    int active_chosen_player = designateImpostor(&state);
-                    printf("Player %d is impostor\n", active_chosen_player);
-                    state.phase = GAME_SHOW_ROLE;
+                    start_new_round(&state, &state_start_time);
                     printf("Game is now GAME_SHOW_ROLE\n");
 
                     state_start_time = SDL_GetTicks64(); // TIDSSTÄMPEL
@@ -630,6 +680,18 @@ int main(void)
                     if (can_cast_vote(meeting_info, pid) && meeting_info.votes_recieved < meeting_info.alive_players_count)
                         cast_vote(&meeting_info, vote);
                 }
+            }
+            else if (type == MSG_DEBUG_CREWMATES_WIN)
+            {
+                state.phase = GAME_CREWMATES_WIN;
+                printf("[DEBUG] Forced GAME_CREWMATES_WIN\n");
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+            }
+            else if (type == MSG_DEBUG_IMPOSTOR_WIN)
+            {
+                state.phase = GAME_IMPOSTOR_WIN;
+                printf("[DEBUG] Forced GAME_IMPOSTOR_WIN\n");
+                broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
         }
 
