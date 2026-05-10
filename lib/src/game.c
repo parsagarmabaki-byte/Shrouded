@@ -231,7 +231,7 @@ void render_controls_screen(SDL_Renderer *renderer, gameState *state, int local_
     SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
     SDL_RenderFillRect(renderer, &box);
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 200, 50, 255);
     draw_thick_rect(renderer, box, 4);
 
     SDL_Color white = {255, 255, 255, 255};
@@ -403,7 +403,8 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *p
                     start_letter_task(task, renderer);
                 break;
             case TASK_ALTERNATE:
-                start_alternate_task(task, renderer, 25);
+                if (tile_type == 10)
+                    start_alternate_task(task, renderer, 25);
                 break;
             default:
                 break;
@@ -566,7 +567,7 @@ void debug_walls(SDL_Renderer *renderer, Camera cam)
 #endif
 }
 
-void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player)
+void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player, gameState *state)
 {
     SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
     SDL_Rect map_rect = {252, 56, 776, 620};
@@ -586,26 +587,43 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawRect(renderer, &map_rect);
 
-    // Exempelmarkörer för tasks
-    SDL_Rect marker1 = {320, 140, 24, 24};
-    SDL_Rect marker2 = {453, 310, 24, 24};
-    SDL_Rect marker3 = {835, 310, 24, 24};
-    SDL_Rect marker4 = {675, 140, 24, 24};
-    SDL_Rect marker5 = {790, 130, 24, 24};
-    SDL_Rect marker6 = {900, 130, 24, 24};
-    SDL_Rect marker7 = {825, 570, 24, 24};
-    SDL_Rect marker8 = {415, 505, 24, 24};
+    static TaskMarker markers[] =
+    {
+        { TASK_HOLD,          {320, 140, 24, 24} },
+        { TASK_LETTER,        {453, 310, 24, 24} },
+        { TASK_CLICK,         {835, 310, 24, 24} },
+        { TASK_MEMORY,        {675, 140, 24, 24} },
+        { TASK_ALTERNATE,     {790, 130, 24, 24} },
+        { TASK_LOGICAL_ORDER, {900, 130, 24, 24} },
+        { TASK_TIMER,         {825, 570, 24, 24} },
+        { TASK_REFLEX,        {415, 505, 24, 24} }
+    };
 
-    SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
-    SDL_RenderFillRect(renderer, &marker1);
-    SDL_RenderFillRect(renderer, &marker2);
-    SDL_RenderFillRect(renderer, &marker3);
-    SDL_RenderFillRect(renderer, &marker4);
-    SDL_RenderFillRect(renderer, &marker5);
-    SDL_RenderFillRect(renderer, &marker6);
-    SDL_RenderFillRect(renderer, &marker7);
-    SDL_RenderFillRect(renderer, &marker8);
-    SDL_RenderFillRect(renderer, &marker8);
+    int marker_count = sizeof(markers) / sizeof(markers[0]);
+
+    bool is_impostor = state->players[state->local_player_id].isImpostor;
+    if(is_impostor)
+    {
+        for (int i = 0; i < marker_count; i++)
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 80, 80, 255);
+            SDL_RenderFillRect(renderer, &markers[i].rect);
+        }
+    }
+    else
+    {
+        SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
+        TaskType current_task = state->players[state->local_player_id].task_order[state->players[state->local_player_id].tasks_completed];
+        
+        for (int i = 0; i < marker_count; i++)
+            {
+                if (markers[i].type == current_task)
+                {
+                    SDL_RenderFillRect(renderer, &markers[i].rect);
+                    break;
+                }
+            }
+    }
 
     float scale_x = (float)map_rect.w / GAME_MAP_WIDTH;
     float scale_y = (float)map_rect.h / GAME_MAP_HEIGHT;
@@ -702,11 +720,11 @@ void game_running_events(Client *client, SDL_Renderer *renderer, gameState *stat
         {
             *task_map_open = !*task_map_open;
         }
-        if (event->key.keysym.scancode == SDL_SCANCODE_TAB)
+        if (event->key.keysym.scancode == SDL_SCANCODE_TAB && !task_active_check(task))
         {
             *task_panel_visible = !(*task_panel_visible);
         }
-        if (event->key.keysym.scancode == SDL_SCANCODE_I)
+        if (event->key.keysym.scancode == SDL_SCANCODE_I && !task_active_check(task))
             *controls_visible = !(*controls_visible);
     }
 
@@ -859,7 +877,7 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     if (assets.vignette_img && !is_local_impostor && state->players[local_id].isAlive)
         SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
     render_info_text(renderer, state, local_id, small_text);
-    if (state->players[local_id].isAlive)
+    if (state->players[local_id].isAlive && !task_active_check(task))
         render_player_ability(renderer, *player, assets, bodies);
 
     if (is_local_impostor)
@@ -875,7 +893,7 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     }
     if (task_map_open)
     {
-        render_task_map(renderer, task, assets, player);
+        render_task_map(renderer, task, assets, player, state);
     }
 
     render_global_progress_bar(renderer, state);

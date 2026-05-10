@@ -24,6 +24,12 @@ typedef struct
     UDPpacket *recievepacket;
 } Client;
 
+typedef struct
+{
+    TaskType type;
+    SDL_Rect rect;
+} TaskMarker;
+
 void runGame(Client *client, waitForPlayers *lobby, gameState *state);
 clientInput read_input(bool tasks_active);
 void render_controls_screen(SDL_Renderer *renderer, gameState *state, int local_id, Text text);
@@ -37,7 +43,7 @@ void kill_events(Client *client, SDL_Renderer *renderer, gameState *state, SDL_E
 void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *renderer, SDL_Event *event, Player *player, bool *emergency_window_open, int local_id);
 void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *player, bool is_local_impostor, gameState *state, int local_id);
 void debug_walls(SDL_Renderer *renderer, Camera cam);
-void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player);
+void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player, gameState *state);
 void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
 void update_player_direction(Player *player, clientInput *user_input);
 void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool task_panel_visible, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text, bool controls_visible, Text generic_text);
