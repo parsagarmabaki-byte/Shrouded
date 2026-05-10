@@ -44,6 +44,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
         dt = calculate_delta_time(&last_tick);
         process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &task_panel_visible, &targeted_banner_id, &pause_menu_open, &controls_visible, assets);
         collect_packets(client, state, bodies);
+        is_local_impostor = state->players[local_id].isImpostor != 0;
         ui_open = emergency_window_open || task_map_open || pause_menu_open;
         if (state->phase == GAME_RUNNING)
             update_game(client, state, player, task, bodies, &user_input, local_id, ui_open, &was_task_active, dt, &accumulator);

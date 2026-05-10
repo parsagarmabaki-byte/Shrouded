@@ -160,7 +160,9 @@ void start_new_round(gameState *state, Uint64 *state_start_time)
         TASK_LETTER,
         TASK_REFLEX,
         TASK_LOGICAL_ORDER,
-        TASK_MEMORY};
+        TASK_MEMORY,
+        TASK_HOLD,
+        TASK_ALTERNATE};
 
     srand((unsigned int)time(NULL));
 
@@ -208,27 +210,39 @@ void check_win_condition(gameState *state)
 {
     int alive_impostor = 0;
     int alive_crewmates = 0;
+    int active_crewmates = 0;
+    int completed_tasks = 0;
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
+        if (!state->players[i].active)
+        {
+            continue;
+        }
+
+        if (state->players[i].isImpostor)
+        {
+            if (state->players[i].isAlive)
+                alive_impostor++;
+            continue;
+        }
+
+        active_crewmates++;
+        completed_tasks += state->players[i].tasks_completed;
+
         if (state->players[i].isAlive)
         {
             alive_crewmates++;
         }
 
-        if (state->players[i].isImpostor)
-        {
-            alive_impostor++;
-        }
-
     } // Kolla om impostorn finns
-    if (!alive_impostor)
-    {
+    if (alive_impostor == 0){
+        state->phase = GAME_CREWMATES_WIN;
+    } else if (alive_impostor >= alive_crewmates){
+        state->phase = GAME_IMPOSTOR_WIN;
+    } else if (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT){
         state->phase = GAME_CREWMATES_WIN;
     }
-    else if (alive_impostor >= alive_crewmates)
-    {
-        state->phase = GAME_IMPOSTOR_WIN;
-    }
+
 
     // Lägg till task win-conditions
 }
@@ -528,6 +542,15 @@ int main(void)
                     broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                 }
             }
+            else if (type == MSG_PLAY_AGAIN)
+            {
+                if (state.phase == GAME_CREWMATES_WIN || state.phase == GAME_IMPOSTOR_WIN)
+                {
+                    start_new_round(&state, &state_start_time);
+                    printf("Play again: game is now GAME_SHOW_ROLE\n");
+                    broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                }
+            }
             else if (type == MSG_CLIENT_INPUT)
             {
                 if (state.phase == GAME_RUNNING)
@@ -564,6 +587,8 @@ int main(void)
                             msg.x = state.players[killer_id].x;
                             msg.y = state.players[killer_id].y;
                             broadcast_Kill_msg(server_socket, send_packet, &msg, clientAddresses, clientUsed);
+                            check_win_condition(&state);
+                            broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
                         }
                     }
                 }
@@ -634,7 +659,7 @@ int main(void)
 
                     // identify sender
                     int pid = get_player_id_from_sender(clientAddresses, clientUsed, receive_packet->address);
-                    if (pid >= 0 && state.players[pid].active)
+                    if (pid >= 0 && state.phase == GAME_RUNNING && state.players[pid].active && !state.players[pid].isImpostor)
                     {
                         int completed = state.players[pid].tasks_completed;
 
@@ -649,6 +674,8 @@ int main(void)
                                 // track completion
                                 state.players[pid].tasks_completed++;
                                 state.total_tasks_completed++;
+
+                                check_win_condition(&state);
 
                                 // calculate total tasks needed
                                 int active_count = countActivePlayers(&state);
@@ -739,6 +766,7 @@ int main(void)
                     resolve_voting(&state, meeting_info, state.voting_results);
                     spawn_players(&state);
                     state.phase = GAME_RUNNING;
+                    check_win_condition(&state);
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
