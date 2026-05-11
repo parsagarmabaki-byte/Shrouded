@@ -10,93 +10,124 @@
 
 int main()
 {
-    Client client = {0};
     waitForPlayers lobby = {0};
-    SDL_Event event;
-    gameState state = {0};
-    AudioAssets audio;
-    bool running = true;
     char server_ip[64] = "127.0.0.1";
-    char connection_error[128] = "";
 
     if (!initiate(&lobby)) return 1;
 
-    // Visa huvudmenyn först. Om användaren valde Exit (eller stängde fönstret)
-    // städar vi upp och avslutar utan att gå vidare till IP-prompten.
-    if (!showMainMenu(&lobby))
+    bool app_running = true;
+    while (app_running)
     {
-        cleanLobby(&lobby);
-        return 0;
-    }
+        Client client = {0};
+        SDL_Event event;
+        gameState state = {0};
+        AudioAssets audio = {0};
+        bool running = true;
+        bool return_to_menu = false;
+        char connection_error[128] = "";
 
-    while (running)
-    {
-        if (!promptServerAddress(&lobby, server_ip, sizeof(server_ip), connection_error))
-        {
-            cleanLobby(&lobby);
-            return 0;
-        }
+        SDL_RenderSetLogicalSize(lobby.renderer, 0, 0);
 
-        if (init_client(&client, server_ip, connection_error, sizeof(connection_error)))
+        // Visa huvudmenyn först. Om användaren valde Exit (eller stängde fönstret)
+        // städar vi upp och avslutar utan att gå vidare till IP-prompten.
+        if (!showMainMenu(&lobby))
         {
             break;
         }
-    }
 
-    if (!send_join(&client))
-    {
-        cleanLobby(&lobby);
-        clean_client(&client);
-        return 1;
-    }
-    if (!init_audio()) return 1;
-    if (!load_audio(&audio)){cleanup_audio(&audio);return 1;}
-
-    play_lobby_music(audio.lobby_music, -1);
-
-    // Lobby-loop
-    while (running)
-    {
-        while (SDL_PollEvent(&event))
+        while (running)
         {
-            if (event.type == SDL_QUIT)
+            if (!promptServerAddress(&lobby, server_ip, sizeof(server_ip), connection_error))
             {
-                send_leave_message(&client);
                 running = false;
+                app_running = false;
+                break;
             }
-            if (event.type == SDL_KEYDOWN)
+
+            if (init_client(&client, server_ip, connection_error, sizeof(connection_error)))
             {
-                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                break;
+            }
+        }
+
+        if (!running)
+        {
+            clean_client(&client);
+            continue;
+        }
+
+        if (!send_join(&client))
+        {
+            clean_client(&client);
+            cleanLobby(&lobby);
+            return 1;
+        }
+        if (!init_audio())
+        {
+            clean_client(&client);
+            cleanLobby(&lobby);
+            return 1;
+        }
+        if (!load_audio(&audio))
+        {
+            cleanup_audio(&audio);
+            clean_client(&client);
+            cleanLobby(&lobby);
+            return 1;
+        }
+
+        play_lobby_music(audio.lobby_music, -1);
+
+        // Lobby-loop
+        while (running)
+        {
+            while (SDL_PollEvent(&event))
+            {
+                if (event.type == SDL_QUIT)
                 {
                     send_leave_message(&client);
                     running = false;
+                    app_running = false;
                 }
-                else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+                if (event.type == SDL_KEYDOWN)
                 {
-                    if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
-                        send_start_game(&client);
+                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                    {
+                        send_leave_message(&client);
+                        running = false;
+                        app_running = false;
+                    }
+                    else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+                    {
+                        if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
+                            send_start_game(&client);
+                    }
                 }
             }
+
+            collect_packets(&client, &state, NULL);
+
+            if (state.phase != GAME_LOBBY)
+                running = false;
+            else
+                renderWaitingScreen(&lobby, &state);
         }
-        
-        collect_packets(&client, &state, NULL);
 
+        // Game-loop
         if (state.phase != GAME_LOBBY)
-            running = false;
-        else
-            renderWaitingScreen(&lobby, &state);
+        {
+            stop_music();
+            return_to_menu = runGame(&client, &lobby, &state);
+        }
+
+        cleanup_audio(&audio);
+        clean_client(&client);
+
+        if (!return_to_menu)
+            app_running = false;
     }
 
-    // Game-loop
-    if (state.phase != GAME_LOBBY)
-    {
-        stop_music();
-        runGame(&client, &lobby, &state);
-    }
-
-    cleanup_audio(&audio);
     cleanLobby(&lobby);
-    clean_client(&client);
 
     return 0;
 }

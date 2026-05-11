@@ -3,7 +3,7 @@
 #include "wall_data.h"
 #include "emergency_meeting.h"
 
-void runGame(Client *client, waitForPlayers *lobby, gameState *state)
+int runGame(Client *client, waitForPlayers *lobby, gameState *state)
 {
     TTF_Init();
     SDL_Renderer *renderer = lobby->renderer;
@@ -12,6 +12,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
 
     int local_id = state->local_player_id;
     bool emergency_window_open = false;
+    bool return_to_menu = false;
     bool is_local_impostor = state->players[local_id].isImpostor != 0;
     bool running = true;
     bool task_map_open = false;
@@ -42,7 +43,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     while (running)
     {
         dt = calculate_delta_time(&last_tick);
-        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &emergency_window_open, is_local_impostor, &task_map_open, &task_panel_visible, &targeted_banner_id, &pause_menu_open, &controls_visible, assets);
+        process_events(client, renderer, state, task, &event, player, bodies, local_id, &running, &return_to_menu, &emergency_window_open, is_local_impostor, &task_map_open, &task_panel_visible, &targeted_banner_id, &pause_menu_open, &controls_visible, assets);
         collect_packets(client, state, bodies);
         is_local_impostor = state->players[local_id].isImpostor != 0;
         ui_open = emergency_window_open || task_map_open || pause_menu_open;
@@ -60,6 +61,7 @@ void runGame(Client *client, waitForPlayers *lobby, gameState *state)
     destroy_task(task);
     destroy_assets(&assets);
     TTF_Quit();
+    return return_to_menu;
 }
 
 clientInput read_input(bool tasks_active)
@@ -654,12 +656,12 @@ static SDL_Rect win_play_again_rect(void)
     return (SDL_Rect){315, 600, 260, 70};
 }
 
-static SDL_Rect win_exit_rect(void)
+static SDL_Rect win_main_menu_rect(void)
 {
     return (SDL_Rect){695, 600, 260, 70};
 }
 
-static void win_screen_events(Client *client, SDL_Renderer *renderer, SDL_Event *event, bool *running)
+static void win_screen_events(Client *client, SDL_Renderer *renderer, SDL_Event *event, bool *running, bool *return_to_menu)
 {
     if (event->type == SDL_QUIT)
     {
@@ -681,15 +683,16 @@ static void win_screen_events(Client *client, SDL_Renderer *renderer, SDL_Event 
         {
             send_play_again(client);
         }
-        else if (is_hovering(renderer, win_exit_rect()))
+        else if (is_hovering(renderer, win_main_menu_rect()))
         {
             send_leave_message(client);
+            *return_to_menu = true;
             *running = false;
         }
     }
 }
 
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, bool *task_panel_visible, int *targeted_banner_id, bool *pause_menu_open, bool *controls_visible, GameAssets assets)
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *return_to_menu, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, bool *task_panel_visible, int *targeted_banner_id, bool *pause_menu_open, bool *controls_visible, GameAssets assets)
 {
     while (SDL_PollEvent(event))
     {
@@ -705,7 +708,7 @@ void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Ta
 
         if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_IMPOSTOR_WIN)
         {
-            win_screen_events(client, renderer, event, running);
+            win_screen_events(client, renderer, event, running, return_to_menu);
             continue;
         }
 

@@ -30,7 +30,7 @@ typedef struct
     SDL_Rect rect;
 } TaskMarker;
 
-void runGame(Client *client, waitForPlayers *lobby, gameState *state);
+int runGame(Client *client, waitForPlayers *lobby, gameState *state);
 clientInput read_input(bool tasks_active);
 void render_controls_screen(SDL_Renderer *renderer, gameState *state, int local_id, Text text);
 static const char *task_type_name(TaskType t);
@@ -48,7 +48,7 @@ void update_player_movement(Player *player, clientInput *user_input, bool task_i
 void update_player_direction(Player *player, clientInput *user_input);
 void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool task_panel_visible, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text, bool controls_visible, Text generic_text);
 static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, GameAssets assets, clientInput user_input, Player *player, KillAnimation bodies[MAX_PLAYERS], Task *task, int local_id, float dt, bool is_local_impostor, bool emergency_window_open, bool task_map_open, bool pause_menu_open, bool task_panel_visible, Text panel_text, bool controls_visible, Text generic_text);
-void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, bool *task_panel_visible, int *targeted_banner_id, bool *pause_menu_open, bool *controls_visible, GameAssets assets);
+void process_events(Client *client, SDL_Renderer *renderer, gameState *state, Task *task, SDL_Event *event, Player *player, KillAnimation bodies[MAX_PLAYERS], int local_id, bool *running, bool *return_to_menu, bool *emergency_window_open, bool is_local_impostor, bool *task_map_open, bool *task_panel_visible, int *targeted_banner_id, bool *pause_menu_open, bool *controls_visible, GameAssets assets);
 void report_body_events(SDL_Renderer *renderer, Client *client, gameState *state, SDL_Event *event, KillAnimation bodies[MAX_PLAYERS], Player *player, Task *task);
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
 void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int *targeted_banner_id);
