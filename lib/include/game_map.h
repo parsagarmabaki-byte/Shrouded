@@ -51,11 +51,12 @@ typedef struct
     SDL_Texture *killer_win_screens[PLAYER_SLOTS];
     SDL_Texture *crewmates_win_screens[PLAYER_SLOTS];
 
-
     // Pausmeny
     SDL_Texture *pause_bg;
     SDL_Texture *pause_resume;
     SDL_Texture *pause_exit;
+
+    SDL_Texture *task_indicator;
 } GameAssets;
 
 
