@@ -591,22 +591,10 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawRect(renderer, &map_rect);
 
-    static TaskMarker markers[] =
-    {
-        { TASK_HOLD,          {320, 140, 24, 24} },
-        { TASK_LETTER,        {453, 310, 24, 24} },
-        { TASK_CLICK,         {835, 310, 24, 24} },
-        { TASK_MEMORY,        {675, 140, 24, 24} },
-        { TASK_ALTERNATE,     {790, 130, 24, 24} },
-        { TASK_LOGICAL_ORDER, {900, 130, 24, 24} },
-        { TASK_TIMER,         {825, 570, 24, 24} },
-        { TASK_REFLEX,        {415, 505, 24, 24} }
-    };
-
     int marker_count = sizeof(markers) / sizeof(markers[0]);
 
     bool is_impostor = state->players[state->local_player_id].isImpostor;
-    if(is_impostor)
+    if (is_impostor)
     {
         for (int i = 0; i < marker_count; i++)
         {
@@ -649,6 +637,43 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawRect(renderer, &player_marker);
+}
+
+static TaskMarker *find_marker(TaskType type)
+{
+    int count = sizeof(markers) / sizeof(markers[0]);
+
+    for (int i = 0; i < count; i++)
+    {
+        if (markers[i].type == type)
+            return &markers[i];
+    }
+
+    return NULL;
+}
+
+void render_active_task_indicator(SDL_Renderer *renderer, gameState *state, GameAssets assets, Camera *cam, int local_id)
+{
+    if (state->players[local_id].isImpostor)
+        return;
+
+    int current_index =
+        state->players[local_id].tasks_completed;
+
+    if (current_index >= TASK_COUNT)
+        return;
+
+    TaskType current_task =state->players[local_id].task_order[current_index];
+
+    TaskMarker *marker =
+        find_marker(current_task);
+
+    if (!marker)
+        return;
+
+    SDL_Rect dst ={marker->world_x - (int)cam->x - 24, marker->world_y - (int)cam->y - 48, 48, 48};
+
+    SDL_RenderCopy(renderer, assets.task_indicator, NULL, &dst);
 }
 
 static SDL_Rect win_play_again_rect(void)
@@ -997,6 +1022,7 @@ static void render_game(SDL_Renderer *renderer, gameState *state, Camera *cam, G
     render_kill_animation(renderer, bodies, assets, cam);
     if (assets.vignette_img && !is_local_impostor && state->players[local_id].isAlive)
         SDL_RenderCopy(renderer, assets.vignette_img, NULL, NULL);
+    render_active_task_indicator(renderer, state, assets, cam, local_id);
     render_info_text(renderer, state, local_id, small_text);
     if (state->players[local_id].isAlive && !task_active_check(task))
         render_player_ability(renderer, *player, assets, bodies);
