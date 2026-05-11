@@ -2,6 +2,30 @@
 #include "game_map.h"
 #include "client_network.h"
 
+static void render_meeting_hover_glow(SDL_Renderer *renderer, SDL_Rect rect)
+{
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 255, 214, 120, 45);
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_SetRenderDrawColor(renderer, 255, 230, 150, 190);
+    SDL_RenderDrawRect(renderer, &rect);
+}
+
+static void render_meeting_button_hovers(SDL_Renderer *renderer, gameState *state)
+{
+    if (!state->players[state->local_player_id].isAlive)
+        return;
+
+    SDL_Rect submit_button = {260, 555, 265, 75};
+    SDL_Rect skip_button = {760, 555, 265, 75};
+
+    if (is_hovering(renderer, submit_button))
+        render_meeting_hover_glow(renderer, submit_button);
+
+    if (is_hovering(renderer, skip_button))
+        render_meeting_hover_glow(renderer, skip_button);
+}
+
 void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_button_view, SDL_Texture *emergency_button_hover)
 {
     int width = 680;
@@ -24,6 +48,7 @@ void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameSta
     render_emergency_map(renderer, assets, state->players[state->local_player_id].isAlive);
     render_banners(renderer, assets, state, targeted_banner_id);
     render_emergency_icon(renderer, assets.emergency_meeting_icon, id_reported);
+    render_meeting_button_hovers(renderer, state);
     SDL_Rect submit_button = {500, 800, 200, 200};
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &submit_button);
@@ -62,6 +87,7 @@ int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *e
             send_vote(client, -1);
         // send_player_vote()
     }
+    return 0;
 }
 
 void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_alive)
@@ -84,10 +110,17 @@ void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state,
         if (state->players[i].isAlive)
         {
             if (targeted_banner_id != -1 && targeted_banner_id != i)
-                SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 155);
+            {
+                SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 95);
+                SDL_SetTextureColorMod(assets.players_alive_banner[i], 130, 130, 130);
+            }
 
             SDL_RenderCopy(renderer, assets.players_alive_banner[i], NULL, &banner);
+            SDL_SetTextureColorMod(assets.players_alive_banner[i], 255, 255, 255);
             SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 255);
+
+            if (state->players[state->local_player_id].isAlive && is_hovering(renderer, banner))
+                render_meeting_hover_glow(renderer, banner);
         }
         else
         {
