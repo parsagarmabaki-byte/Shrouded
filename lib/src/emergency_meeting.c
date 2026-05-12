@@ -95,7 +95,7 @@ void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_
     SDL_Texture *map_texture;
     if (player_alive)
         map_texture = assets.emergency_meeting_alive;
-    else if (!player_alive)
+    else
         map_texture = assets.emergency_meeting_dead;
     SDL_RenderCopy(renderer, map_texture, NULL, NULL);
 }
