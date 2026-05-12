@@ -11,6 +11,7 @@
 #include "imposter_ability.h"
 #define PACKET_SIZE 1024
 
+
 static int init_server(UDPsocket *socket)
 {
     return init_network_socket(socket, SERVER_PORT);
@@ -730,7 +731,7 @@ int main(void)
         {
             if (state.phase == GAME_SHOW_ROLE)
             {
-                if (SDL_GetTicks64() - state_start_time >= 3000) // NÄR 3 SEKUNDER GÅTT
+                if (SDL_GetTicks64() - state_start_time >= SHOW_ROLE_DURATION) 
                 {
                     state.phase = GAME_RUNNING;
                     printf("Game is now GAME_RUNNING\n");
@@ -739,7 +740,7 @@ int main(void)
             }
             else if (state.phase == GAME_INFO_MEETING)
             {
-                if (SDL_GetTicks64() - phase_time >= 1500) // NÄR 3 SEKUNDER GÅTT
+                if (SDL_GetTicks64() - phase_time >= INFO_MEETING_DURATION) 
                 {
                     state.phase = GAME_MEETING;
                     inititate_meeting_info(&meeting_info, state);
@@ -748,20 +749,30 @@ int main(void)
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
             }
+            
             else if (state.phase == GAME_MEETING)
             {
-                if (SDL_GetTicks64() - phase_time >= 45000 || meeting_info.votes_recieved == meeting_info.alive_players_count) // NÄR 15 SEKUNDER GÅTT
+                Uint32 elapsed = SDL_GetTicks64() - phase_time;
+                Uint32 meeting_duration = MEETING_DURATION; // TIME IN MEETING MILLISECONDS (60 sec)
+                state.meeting_time_remaining = (elapsed < meeting_duration) 
+                    ? (int)(meeting_duration - elapsed) 
+                    : 0;
+                
+                if (elapsed >= meeting_duration || meeting_info.votes_recieved == meeting_info.alive_players_count)
                 {
+                    
                     state.phase = SHOW_VOTE_RESULT;
                     state.voting_result = calculate_votes(meeting_info, state.voting_results);
                     printf("MEETING ENDED\n");
                     phase_time = SDL_GetTicks64();
+                    
                 }
                 broadcastGameState(server_socket, send_packet, &state, clientAddresses, clientUsed);
+                
             }
             else if (state.phase == SHOW_VOTE_RESULT)
             {
-                if (SDL_GetTicks64() - phase_time >= 10000)
+                if (SDL_GetTicks64() - phase_time >= VOTE_RESULT_DURATION)
                 {
                     resolve_voting(&state, meeting_info, state.voting_results);
                     spawn_players(&state);

@@ -36,6 +36,7 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state)
     GameAssets assets = load_assets(renderer);
     Text small_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 18);
     Text generic_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 24);
+    Text timer_meeting_text = text_create(renderer, "assets/fonts/BebasNeue-Regular.ttf", 40);
 
     SDL_RaiseWindow(lobby->window);
     SDL_SetWindowInputFocus(lobby->window);
@@ -50,18 +51,21 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state)
         if (state->phase == GAME_RUNNING)
             update_game(client, state, player, task, bodies, &user_input, local_id, ui_open, &was_task_active, dt, &accumulator);
 
-        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, task_panel_visible, &emergency_window_open, dt, targeted_banner_id, pause_menu_open, small_text, controls_visible, generic_text);
+        render_game_phase(client, renderer, state, player, task, bodies, &cam, assets, user_input, local_id, is_local_impostor, task_map_open, task_panel_visible, &emergency_window_open, dt, targeted_banner_id, pause_menu_open, small_text, controls_visible, generic_text, timer_meeting_text);
     }
     if (small_text)
         text_destroy(small_text);
     if (generic_text)
         text_destroy(generic_text);
+        
+    text_destroy(timer_meeting_text);
 
     player_destroy(player);
     destroy_task(task);
     destroy_assets(&assets);
     TTF_Quit();
     return return_to_menu;
+    
 }
 
 clientInput read_input(bool tasks_active)
@@ -828,7 +832,7 @@ void game_meeting_events(Client *client, SDL_Renderer *renderer, gameState state
     handle_send_vote_button(client,renderer, event, player_alive, *targeted_banner_id);
 }
 
-void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool task_panel_visible, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text, bool controls_visible, Text generic_text)
+void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state, Player *player, Task *task, KillAnimation bodies[MAX_PLAYERS], Camera *cam, GameAssets assets, clientInput user_input, int local_id, bool is_local_impostor, bool task_map_open, bool task_panel_visible, bool *emergency_window_open, float dt, int targeted_banner_id, bool pause_menu_open, Text panel_text, bool controls_visible, Text generic_text, Text timer_meeting_text)
 {
     static gamePhase previous_phase = GAME_LOBBY;
     static Uint32 win_fade_start = 0;
@@ -904,7 +908,7 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
     else if (state->phase == GAME_MEETING)
     {
         int player_reported_id = state->emergency_meeting_reported_id;
-        render_emergency_meeting(renderer, assets, state, player_reported_id, targeted_banner_id);
+        render_emergency_meeting(renderer, assets, state, player_reported_id, targeted_banner_id, timer_meeting_text);
         *emergency_window_open = false;
     }
     else if (state->phase == SHOW_VOTE_RESULT)
