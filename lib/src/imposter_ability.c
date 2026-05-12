@@ -191,6 +191,7 @@ bool find_target_report_body(Position bodies, int player_x, int player_y)
     {
        return true;
     }
+    return false;
 }
 
 void render_player_ability(SDL_Renderer *renderer, Player player, GameAssets assets, KillAnimation bodies[MAX_PLAYERS])
