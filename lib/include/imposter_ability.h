@@ -4,7 +4,7 @@
 #include "game.h"
 #include "player_movement.h"
 #include "kill_animation.h"
-#define COOLDOWN 10000
+#define COOLDOWN 30000
 #define KILL_RADIUS 100
 
 

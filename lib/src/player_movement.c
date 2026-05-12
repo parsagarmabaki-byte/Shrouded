@@ -62,9 +62,9 @@ void compare_server_position(gameState state, Player *player,int local_id)
     float dx = state.players[local_id].x - player->Hitbox.x;
     float dy = state.players[local_id].y - player->Hitbox.y;
 
-    if (fabsf(dx) > 12.0f)
+    if (fabsf(dx) > 18.0f)
         player->Hitbox.x = state.players[local_id].x;
-    if (fabsf(dy) > 12.0f)
+    if (fabsf(dy) > 18.0f)
         player->Hitbox.y = state.players[local_id].y;
 }
 
@@ -116,7 +116,7 @@ void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, 
     SDL_RenderCopy(renderer, texture, &src, &dst_render);
 
     SDL_GetRenderDrawColor(renderer, &old_r, &old_g, &old_b, &old_a);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 100); // ÄNdra 100 till 0 för att ta bort gula ramen 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 0); // ÄNdra 100 till 0 för att ta bort gula ramen 
     SDL_RenderDrawRect(renderer, &dst_hitbox);
     SDL_SetRenderDrawColor(renderer, old_r, old_g, old_b, old_a);
 }
