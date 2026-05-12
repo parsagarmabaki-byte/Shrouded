@@ -10,6 +10,6 @@
 #define HITBOX_SIZE 20
 
 extern const unsigned char wall_map[WALL_MAP_ROWS][WALL_MAP_COLS];
-int collides_with_wall(float x, float y);
+int collides_with_tile(float x, float y);
 
 #endif

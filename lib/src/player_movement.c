@@ -44,14 +44,14 @@ void apply_movement(float *x, float *y, clientInput input, float dt)
 
     float new_x = *x + dx * move;
 
-    if (collides_with_wall(new_x, *y) != 1)
+    if (collides_with_tile(new_x, *y) != 1)
     {
         *x = new_x;
     }
 
     float new_y = *y + dy * move;
 
-    if (collides_with_wall(*x, new_y) != 1)
+    if (collides_with_tile(*x, new_y) != 1)
     {
         *y = new_y;
     }

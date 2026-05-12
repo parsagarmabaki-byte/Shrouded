@@ -376,7 +376,7 @@ void task_events(SDL_Renderer *renderer, SDL_Event *event, Task *task, Player *p
 
         if (sc == SDL_SCANCODE_E && player && !task_active_check(task))
         {
-            int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
+            int tile_type = collides_with_tile(player->Hitbox.x, player->Hitbox.y);
 
             TaskType required_task = state->players[local_id].task_order[state->players[local_id].tasks_completed];
 
@@ -489,7 +489,7 @@ void emergency_meeting_events(Client *client, gameState *state, SDL_Renderer *re
     {
         if (event->key.keysym.scancode == SDL_SCANCODE_E)
         {
-            int tile_type = collides_with_wall(player->Hitbox.x, player->Hitbox.y);
+            int tile_type = collides_with_tile(player->Hitbox.x, player->Hitbox.y);
             if (tile_type == 2 && state->players[local_id].isAlive)
                 *emergency_window_open = true;
         }
