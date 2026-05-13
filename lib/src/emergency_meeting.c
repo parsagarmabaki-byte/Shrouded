@@ -112,24 +112,38 @@ void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_
 void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state, int targeted_banner_id)
 {
     SDL_Rect banner;
+    SDL_Texture *banner_img;
+
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         banner = get_banner_rect(i);
 
         if (state->players[i].isAlive)
         {
-            if (targeted_banner_id != -1 && targeted_banner_id != i)
+            int hovered = is_hovering(renderer, banner);
+            int has_target = targeted_banner_id != -1;
+            int is_targeted = targeted_banner_id == i;
+
+            if (hovered || is_targeted)
+                banner_img = assets.players_alive_banner_hover[i];
+            else
+                banner_img = assets.players_alive_banner[i];
+
+            if (has_target && !is_targeted)
             {
-                SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 95);
-                SDL_SetTextureColorMod(assets.players_alive_banner[i], 130, 130, 130);
+                SDL_SetTextureAlphaMod(banner_img, 95);
+                SDL_SetTextureColorMod(banner_img, 130, 130, 130);
+            }
+            else
+            {
+                SDL_SetTextureAlphaMod(banner_img, 255);
+                SDL_SetTextureColorMod(banner_img, 255, 255, 255);
             }
 
-            SDL_RenderCopy(renderer, assets.players_alive_banner[i], NULL, &banner);
-            SDL_SetTextureColorMod(assets.players_alive_banner[i], 255, 255, 255);
-            SDL_SetTextureAlphaMod(assets.players_alive_banner[i], 255);
+            SDL_RenderCopy(renderer, banner_img, NULL, &banner);
 
-            if (state->players[state->local_player_id].isAlive && is_hovering(renderer, banner))
-                render_meeting_hover_glow(renderer, banner);
+            SDL_SetTextureAlphaMod(banner_img, 255);
+            SDL_SetTextureColorMod(banner_img, 255, 255, 255);
         }
         else
         {

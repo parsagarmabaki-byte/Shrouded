@@ -41,6 +41,7 @@ typedef struct
     SDL_Texture *emergency_meeting_icon;
     
     SDL_Texture *players_alive_banner[PLAYER_SLOTS];
+    SDL_Texture *players_alive_banner_hover[PLAYER_SLOTS];
     SDL_Texture *players_dead_banner[PLAYER_SLOTS];
     
     SDL_Texture *players_kicked_out[PLAYER_SLOTS];

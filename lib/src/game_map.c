@@ -88,6 +88,9 @@ GameAssets load_assets(SDL_Renderer *renderer)
         
         snprintf(path, sizeof(path), "assets/images/player%d_alive.png", i+1);
         asset.players_alive_banner[i] = loading_img(renderer, path);
+
+        snprintf(path, sizeof(path), "assets/images/player%d_alive_hover.png", i+1);
+        asset.players_alive_banner_hover[i] = loading_img(renderer, path);
         
         snprintf(path, sizeof(path), "assets/images/player%d_dead_transparent.png", i+1);
         asset.players_dead_banner[i] = loading_img(renderer, path);
