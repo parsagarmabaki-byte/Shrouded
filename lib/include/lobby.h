@@ -13,6 +13,7 @@ typedef struct
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *background;
+    SDL_Texture *enterIpBackground;
 
     // Statiska texter (sätts en gång i initiate)
     Text titleText;      // "CONNECT TO SERVER"
@@ -20,6 +21,7 @@ typedef struct
     Text enterText;      // "Press Enter to connect"
     Text escText;        // "Esc closes the client"
     Text startText;      // "PRESS SPACE TO START"
+    Text ipButtonText;   // "MY IP"
 
     // Dynamiska texter (uppdateras vid behov)
     Text inputText;      // IP-adressen som användaren skriver
