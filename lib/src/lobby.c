@@ -1,8 +1,10 @@
 #include "lobby.h"
 #include "text.h"
+#include "ip_config.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+
 
 int initiate(waitForPlayers *pWait)
 {
@@ -72,22 +74,40 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
-    // Skapa alla Text-objekt med samma font och storlek
-    const char *fontPath = "assets/fonts/BebasNeue-Regular.ttf";
-    const int fontSize = 60;
+    SDL_Surface *enterIpSurface = IMG_Load("assets/lobbyscreen/ENTERIP.png");
+    if (!enterIpSurface)
+    {
+        printf("IMG_Load ENTERIP.png: %s\n", IMG_GetError());
+        cleanLobby(pWait);
+        return 0;
+    }
 
-    pWait->titleText     = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->subtitleText  = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->enterText     = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->escText       = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->errorText     = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->inputText     = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->connectedText = text_create(pWait->renderer, fontPath, fontSize);
-    pWait->startText     = text_create(pWait->renderer, fontPath, fontSize);
+    pWait->enterIpBackground = SDL_CreateTextureFromSurface(pWait->renderer, enterIpSurface);
+    SDL_FreeSurface(enterIpSurface);
+
+    if (!pWait->enterIpBackground)
+    {
+        printf("SDL_CreateTextureFromSurface ENTERIP.png: %s\n", SDL_GetError());
+        cleanLobby(pWait);
+        return 0;
+    }
+
+    // Skapa Text-objekt med storlekar som passar respektive vy.
+    const char *fontPath = "assets/fonts/BebasNeue-Regular.ttf";
+
+    pWait->titleText     = text_create(pWait->renderer, fontPath, 64);
+    pWait->subtitleText  = text_create(pWait->renderer, fontPath, 30);
+    pWait->enterText     = text_create(pWait->renderer, fontPath, 30);
+    pWait->escText       = text_create(pWait->renderer, fontPath, 28);
+    pWait->errorText     = text_create(pWait->renderer, fontPath, 30);
+    pWait->inputText     = text_create(pWait->renderer, fontPath, 48);
+    pWait->connectedText = text_create(pWait->renderer, fontPath, 60);
+    pWait->startText     = text_create(pWait->renderer, fontPath, 60);
+    pWait->ipButtonText  = text_create(pWait->renderer, fontPath, 15);
 
     if (!pWait->titleText || !pWait->subtitleText || !pWait->enterText ||
         !pWait->escText || !pWait->errorText || !pWait->inputText ||
-        !pWait->connectedText || !pWait->startText)
+        !pWait->connectedText || !pWait->startText || !pWait->ipButtonText)
     {
         printf("text_create failed for one or more Text objects\n");
         cleanLobby(pWait);
@@ -95,14 +115,15 @@ int initiate(waitForPlayers *pWait)
     }
 
     // Sätt statiska texter en gång — dessa ändras aldrig
-    SDL_Color white = {255, 255, 255, 255};
-    SDL_Color muted = {210, 210, 210, 255};
+    SDL_Color white = {245, 248, 255, 255};
+    SDL_Color muted = {165, 175, 190, 255};
 
-    text_set(pWait->titleText,    "CONNECT TO SERVER",                white);
-    text_set(pWait->subtitleText, "Enter the server IP address below", muted);
-    text_set(pWait->enterText,    "Press Enter to connect",            muted);
-    text_set(pWait->escText,      "Esc closes the client",             muted);
+    text_set(pWait->titleText,    "SERVER CONNECTION",        white);
+    text_set(pWait->subtitleText, "TYPE SERVER IP ADDRESS",    muted);
+    text_set(pWait->enterText,    "ENTER TO CONNECT",          muted);
+    text_set(pWait->escText,      "ESC TO RETURN",             muted);
     text_set(pWait->startText,    "PRESS SPACE TO START",              white);
+    text_set(pWait->ipButtonText, "FETCH MY IP (MAC/LINUX)",      white);
 
     return 1;
 }
@@ -117,7 +138,9 @@ void cleanLobby(waitForPlayers *pWait)
     text_destroy(pWait->inputText);
     text_destroy(pWait->connectedText);
     text_destroy(pWait->startText);
+    text_destroy(pWait->ipButtonText);
 
+    if (pWait->enterIpBackground) SDL_DestroyTexture(pWait->enterIpBackground);
     if (pWait->background) SDL_DestroyTexture(pWait->background);
     if (pWait->renderer)   SDL_DestroyRenderer(pWait->renderer);
     if (pWait->window)     SDL_DestroyWindow(pWait->window);
@@ -137,8 +160,9 @@ int countActivePlayers(gameState *state)
 int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size, const char *error_message)
 {
     SDL_Event event;
-    SDL_Color white = {255, 255, 255, 255};
-    SDL_Color red   = {255, 120, 120, 255};
+    SDL_Color white = {245, 248, 255, 255};
+    SDL_Color muted = {105, 118, 135, 255};
+    SDL_Color red   = {255, 125, 125, 255};
     int windowWidth, windowHeight;
     int finished = 0;
     int textChanged = 1; // Flagga så vi sätter inputText första framen
@@ -181,6 +205,24 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
                 }
             }
 
+            if (event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                SDL_Rect enter_ip_rect = get_enter_ip_rect(pWait->renderer, pWait->enterIpBackground);
+                SDL_Rect input_box = {
+                    enter_ip_rect.x + (int)(enter_ip_rect.w * 0.18f),
+                    enter_ip_rect.y + (int)(enter_ip_rect.h * 0.47f),
+                    (int)(enter_ip_rect.w * 0.54f),
+                    (int)(enter_ip_rect.h * 0.19f)
+                };
+                SDL_Rect my_ip_button = get_my_ip_button_rect(input_box);
+
+                if (point_in_rect(event.button.x, event.button.y, my_ip_button))
+                {
+                    get_local_ip_address(buffer, buffer_size);
+                    textChanged = 1;
+                }
+            }
+
             if (event.type == SDL_KEYDOWN)
             {
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
@@ -215,6 +257,8 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
         {
             if (strlen(buffer) > 0)
                 text_set(pWait->inputText, buffer, white);
+            else
+                text_set(pWait->inputText, "127.0.0.1", muted);
             textChanged = 0;
         }
 
@@ -223,54 +267,52 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
         // så vi sätter det här en gång (behöver egentligen bara göras en gång,
         // men text_set är billig jämfört med att rita varje frame)
 
-        SDL_RenderCopy(pWait->renderer, pWait->background, NULL, NULL);
-
         SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
 
-        // Panel
-        SDL_Rect panel;
-        panel.x = windowWidth / 2 - 360;
-        panel.y = windowHeight / 2 - 215;
-        panel.w = 720;
-        panel.h = 430;
+        SDL_Rect enter_ip_rect = get_enter_ip_rect(pWait->renderer, pWait->enterIpBackground);
+        render_connection_background(pWait->renderer, pWait->enterIpBackground, pWait->background, enter_ip_rect);
 
-        SDL_SetRenderDrawBlendMode(pWait->renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(pWait->renderer, 12, 19, 28, 220);
-        SDL_RenderFillRect(pWait->renderer, &panel);
-        SDL_SetRenderDrawColor(pWait->renderer, 255, 255, 255, 255);
-        SDL_RenderDrawRect(pWait->renderer, &panel);
+        int screen_center_x = enter_ip_rect.x + enter_ip_rect.w / 2;
 
-        int panel_center_x = panel.x + (panel.w / 2);
-
-        // Rita statiska texter (text_draw centrerar på x och y)
-        text_draw(pWait->titleText,    panel_center_x, panel.y + 42 + text_get_height(pWait->titleText) / 2);
-        text_draw(pWait->subtitleText, panel_center_x, panel.y + 125 + text_get_height(pWait->subtitleText) / 2);
-        text_draw(pWait->enterText,    panel_center_x, panel.y + 180 + text_get_height(pWait->enterText) / 2);
+        text_draw(pWait->titleText, screen_center_x, enter_ip_rect.y + (int)(enter_ip_rect.h * 0.20f));
+        text_draw(pWait->subtitleText, screen_center_x, enter_ip_rect.y + (int)(enter_ip_rect.h * 0.30f));
+        text_draw(pWait->enterText, screen_center_x, enter_ip_rect.y + (int)(enter_ip_rect.h * 0.75f));
 
         // Inputruta
         SDL_Rect inputBox;
-        inputBox.x = panel.x + 70;
-        inputBox.y = panel.y + 255;
-        inputBox.w = panel.w - 140;
-        inputBox.h = 78;
-
-        SDL_SetRenderDrawColor(pWait->renderer, 24, 34, 46, 255);
-        SDL_RenderFillRect(pWait->renderer, &inputBox);
-        SDL_SetRenderDrawColor(pWait->renderer, 255, 255, 255, 255);
-        SDL_RenderDrawRect(pWait->renderer, &inputBox);
+        inputBox.x = enter_ip_rect.x + (int)(enter_ip_rect.w * 0.18f);
+        inputBox.y = enter_ip_rect.y + (int)(enter_ip_rect.h * 0.47f);
+        inputBox.w = (int)(enter_ip_rect.w * 0.54f);
+        inputBox.h = (int)(enter_ip_rect.h * 0.19f);
 
         // Rita input-texten vänsterställd (text_draw_at = övre vänstra hörnet)
-        if (strlen(buffer) > 0)
-            text_draw_at(pWait->inputText, inputBox.x + 24, inputBox.y + 12);
+        SDL_Rect my_ip_button = get_my_ip_button_rect(inputBox);
+        int input_text_x = inputBox.x + (int)(inputBox.w * 0.035f);
+        int input_text_y = inputBox.y + (inputBox.h - text_get_height(pWait->inputText)) / 2;
+        text_draw_at(pWait->inputText, input_text_x, input_text_y);
+
+        if ((SDL_GetTicks() / 500) % 2 == 0)
+        {
+            int cursor_x = input_text_x + text_get_width(pWait->inputText) + 6;
+            int text_height = text_get_height(pWait->inputText);
+            int cursor_y = input_text_y;
+            if (strlen(buffer) == 0)
+                cursor_x = input_text_x;
+
+            SDL_SetRenderDrawColor(pWait->renderer, 245, 226, 176, 255);
+            SDL_RenderDrawLine(pWait->renderer, cursor_x, cursor_y, cursor_x, cursor_y + text_height);
+        }
 
         // Esc-text
-        text_draw(pWait->escText, panel_center_x, panel.y + 355 + text_get_height(pWait->escText) / 2);
+        text_draw(pWait->escText, screen_center_x, enter_ip_rect.y + (int)(enter_ip_rect.h * 0.81f));
+
+        render_my_ip_button(pWait->renderer, pWait->ipButtonText, my_ip_button);
 
         // Felmeddelande
         if (error_message && error_message[0] != '\0')
         {
             text_set(pWait->errorText, error_message, red);
-            text_draw(pWait->errorText, panel_center_x, panel.y + 392 + text_get_height(pWait->errorText) / 2);
+            text_draw(pWait->errorText, screen_center_x, enter_ip_rect.y + (int)(enter_ip_rect.h * 0.87f));
         }
 
         SDL_RenderPresent(pWait->renderer);
