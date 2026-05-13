@@ -896,6 +896,13 @@ void render_game_phase(Client *client, SDL_Renderer *renderer, gameState *state,
         }
         else if (state->type == MSG_BODY_FOUND)
         {
+            render_game(renderer, state, cam, assets, user_input, player, bodies, task, local_id, dt, is_local_impostor, false, false, false, false, panel_text, false, generic_text);
+
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 120);
+            SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+            SDL_RenderFillRect(renderer, &backdrop);
+
             meeting_info_texture = assets.dead_body_reported_info;
             for (int i = 0; i < MAX_PLAYERS; i++)
             {

@@ -18,6 +18,8 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
         return NULL;
     }
 
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
     return texture;
 }
 
