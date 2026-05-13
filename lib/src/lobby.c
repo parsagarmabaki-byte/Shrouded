@@ -123,7 +123,7 @@ int initiate(waitForPlayers *pWait)
     text_set(pWait->enterText,    "ENTER TO CONNECT",          muted);
     text_set(pWait->escText,      "ESC TO RETURN",             muted);
     text_set(pWait->startText,    "PRESS SPACE TO START",              white);
-    text_set(pWait->ipButtonText, "FETCH MY IP - MAC/LINUX ONLY",      white);
+    text_set(pWait->ipButtonText, "FETCH MY IP (MAC/LINUX)",      white);
 
     return 1;
 }
