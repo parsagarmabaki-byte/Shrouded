@@ -36,6 +36,8 @@ typedef struct
     SDL_Texture *dead_body_reported_info;
 
     SDL_Texture *emergency_meeting_alive;
+    SDL_Texture *emergency_meeting_submit;
+    SDL_Texture *emergency_meeting_skip;
     SDL_Texture *emergency_meeting_dead;
     
     SDL_Texture *emergency_meeting_icon;

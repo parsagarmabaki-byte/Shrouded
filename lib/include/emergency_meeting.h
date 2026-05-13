@@ -11,12 +11,12 @@
 #define banner_y 170
 
 void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_button_view, SDL_Texture *emergency_button_hover);
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text);
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int player_voted);
 void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_reported);
 void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state, int targeted_banner_id);
-void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_alive);
+void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_alive, int player_voted);
 int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int target_banner_id);
-int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner);
+int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner, int *player_voted);
 void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int target_id);
 void render_voting_banners(SDL_Renderer *renderer, gameState *state, GameAssets assets);
 void render_voting_screen(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result);

@@ -44,6 +44,10 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
     asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
     asset.emergency_meeting_alive = loading_img(renderer, "assets/images/emergency_meeting_alive.png");
+
+    asset.emergency_meeting_submit = loading_img(renderer, "assets/images/emergency_meeting_submit_hover.png");
+    asset.emergency_meeting_skip = loading_img(renderer, "assets/images/emergency_meeting_skip_hover.png");
+    
     asset.emergency_meeting_dead = loading_img(renderer, "assets/images/emergency_meeting_dead.png");
     asset.emergency_meeting_icon = loading_img(renderer, "assets/images/meeting-ikon.png");
 
