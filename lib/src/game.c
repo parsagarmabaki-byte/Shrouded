@@ -8,8 +8,6 @@
 
 static void game_context_cleanup(GameContext *ctx);
 static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby);
-void print_time_ms();
-
 
 int runGame(Client *client, waitForPlayers *lobby, gameState *state)
 {
