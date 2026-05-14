@@ -91,3 +91,51 @@ int collides_with_tile(float x, float y)
     return 0;
 
 }
+
+
+void debug_walls(SDL_Renderer *renderer, Camera cam)
+{
+#ifdef DEBUG_WALLS
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 50);
+
+    for (int row = 0; row <= WALL_MAP_ROWS; row++)
+    {
+        int y = row * WALL_TILE_SIZE - (int)cam.y;
+        SDL_RenderDrawLine(renderer,
+                           0 - (int)cam.x, y,
+                           (WALL_MAP_COLS * WALL_TILE_SIZE) - (int)cam.x, y);
+    }
+
+    for (int col = 0; col <= WALL_MAP_COLS; col++)
+    {
+        int x = col * WALL_TILE_SIZE - (int)cam.x;
+        SDL_RenderDrawLine(renderer,
+                           x, 0 - (int)cam.y,
+                           x, (WALL_MAP_ROWS * WALL_TILE_SIZE) - (int)cam.y);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
+
+    for (int row = 0; row < WALL_MAP_ROWS; row++)
+    {
+        for (int col = 0; col < WALL_MAP_COLS; col++)
+        {
+            if (wall_map[row][col])
+            {
+                SDL_Rect r = {
+                    col * WALL_TILE_SIZE - (int)cam.x,
+                    row * WALL_TILE_SIZE - (int)cam.y,
+                    WALL_TILE_SIZE,
+                    WALL_TILE_SIZE};
+                SDL_RenderFillRect(renderer, &r);
+
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                SDL_RenderDrawRect(renderer, &r);
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
+            }
+        }
+    }
+#endif
+}

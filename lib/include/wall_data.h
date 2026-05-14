@@ -3,7 +3,8 @@
 #define WALL_DATA_H_INCLUDED
 
 #include <stdbool.h>
-
+#include <SDL2/SDL.h>
+#include "game_map.h"
 #define WALL_TILE_SIZE 32
 #define WALL_MAP_COLS  80
 #define WALL_MAP_ROWS  64
@@ -11,5 +12,7 @@
 
 extern const unsigned char wall_map[WALL_MAP_ROWS][WALL_MAP_COLS];
 int collides_with_tile(float x, float y);
+void debug_walls(SDL_Renderer *renderer, Camera cam);
+
 
 #endif
