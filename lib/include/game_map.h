@@ -20,13 +20,10 @@ typedef struct
     SDL_Texture *dead_skins[PLAYER_SLOTS];
     SDL_Texture *map_texture;
     SDL_Texture *vignette_img;
-    SDL_Texture *killer_img;
-    SDL_Texture *innocent_img;
-    SDL_Texture *role_art_img;
 
     SDL_Texture *kill_button_active;
     SDL_Texture *kill_button_deactive;
-    
+
     SDL_Texture *report_button_deactive;
     SDL_Texture *report_button_active;
 
@@ -39,13 +36,13 @@ typedef struct
     SDL_Texture *emergency_meeting_submit;
     SDL_Texture *emergency_meeting_skip;
     SDL_Texture *emergency_meeting_dead;
-    
+
     SDL_Texture *emergency_meeting_icon;
-    
+
     SDL_Texture *players_alive_banner[PLAYER_SLOTS];
     SDL_Texture *players_alive_banner_hover[PLAYER_SLOTS];
     SDL_Texture *players_dead_banner[PLAYER_SLOTS];
-    
+
     SDL_Texture *players_kicked_out[PLAYER_SLOTS];
     SDL_Texture *players_voting_result_alive[PLAYER_SLOTS];
     SDL_Texture *players_voting_result_dead[PLAYER_SLOTS];
@@ -62,8 +59,15 @@ typedef struct
     SDL_Texture *task_indicator;
 } GameAssets;
 
+typedef struct
+{
+    SDL_Texture *killer_img;
+    SDL_Texture *innocent_img;
+    SDL_Texture *role_art_img;
+} Game_Show_Role_asset;
 
-typedef struct {
+typedef struct
+{
     float x, y;
     int screen_w, screen_h;
 } Camera;
@@ -72,8 +76,8 @@ GameAssets load_assets(SDL_Renderer *renderer);
 SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
 void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam);
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h);
+Game_Show_Role_asset load_show_role_assets(SDL_Renderer *renderer);
 static void destroy_texture(SDL_Texture **texture);
 void destroy_assets(GameAssets *assets);
 
 #endif
- 

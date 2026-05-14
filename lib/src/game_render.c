@@ -44,7 +44,7 @@ void render_game_phase(GameContext *ctx)
         break;
 
     case GAME_SHOW_ROLE:
-        render_game_show_role(ctx->renderer, ctx->assets, state, ctx->local_id);
+        render_game_show_role(ctx->renderer, ctx->show_role_asset, state, ctx->local_id);
         break;
 
     case GAME_INFO_MEETING:
@@ -192,7 +192,7 @@ void render_killer_win(SDL_Renderer *renderer, GameAssets assets, gameState stat
     }
 }
 
-void render_game_show_role(SDL_Renderer *renderer, GameAssets assets, gameState *state, int local_id)
+void render_game_show_role(SDL_Renderer *renderer, Game_Show_Role_asset assets, gameState *state, int local_id)
 {
     SDL_Texture *role_img = NULL;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -215,7 +215,6 @@ void render_game_show_role(SDL_Renderer *renderer, GameAssets assets, gameState 
 
     SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
 }
-
 
 void render_world(GameContext *ctx)
 {
@@ -302,7 +301,6 @@ void render_info_text(SDL_Renderer *renderer, gameState *state, int local_id, Te
     text_set(text, "Press \"I\" for info screen", grey);
     text_draw_at(text, 10, LOGICAL_SCREEN_HEIGHT - 30);
 }
-
 
 void render_game_ui(GameContext *ctx)
 {

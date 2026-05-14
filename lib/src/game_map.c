@@ -31,10 +31,6 @@ GameAssets load_assets(SDL_Renderer *renderer)
     if (asset.vignette_img)
         SDL_SetTextureBlendMode(asset.vignette_img, SDL_BLENDMODE_BLEND);
 
-    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");
-    asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
-    asset.role_art_img = loading_img(renderer, "assets/images/show_role.png");
-
     asset.kill_button_active = loading_img(renderer, "assets/images/kill_button_active.png");
     asset.kill_button_deactive = loading_img(renderer, "assets/images/kill_button_deactive.png");
 
@@ -116,6 +112,15 @@ GameAssets load_assets(SDL_Renderer *renderer)
     return asset;   
 }
 
+Game_Show_Role_asset load_show_role_assets(SDL_Renderer *renderer)
+{
+    Game_Show_Role_asset asset;
+    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");
+    asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
+    asset.role_art_img = loading_img(renderer, "assets/images/show_role.png");
+    return asset;
+}
+
 static void destroy_texture(SDL_Texture **texture)
 {
     if (texture && *texture)
@@ -139,9 +144,6 @@ void destroy_assets(GameAssets *assets)
 
     destroy_texture(&assets->map_texture);
     destroy_texture(&assets->vignette_img);
-    destroy_texture(&assets->killer_img);
-    destroy_texture(&assets->innocent_img);
-    destroy_texture(&assets->role_art_img);
     destroy_texture(&assets->kill_button_active);
     destroy_texture(&assets->kill_button_deactive);
     destroy_texture(&assets->report_button_deactive);
