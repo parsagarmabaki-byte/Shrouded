@@ -52,7 +52,7 @@ void render_game_phase(GameContext *ctx)
         break;
 
     case GAME_MEETING:
-        render_emergency_meeting(ctx->renderer, ctx->assets, state, state->emergency_meeting_reported_id, ctx->targeted_banner_id, ctx->timer_meeting_text, ctx->player_voted);
+        render_emergency_meeting(ctx->renderer, ctx->assets, state, state->emergency_meeting_reported_id, ctx->targeted_banner_id, ctx->timer_meeting_text, ctx->local_id);
         ctx->emergency_window_open = false;
         break;
 

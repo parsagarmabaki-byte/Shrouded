@@ -102,6 +102,7 @@ typedef struct {
     int emergency_meeting;
 
     int current_frame;
+    int player_voted;
     Direction direction;
 
     TaskType task_order[TASK_COUNT];   // shuffled player task list

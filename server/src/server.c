@@ -28,7 +28,7 @@ void handle_kill(Server *s, IPaddress sender);
 void handle_emergency_meeting(Server *s, IPaddress sender);
 void handle_body_found(Server *s, IPaddress sender);
 void handle_task_complete(Server *s, IPaddress sender);
-void handle_vote(Server *s, IPaddress sender);
+void handle_vote(Server *s, IPaddress sender, gameState *state);
 
 // ===================== MAIN =====================
 
@@ -78,19 +78,44 @@ int main(void)
 
             switch (type)
             {
-                case MSG_JOIN:                  handle_join(&server, sender);              break;
-                case MSG_LEAVE:                 handle_leave(&server, sender);             break;
-                case MSG_START_GAME:            handle_start_game(&server);                break;
-                case MSG_PLAY_AGAIN:            handle_play_again(&server);                break;
-                case MSG_CLIENT_INPUT:          handle_client_input(&server, sender);      break;
-                case MSG_KILL_REQUEST:          handle_kill(&server, sender);              break;
-                case MSG_EMERGENCY_MEETING:     handle_emergency_meeting(&server, sender); break;
-                case MSG_BODY_FOUND:            handle_body_found(&server, sender);        break;
-                case MSG_TASK_COMPLETE:         handle_task_complete(&server, sender);     break;
-                case MSG_VOTE_REQUEST:          handle_vote(&server, sender);              break;
-                case MSG_DEBUG_CREWMATES_WIN:   server.state.phase = GAME_CREWMATES_WIN;   break;
-                case MSG_DEBUG_IMPOSTOR_WIN:    server.state.phase = GAME_IMPOSTOR_WIN;    break;
-                default: break;
+            case MSG_JOIN:
+                handle_join(&server, sender);
+                break;
+            case MSG_LEAVE:
+                handle_leave(&server, sender);
+                break;
+            case MSG_START_GAME:
+                handle_start_game(&server);
+                break;
+            case MSG_PLAY_AGAIN:
+                handle_play_again(&server);
+                break;
+            case MSG_CLIENT_INPUT:
+                handle_client_input(&server, sender);
+                break;
+            case MSG_KILL_REQUEST:
+                handle_kill(&server, sender);
+                break;
+            case MSG_EMERGENCY_MEETING:
+                handle_emergency_meeting(&server, sender);
+                break;
+            case MSG_BODY_FOUND:
+                handle_body_found(&server, sender);
+                break;
+            case MSG_TASK_COMPLETE:
+                handle_task_complete(&server, sender);
+                break;
+            case MSG_VOTE_REQUEST:
+                handle_vote(&server, sender,&server.state);
+                break;
+            case MSG_DEBUG_CREWMATES_WIN:
+                server.state.phase = GAME_CREWMATES_WIN;
+                break;
+            case MSG_DEBUG_IMPOSTOR_WIN:
+                server.state.phase = GAME_IMPOSTOR_WIN;
+                break;
+            default:
+                break;
             }
         }
 
@@ -125,7 +150,7 @@ void update_server_tick(Server *s)
         if (SDL_GetTicks64() - s->phase_time >= INFO_MEETING_DURATION)
         {
             s->state.phase = GAME_MEETING;
-            inititate_meeting_info(&s->meeting_info, s->state);
+            inititate_meeting_info(&s->meeting_info, &s->state);
             s->phase_time = SDL_GetTicks64();
             printf("INFORMATION OF MEETING ENDED\n");
         }
@@ -135,8 +160,8 @@ void update_server_tick(Server *s)
         Uint32 elapsed = SDL_GetTicks64() - s->phase_time;
         Uint32 meeting_duration = MEETING_DURATION;
         s->state.meeting_time_remaining = (elapsed < meeting_duration)
-            ? (int)(meeting_duration - elapsed)
-            : 0;
+                                              ? (int)(meeting_duration - elapsed)
+                                              : 0;
 
         if (elapsed >= meeting_duration || s->meeting_info.votes_recieved == s->meeting_info.alive_players_count)
         {
@@ -349,7 +374,7 @@ void handle_task_complete(Server *s, IPaddress sender)
     broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 }
 
-void handle_vote(Server *s, IPaddress sender)
+void handle_vote(Server *s, IPaddress sender, gameState *state)
 {
     if (!packet_has_size(s->receive_packet, sizeof(VoteRequest), "VoteRequest"))
         return;
@@ -359,5 +384,8 @@ void handle_vote(Server *s, IPaddress sender)
     int pid = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
     vote.voter_id = pid;
     if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_recieved < s->meeting_info.alive_players_count)
+    {
         cast_vote(&s->meeting_info, vote);
+        state->players[pid].player_voted=1;
+    }
 }

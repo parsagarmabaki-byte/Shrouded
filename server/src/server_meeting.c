@@ -1,7 +1,7 @@
 #include "server_meeting.h"
 #include <stdio.h>
 
-void inititate_meeting_info(Meeting *meeting_info, gameState state)
+void inititate_meeting_info(Meeting *meeting_info, gameState *state)
 {
     meeting_info->alive_players_count = 0;
     meeting_info->votes_recieved = 0;
@@ -16,11 +16,12 @@ void inititate_meeting_info(Meeting *meeting_info, gameState state)
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (!state.players[i].isAlive || !state.players[i].active)
+        if (!state->players[i].isAlive || !state->players[i].active)
             continue;
 
         meeting_info->alive_players_id[meeting_info->alive_players_count] = i;
         meeting_info->alive_players_count++;
+        state->players[i].player_voted=0;
     }
 }
 

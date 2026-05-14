@@ -214,7 +214,7 @@ static void game_running_events(GameContext *ctx)
 static void game_meeting_events(GameContext *ctx)
 {
     ctx->targeted_banner_id = target_player_banner(ctx->renderer, *ctx->state, &ctx->event, ctx->state->players[ctx->local_id].isAlive, ctx->targeted_banner_id);
-    handle_send_vote_button(ctx->client, ctx->renderer, &ctx->event, ctx->state->players[ctx->local_id].isAlive, ctx->targeted_banner_id, &ctx->player_voted);
+    handle_send_vote_button(ctx->client, ctx->renderer, &ctx->event, ctx->state->players[ctx->local_id].isAlive, ctx->targeted_banner_id, ctx->state->players[ctx->local_id].player_voted);
 }
 
 static void task_events(GameContext *ctx)

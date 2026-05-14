@@ -3,7 +3,7 @@
 
 #include "network_data.h"
 
-void inititate_meeting_info(Meeting *meeting_info, gameState state);
+void inititate_meeting_info(Meeting *meeting_info, gameState *state);
 int can_cast_vote(Meeting meeting_info, int voter_id);
 void cast_vote(Meeting *meeting_info, VoteRequest vote);
 int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1]);
