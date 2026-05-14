@@ -29,6 +29,8 @@ void render_all_players(gameState *state, Player *player, GameAssets assets, Cam
 void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player, gameState *state);
 void render_global_progress_bar(SDL_Renderer *renderer, gameState *state);
 static const char *task_type_name(TaskType t);
+void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt);
+
 
 
 #endif

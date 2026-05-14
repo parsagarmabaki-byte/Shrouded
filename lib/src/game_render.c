@@ -216,6 +216,7 @@ void render_game_show_role(SDL_Renderer *renderer, GameAssets assets, gameState 
     SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
 }
 
+
 void render_world(GameContext *ctx)
 {
     gameState *state = ctx->state;
