@@ -1,4 +1,5 @@
 #include "task_render.h"
+#include "task_internal.h"
 
 const SDL_Color WHITE = {255, 255, 255, 255};
 

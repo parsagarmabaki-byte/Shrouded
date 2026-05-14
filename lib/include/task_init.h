@@ -1,7 +1,7 @@
 #ifndef TASK_INIT_H
 #define TASK_INIT_H
 
-#include "task_internal.h"
+#include "task.h"
 
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
 void start_click_task(Task *task, SDL_Renderer *renderer, int target);

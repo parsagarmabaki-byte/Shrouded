@@ -1,6 +1,7 @@
 #include "task_init.h"
 #include <SDL2/SDL_image.h>
 #include <time.h>
+#include "task_internal.h"
 
 
 static void sort_numbers(int *arr, int size)
@@ -154,7 +155,7 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
         task->numbers_rect[i].x = start_x + (i * spacing);
         task->numbers_rect[i].y = 350;
     }
-    
+
     sort_numbers(task->sortedNumbers, 5);
 }
 

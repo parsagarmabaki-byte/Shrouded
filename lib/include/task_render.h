@@ -1,8 +1,7 @@
 #ifndef TASK_RENDER_H
 #define TASK_RENDER_H
 
-#include "task_internal.h"
-
+#include "task.h"
 
 void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
 void render_timer_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, int box_width, int box_height);
