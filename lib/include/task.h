@@ -1,8 +1,10 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <SDL2/SDL.h>
+
+extern const SDL_Color WHITE;
 
 typedef struct Task Task;
 
@@ -41,10 +43,6 @@ void start_alternate_task(Task *task, SDL_Renderer *renderer, int target);
 void end_task(Task *task, TaskStatus status);
 void cleanup_task(Task *task);
 void update_task(Task *task, float dt);
-void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
-
-void task_handle_keyup(Task *task, SDL_Keycode key);
-
 
 // getters
 bool task_active_check(Task *task);
@@ -54,6 +52,7 @@ TaskType task_get_last_type(Task *task);
 
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key);
+void task_handle_keyup(Task *task, SDL_Keycode key);
 void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 #endif

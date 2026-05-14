@@ -16,6 +16,7 @@
 #include "kill_animation.h"
 #include "imposter_ability.h"
 #include "text.h"
+#include "task_render.h"
 
 typedef struct
 {
