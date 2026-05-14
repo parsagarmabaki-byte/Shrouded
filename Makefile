@@ -44,13 +44,12 @@ EMERGENCY_MEETING_SRC = lib/src/emergency_meeting.c
 TEXT_SRC = lib/src/text.c
 MAIN_MENU_SRC = lib/src/main_menu.c
 GAME_RENDER_SRC = lib/src/game_render.c
-PLAYER_MOVEMENT_SRC = lib/src/player_movement.c
-GAME_MAP_SRC = lib/src/game_map.c
-NETWORK_SRC = lib/src/network.c
 CLIENT_NETWORK_SRC = client/src/client_network.c
-
-PLAYER_MOVEMENT_TEST_SRC = test_files/test_player_movement.c
-GAME_MAP_TEST_SRC = test_files/test_game_map.c
+SERVER_BROADCAST_SRC = lib/src/server/server_broadcast.c
+SERVER_LOBBY_SRC = lib/src/server/server_lobby.c
+SERVER_ROUND_SRC = lib/src/server/server_round.c
+SERVER_MEETING_SRC = lib/src/server/server_meeting.c
+SERVER_GAME_LOGIC_SRC = lib/src/server/server_game_logic.c
 
 # ─── Object files ───────────────────────────────────────
 CLIENT_OBJ = $(OBJDIR)/client.o
@@ -73,24 +72,20 @@ EMERGENCY_MEETING_OBJ = $(OBJDIR)/emergency_meeting.o
 TEXT_OBJ = $(OBJDIR)/text.o
 MAIN_MENU_OBJ = $(OBJDIR)/main_menu.o
 GAME_RENDER_OBJ = $(OBJDIR)/game_render.o
-PLAYER_MOVEMENT_OBJ = $(OBJDIR)/player_movement.o
-GAME_MAP_OBJ = $(OBJDIR)/game_map.o
-NETWORK_OBJ = $(OBJDIR)/network.o
 CLIENT_NETWORK_OBJ = $(OBJDIR)/client_network.o
-
-PLAYER_MOVEMENT_TEST_OBJ = $(OBJDIR)/test_player_movement.o
-GAME_MAP_TEST_OBJ = $(OBJDIR)/test_game_map.o
+SERVER_BROADCAST_OBJ = $(OBJDIR)/server_broadcast.o
+SERVER_LOBBY_OBJ = $(OBJDIR)/server_lobby.o
+SERVER_ROUND_OBJ = $(OBJDIR)/server_round.o
+SERVER_MEETING_OBJ = $(OBJDIR)/server_meeting.o
+SERVER_GAME_LOGIC_OBJ = $(OBJDIR)/server_game_logic.o
 
 # ─── Output files ───────────────────────────────────────
 CLIENT_OUT = $(OBJDIR)/client$(EXE)
 SERVER_OUT = $(OBJDIR)/server$(EXE)
 
-PLAYER_MOVEMENT_TEST_OUT = $(OBJDIR)/test_player_movement$(EXE)
-GAME_MAP_TEST_OUT = $(OBJDIR)/test_game_map$(EXE)
-
 # ─── Compiler ───────────────────────────────────────────
 CC = gcc
-CFLAGS = -g -Ilib/include
+CFLAGS = -g -Ilib/include -Ilib/include/server
 LDFLAGS = -lm
 
 # ─── Platform-specific settings ─────────────────────────
@@ -157,12 +152,6 @@ $(GAME_INPUT_OBJ): $(GAME_INPUT_SRC) | $(OBJDIR)
 $(GAME_UPDATE_OBJ): $(GAME_UPDATE_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(PLAYER_MOVEMENT_TEST_OBJ): $(PLAYER_MOVEMENT_TEST_SRC) | $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(GAME_MAP_TEST_OBJ): $(GAME_MAP_TEST_SRC) | $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
 $(TASK_OBJ): $(TASK_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -185,7 +174,7 @@ $(EMERGENCY_MEETING_OBJ): $(EMERGENCY_MEETING_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TEXT_OBJ): $(TEXT_SRC) | $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@	
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(MAIN_MENU_OBJ): $(MAIN_MENU_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -193,17 +182,27 @@ $(MAIN_MENU_OBJ): $(MAIN_MENU_SRC) | $(OBJDIR)
 $(GAME_RENDER_OBJ): $(GAME_RENDER_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(SERVER_BROADCAST_OBJ): $(SERVER_BROADCAST_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(SERVER_LOBBY_OBJ): $(SERVER_LOBBY_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(SERVER_ROUND_OBJ): $(SERVER_ROUND_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(SERVER_MEETING_OBJ): $(SERVER_MEETING_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(SERVER_GAME_LOGIC_OBJ): $(SERVER_GAME_LOGIC_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
 # ─── Link rules ─────────────────────────────────────────
 $(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(IP_CONFIG_OBJ) $(GAME_OBJ) $(GAME_INPUT_OBJ) $(GAME_UPDATE_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ) $(MAIN_MENU_OBJ) $(GAME_RENDER_OBJ) $(TASK_RENDER_OBJ) $(TASK_INIT_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ)
-	$(CC) $^ -o $@ $(LDFLAGS)
-
-$(PLAYER_MOVEMENT_TEST_OUT): $(PLAYER_MOVEMENT_TEST_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ)
-	$(CC) $^ -o $@ $(LDFLAGS)
-
-$(GAME_MAP_TEST_OUT): $(GAME_MAP_TEST_OBJ) $(GAME_MAP_OBJ)
+$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(SERVER_BROADCAST_OBJ) $(SERVER_LOBBY_OBJ) $(SERVER_ROUND_OBJ) $(SERVER_MEETING_OBJ) $(SERVER_GAME_LOGIC_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 # ─── Run targets ────────────────────────────────────────
@@ -213,11 +212,6 @@ run_client: $(CLIENT_OUT)
 run_server: $(SERVER_OUT)
 	./$(SERVER_OUT)
 
-test_player_movement: $(PLAYER_MOVEMENT_TEST_OUT)
-	./$(PLAYER_MOVEMENT_TEST_OUT)
-
-test_game_map: $(GAME_MAP_TEST_OUT)
-	./$(GAME_MAP_TEST_OUT)
 
 # ─── Clean ──────────────────────────────────────────────
 clean:
