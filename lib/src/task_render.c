@@ -23,6 +23,14 @@ static const UIPosition POS3 = {0.5f, 0.55f};
 static const UIPosition POS4 = {0.5f, 0.20f};
 static const UIPosition POS5 = {0.02f, 0.91f};
 
+void draw_centered_text(Text text, const char *content, SDL_Color color, int box_x, int box_y, int box_width, int box_height, UIPosition pos)
+{
+    text_set(text, content, color);
+    int text_x, text_y;
+    get_relative_position(box_x, box_y, box_width, box_height, pos, &text_x, &text_y);
+    text_x -= text_get_width(text) / 2; // center text horizontally
+    text_draw_at(text, text_x, text_y);
+}
 
 void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height)
 {
@@ -103,12 +111,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
-            int counter_x, counter_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS2, &counter_x, &counter_y);
-            counter_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, counter_x, counter_y);
+            draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS2);
         }
 
         // instruction text
@@ -139,13 +142,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
-            text_set(task->dynamic_text, buffer, WHITE);
-            
-            int prog_x, prog_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS3, &prog_x, &prog_y);
-            prog_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_draw_at(task->dynamic_text, prog_x, prog_y);
+            draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS3);
         }
 
         // show target string (next letter)
@@ -220,12 +217,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
-            int counter_x, counter_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS4, &counter_x, &counter_y);
-            counter_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, counter_x, counter_y);
+            draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS4);
         }
 
         // instruction text
@@ -263,12 +255,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
-            int score_x, score_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS4, &score_x, &score_y);
-            score_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_set(task->dynamic_text, progress_buf, WHITE);
-            text_draw_at(task->dynamic_text, score_x, score_y);
+            draw_centered_text(task->dynamic_text, progress_buf, WHITE, box_x, box_y, box_width, box_height, POS4);
         }
 
         // instruction text
@@ -322,13 +309,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
             if (task->dynamic_text)
             {
-                text_set(task->dynamic_text, buffer, WHITE);
-
-                int input_x, input_y;
-                get_relative_position(box_x, box_y, box_width, box_height, POS2, &input_x, &input_y);
-                input_x -= text_get_width(task->dynamic_text) / 2;
-                
-                text_draw_at(task->dynamic_text, input_x, input_y);
+                draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS3);
             }
         }
 
@@ -338,13 +319,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
-            text_set(task->dynamic_text, buffer, WHITE);
-
-            int round_x, round_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS4, &round_x, &round_y);
-            round_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_draw_at(task->dynamic_text, round_x, round_y);
+            draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS4);
         }
 
         // instruction text
@@ -392,12 +367,7 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         snprintf(buffer, sizeof(buffer), "%.1f / %.1f s", task->hold_timer, task->hold_duration);
         if (task->dynamic_text)
         {
-            int timer_x, timer_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS3, &timer_x, &timer_y);
-            timer_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_set(task->dynamic_text, buffer, WHITE);
-            text_draw_at(task->dynamic_text, timer_x, timer_y);
+            draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS3);
         }
         break;
     }
@@ -408,26 +378,14 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
 
         if (task->dynamic_text)
         {
-            text_set(task->dynamic_text, buffer, WHITE);
-
-            int counter_x, counter_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS3, &counter_x, &counter_y);
-            counter_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_draw_at(task->dynamic_text, counter_x, counter_y);
+            draw_centered_text(task->dynamic_text, buffer, WHITE, box_x, box_y, box_width, box_height, POS3);
         }
 
         // Show which button to press next
         const char *next_key = (task->alternate_last_key == SDLK_a) ? "D" : "A";
         if (task->dynamic_text)
         {
-            text_set(task->dynamic_text, next_key, WHITE);
-            
-            int key_x, key_y;
-            get_relative_position(box_x, box_y, box_width, box_height, POS2, &key_x, &key_y);
-            key_x -= text_get_width(task->dynamic_text) / 2;
-            
-            text_draw_at(task->dynamic_text, key_x, key_y);
+            draw_centered_text(task->dynamic_text, next_key, WHITE, box_x, box_y, box_width, box_height, POS2);
         }
 
         if (task->task_text)

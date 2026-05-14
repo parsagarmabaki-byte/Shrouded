@@ -33,6 +33,7 @@ LOBBY_SRC = lib/src/lobby.c
 IP_CONFIG_SRC = lib/src/ip_config.c
 TASK_SRC = lib/src/task.c
 TASK_RENDER_SRC = lib/src/task_render.c
+TASK_INIT_SRC = lib/src/task_init.c
 GAME_SRC = lib/src/game.c
 WALL_DATA_SRC = lib/src/wall_data.c
 IMPOSTER_ABILITY_SRC = lib/src/imposter_ability.c
@@ -58,6 +59,7 @@ LOBBY_OBJ = $(OBJDIR)/lobby.o
 IP_CONFIG_OBJ = $(OBJDIR)/ip_config.o
 TASK_OBJ = $(OBJDIR)/task.o
 TASK_RENDER_OBJ = $(OBJDIR)/task_render.o
+TASK_INIT_OBJ = $(OBJDIR)/task_init.o
 GAME_OBJ = $(OBJDIR)/game.o
 WALL_DATA_OBJ = $(OBJDIR)/wall_data.o
 IMPOSTER_ABILITY_OBJ = $(OBJDIR)/imposter_ability.o
@@ -155,6 +157,9 @@ $(TASK_OBJ): $(TASK_SRC) | $(OBJDIR)
 $(TASK_RENDER_OBJ): $(TASK_RENDER_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(TASK_INIT_OBJ): $(TASK_INIT_SRC) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(WALL_DATA_OBJ): $(WALL_DATA_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -173,7 +178,7 @@ $(TEXT_OBJ): $(TEXT_SRC) | $(OBJDIR)
 $(MAIN_MENU_OBJ): $(MAIN_MENU_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 # ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(IP_CONFIG_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(TASK_RENDER_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ) $(MAIN_MENU_OBJ)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(IP_CONFIG_OBJ) $(GAME_OBJ) $(TASK_OBJ) $(TASK_RENDER_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ) $(MAIN_MENU_OBJ) $(TASK_INIT_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ)

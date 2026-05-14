@@ -17,6 +17,7 @@
 #include "imposter_ability.h"
 #include "text.h"
 #include "task_render.h"
+#include "task_init.h"
 
 typedef struct
 {
