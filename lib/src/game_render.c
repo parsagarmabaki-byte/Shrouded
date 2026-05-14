@@ -1,6 +1,7 @@
 
 #include "game_render.h"
 #include "emergency_meeting.h"
+#include "wall_data.h"
 
 static const char *task_type_name(TaskType t)
 {
