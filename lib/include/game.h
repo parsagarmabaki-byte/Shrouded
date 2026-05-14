@@ -16,6 +16,7 @@
 #include "kill_animation.h"
 #include "imposter_ability.h"
 #include "text.h"
+#include "game_input.h"
 
 typedef struct
 {
@@ -87,25 +88,13 @@ typedef struct GameContext {
 
 int runGame(Client *client, waitForPlayers *lobby, gameState *state);
 static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby);
-clientInput read_input(bool tasks_active);
-static const char *task_type_name(TaskType t);
+
 void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt);
-void kill_events(GameContext *ctx);
-void emergency_meeting_events(GameContext *ctx);
-void task_events(GameContext *ctx);
 void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
 void update_player_direction(Player *player, clientInput *user_input);
-void process_events(GameContext *ctx);
-void report_body_events(GameContext *ctx);
 void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
-void game_meeting_events(GameContext *ctx);
 void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, bool *was_task_active);
-void game_running_events(GameContext *ctx);
 void update_game(GameContext *ctx);
 float calculate_delta_time(Uint64 *last_tick);
-void leave_game_event(Client *client, SDL_Renderer *renderer, SDL_Event *event, bool *running, bool *emergency_window_open, bool *pause_menu_open, GameAssets assets);
-
-
-
 
 #endif

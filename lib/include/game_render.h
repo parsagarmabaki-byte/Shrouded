@@ -28,6 +28,7 @@ void render_info_text(SDL_Renderer *renderer, gameState *state, int local_id, Te
 void render_all_players(gameState *state, Player *player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id);
 void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player, gameState *state);
 void render_global_progress_bar(SDL_Renderer *renderer, gameState *state);
+static const char *task_type_name(TaskType t);
 
 
 #endif
