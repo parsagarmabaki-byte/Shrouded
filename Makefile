@@ -45,11 +45,11 @@ TEXT_SRC = lib/src/text.c
 MAIN_MENU_SRC = lib/src/main_menu.c
 GAME_RENDER_SRC = lib/src/game_render.c
 CLIENT_NETWORK_SRC = client/src/client_network.c
-SERVER_BROADCAST_SRC = lib/src/server/server_broadcast.c
-SERVER_LOBBY_SRC = lib/src/server/server_lobby.c
-SERVER_ROUND_SRC = lib/src/server/server_round.c
-SERVER_MEETING_SRC = lib/src/server/server_meeting.c
-SERVER_GAME_LOGIC_SRC = lib/src/server/server_game_logic.c
+SERVER_BROADCAST_SRC = server/src/server_broadcast.c
+SERVER_LOBBY_SRC = server/src/server_lobby.c
+SERVER_ROUND_SRC = server/src/server_round.c
+SERVER_MEETING_SRC = server/src/server_meeting.c
+SERVER_GAME_LOGIC_SRC = server/src/server_game_logic.c
 
 # ─── Object files ───────────────────────────────────────
 CLIENT_OBJ = $(OBJDIR)/client.o
@@ -85,7 +85,7 @@ SERVER_OUT = $(OBJDIR)/server$(EXE)
 
 # ─── Compiler ───────────────────────────────────────────
 CC = gcc
-CFLAGS = -g -Ilib/include -Ilib/include/server
+CFLAGS = -g -Ilib/include -Iserver/include
 LDFLAGS = -lm
 
 # ─── Platform-specific settings ─────────────────────────
