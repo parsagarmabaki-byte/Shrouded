@@ -35,6 +35,15 @@ void end_task(Task *task, TaskStatus status);
 void cleanup_task(Task *task);
 void update_task(Task *task, float dt);
 
+// specific task logic updates
+void update_timer_task(Task *task, float dt);
+void update_click_task(Task *task);
+void update_letter_task(Task *task);
+void update_reflex_task(Task *task, float dt);
+void update_memory_task(Task *task, float dt);
+void update_hold_task(Task *task, float dt);
+void update_alternate_task(Task *task);
+
 // getters
 bool task_active_check(Task *task);
 TaskType task_get_current_type(Task *task);
@@ -45,5 +54,15 @@ TaskType task_get_last_type(Task *task);
 void task_handle_key(Task *task, SDL_Keycode key);
 void task_handle_keyup(Task *task, SDL_Keycode key);
 void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer);
+
+// specific key handlers for tasks that need it
+void handle_reflex_key(Task *task, SDL_Keycode key);
+void handle_letter_key(Task *task, SDL_Keycode key);
+void handle_memory_key(Task *task, SDL_Keycode key);
+void handle_hold_key(Task *task, SDL_Keycode key);
+void handle_hold_keyup(Task *task, SDL_Keycode key);
+void handle_alternate_key(Task *task, SDL_Keycode key);
+void handle_clicktask_click(Task *task, int mx, int my);
+void handle_logical_order_click(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 #endif
