@@ -10,7 +10,7 @@
 
 void render_game_phase(GameContext *ctx);
 static void render_game(GameContext *ctx);
-void render_game_show_role(SDL_Renderer *renderer, GameAssets assets, gameState *state, int local_id);
+void render_game_show_role(SDL_Renderer *renderer, Game_Show_Role_asset assets, gameState *state, int local_id);
 void render_game_info_meeting(GameContext *ctx);
 void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, gameState state);
 void render_killer_win(SDL_Renderer *renderer, GameAssets assets, gameState state);

@@ -4,15 +4,26 @@
 #include "wall_data.h"
 #include "emergency_meeting.h"
 #include "game_render.h"
+#include "time.h"
 
 static void game_context_cleanup(GameContext *ctx);
 static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby);
+void print_time_ms();
+
 
 int runGame(Client *client, waitForPlayers *lobby, gameState *state)
 {
     srand(time(NULL));
+    printf("Run Game init ...\n");
+    print_time_ms();
     GameContext ctx = game_context_init(client, state, lobby);
+    printf("Render Game show role ...\n");
+    print_time_ms();
+    render_game_show_role(ctx.renderer, ctx.show_role_asset, ctx.state, ctx.local_id);
+    SDL_RenderPresent(ctx.renderer);
     ctx.assets = load_assets(ctx.renderer);
+    printf("Assets loaded ...\n");
+    print_time_ms();
 
     while (ctx.running)
     {
@@ -60,6 +71,7 @@ static GameContext game_context_init(Client *client, gameState *state, waitForPl
     ctx.player = player_create(state, ctx.local_id);
     ctx.task = create_task(ctx.renderer);
     ctx.cam = (Camera){0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+    ctx.show_role_asset = load_show_role_assets(ctx.renderer);
 
     ctx.small_text = text_create(ctx.renderer, "assets/fonts/BebasNeue-Regular.ttf", 18);
     ctx.generic_text = text_create(ctx.renderer, "assets/fonts/BebasNeue-Regular.ttf", 24);
@@ -90,3 +102,17 @@ static void game_context_cleanup(GameContext *ctx)
 
     destroy_assets(&ctx->assets);
 }
+
+void print_time_ms()
+{
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+
+    Uint32 ms = SDL_GetTicks() % 1000;
+
+    printf("[TIME] %02d:%02d:%02d.%03u\n",
+           t->tm_hour,
+           t->tm_min,
+           t->tm_sec,
+           ms);
+};

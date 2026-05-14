@@ -56,6 +56,7 @@ typedef struct GameContext {
     Player *player;
     Task *task;
     GameAssets assets;
+    Game_Show_Role_asset show_role_asset;
     KillAnimation bodies[MAX_PLAYERS];
     Camera cam;
 
