@@ -271,7 +271,7 @@ void update_alternate_task(Task *task)
     }
 }
 
-// handle input events for tasks
+// handle input events
 void task_handle_key(Task *task, SDL_Keycode key)
 {
     if (!task->active)
@@ -307,7 +307,37 @@ void task_handle_key(Task *task, SDL_Keycode key)
     }
 }
 
-static void handle_reflex_key(Task *task, SDL_Keycode key)
+void task_handle_keyup(Task *task, SDL_Keycode key)
+{
+    if (!task->active)
+        return;
+
+    if (task->type == TASK_HOLD && key == SDLK_SPACE)
+    {
+        handle_hold_keyup(task, key);
+        return;
+    }
+}
+
+void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
+{
+    if (!task || !task->active)
+        return;
+
+    if (task->type == TASK_CLICK)
+    {
+        handle_clicktask_click(task, mx, my);
+        return;
+    }
+
+    if (task->type == TASK_LOGICAL_ORDER)
+    {
+        handle_logical_order_click(task, mx, my, renderer);
+        return;
+    }
+}
+
+void handle_reflex_key(Task *task, SDL_Keycode key)
 {
     if (task->cursor_pos >= task->success_min &&
         task->cursor_pos <= task->success_max)
@@ -442,42 +472,12 @@ void handle_alternate_key(Task *task, SDL_Keycode key)
     }
 }
 
-void task_handle_keyup(Task *task, SDL_Keycode key)
-{
-    if (!task->active)
-        return;
-
-    if (task->type == TASK_HOLD && key == SDLK_SPACE)
-    {
-        handle_hold_keyup(task, key);
-        return;
-    }
-}
-
 void handle_hold_keyup(Task *task, SDL_Keycode key)
 {
     if (key == SDLK_SPACE)
     {
         task->hold_key_down = false;
         task->hold_timer = 0.0f; // reset if released
-    }
-}
-
-void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
-{
-    if (!task || !task->active)
-        return;
-
-    if (task->type == TASK_CLICK)
-    {
-        handle_clicktask_click(task, mx, my);
-        return;
-    }
-
-    if (task->type == TASK_LOGICAL_ORDER)
-    {
-        handle_logical_order_click(task, mx, my, renderer);
-        return;
     }
 }
 
