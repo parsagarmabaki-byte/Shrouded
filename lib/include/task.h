@@ -1,8 +1,10 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <SDL2/SDL.h>
+
+extern const SDL_Color WHITE;
 
 typedef struct Task Task;
 
@@ -28,23 +30,19 @@ typedef enum {
 Task* create_task(SDL_Renderer *renderer);
 void destroy_task(Task *task);
 
-// behavior
-void start_timer_task(Task *task, SDL_Renderer *renderer, float duration);
-void start_click_task(Task *task, SDL_Renderer *renderer, int target);
-void start_letter_task(Task *task, SDL_Renderer *renderer);
-void start_reflex_task(Task *task, SDL_Renderer *renderer);
-void start_logical_order_task(Task *task, SDL_Renderer *renderer);
-void start_memory_task(Task *task, SDL_Renderer *renderer);
-void start_hold_task(Task *task, SDL_Renderer *renderer, float duration);
-void start_alternate_task(Task *task, SDL_Renderer *renderer, int target);
-
+// task lifecycle
 void end_task(Task *task, TaskStatus status);
 void cleanup_task(Task *task);
 void update_task(Task *task, float dt);
-void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int screen_height);
 
-void task_handle_keyup(Task *task, SDL_Keycode key);
-
+// specific task logic updates
+void update_timer_task(Task *task, float dt);
+void update_click_task(Task *task);
+void update_letter_task(Task *task);
+void update_reflex_task(Task *task, float dt);
+void update_memory_task(Task *task, float dt);
+void update_hold_task(Task *task, float dt);
+void update_alternate_task(Task *task);
 
 // getters
 bool task_active_check(Task *task);
@@ -54,6 +52,17 @@ TaskType task_get_last_type(Task *task);
 
 // handle input events for tasks
 void task_handle_key(Task *task, SDL_Keycode key);
+void task_handle_keyup(Task *task, SDL_Keycode key);
 void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer);
+
+// specific key handlers for tasks that need it
+void handle_reflex_key(Task *task, SDL_Keycode key);
+void handle_letter_key(Task *task, SDL_Keycode key);
+void handle_memory_key(Task *task, SDL_Keycode key);
+void handle_hold_key(Task *task, SDL_Keycode key);
+void handle_hold_keyup(Task *task, SDL_Keycode key);
+void handle_alternate_key(Task *task, SDL_Keycode key);
+void handle_clicktask_click(Task *task, int mx, int my);
+void handle_logical_order_click(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 #endif
