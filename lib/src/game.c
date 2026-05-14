@@ -14,16 +14,10 @@ void print_time_ms();
 int runGame(Client *client, waitForPlayers *lobby, gameState *state)
 {
     srand(time(NULL));
-    printf("Run Game init ...\n");
-    print_time_ms();
     GameContext ctx = game_context_init(client, state, lobby);
-    printf("Render Game show role ...\n");
-    print_time_ms();
     render_game_show_role(ctx.renderer, ctx.show_role_asset, ctx.state, ctx.local_id);
     SDL_RenderPresent(ctx.renderer);
     ctx.assets = load_assets(ctx.renderer);
-    printf("Assets loaded ...\n");
-    print_time_ms();
 
     while (ctx.running)
     {
@@ -102,17 +96,3 @@ static void game_context_cleanup(GameContext *ctx)
 
     destroy_assets(&ctx->assets);
 }
-
-void print_time_ms()
-{
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-
-    Uint32 ms = SDL_GetTicks() % 1000;
-
-    printf("[TIME] %02d:%02d:%02d.%03u\n",
-           t->tm_hour,
-           t->tm_min,
-           t->tm_sec,
-           ms);
-};
