@@ -339,18 +339,18 @@ void render_game_info_meeting(GameContext *ctx)
     meeting_info_rect.y = (LOGICAL_SCREEN_HEIGHT / 2) - meeting_info_rect.h / 2;
     SDL_Texture *meeting_info_texture = NULL;
 
+    render_world(ctx);
+    SDL_SetRenderDrawBlendMode(ctx->renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(ctx->renderer, 0, 0, 0, 120);
+    SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+    SDL_RenderFillRect(ctx->renderer, &backdrop);
+
     if (state->type == MSG_EMERGENCY_MEETING)
     {
         meeting_info_texture = ctx->assets.emergency_meeting_info;
     }
     else if (state->type == MSG_BODY_FOUND)
     {
-        render_world(ctx);
-        SDL_SetRenderDrawBlendMode(ctx->renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(ctx->renderer, 0, 0, 0, 120);
-        SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
-        SDL_RenderFillRect(ctx->renderer, &backdrop);
-
         meeting_info_texture = assets.dead_body_reported_info;
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
