@@ -30,7 +30,7 @@ void process_events(GameContext *ctx)
             continue;
         }
 
-        if (ctx->state->phase == GAME_CREWMATES_WIN || ctx->state->phase == GAME_IMPOSTOR_WIN)
+        if (ctx->state->phase == GAME_CREWMATES_WIN || ctx->state->phase == GAME_KILLER_WIN)
         {
             win_screen_events(ctx);
             continue;

@@ -22,7 +22,7 @@ Implemented:
 
 Partially implemented / future work:
 
-- Win phase enum values exist (`GAME_CREWMATES_WIN`, `GAME_IMPOSTOR_WIN`), and `check_win_condition()` exists on the server, but automatic win transitions are not fully wired into the game flow yet.
+- Win phase enum values exist (`GAME_CREWMATES_WIN`, `GAME_KILLER_WIN`), and `check_win_condition()` exists on the server, but automatic win transitions are not fully wired into the game flow yet.
 - Task progress is currently local to the client task ADT. Server-authoritative task progress and task-based win conditions still need to be added.
 - Voting/ejection logic is not implemented yet.
 
@@ -139,7 +139,7 @@ typedef enum {
     GAME_INFO_MEETING,
     GAME_MEETING,
     GAME_CREWMATES_WIN,
-    GAME_IMPOSTOR_WIN
+    GAME_KILLER_WIN
 } gamePhase;
 ```
 
@@ -154,7 +154,7 @@ GAME_LOBBY
   -> GAME_RUNNING
 ```
 
-`GAME_CREWMATES_WIN` and `GAME_IMPOSTOR_WIN` exist, but final win-screen behavior and task-win logic are still incomplete.
+`GAME_CREWMATES_WIN` and `GAME_KILLER_WIN` exist, but final win-screen behavior and task-win logic are still incomplete.
 
 ---
 

@@ -64,7 +64,7 @@ void render_game_phase(GameContext *ctx)
         render_crewmate_win_screen(ctx->renderer, ctx->assets, *state);
         break;
 
-    case GAME_IMPOSTOR_WIN:
+    case GAME_KILLER_WIN:
         render_killer_win(ctx->renderer, ctx->assets, *state);
         break;
 
@@ -92,7 +92,7 @@ void handle_phase_transition(GameContext *ctx, gamePhase *previous_phase, Uint32
     if (state->phase == *previous_phase)
         return;
 
-    if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_IMPOSTOR_WIN)
+    if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_KILLER_WIN)
     {
         *win_fade_start = SDL_GetTicks();
     }
@@ -111,7 +111,7 @@ static void render_win_fade(GameContext *ctx, Uint32 win_fade_start, Uint32 win_
 {
     gameState *state = ctx->state;
 
-    if (state->phase != GAME_CREWMATES_WIN && state->phase != GAME_IMPOSTOR_WIN)
+    if (state->phase != GAME_CREWMATES_WIN && state->phase != GAME_KILLER_WIN)
         return;
 
     Uint32 elapsed = SDL_GetTicks() - win_fade_start;

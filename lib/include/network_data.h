@@ -117,7 +117,7 @@ typedef enum{
     GAME_MEETING,
     SHOW_VOTE_RESULT,
     GAME_CREWMATES_WIN,
-    GAME_IMPOSTOR_WIN
+    GAME_KILLER_WIN
 } gamePhase;
 
 typedef struct {

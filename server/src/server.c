@@ -112,7 +112,7 @@ int main(void)
                 server.state.phase = GAME_CREWMATES_WIN;
                 break;
             case MSG_DEBUG_IMPOSTOR_WIN:
-                server.state.phase = GAME_IMPOSTOR_WIN;
+                server.state.phase = GAME_KILLER_WIN;
                 break;
             default:
                 break;
@@ -241,7 +241,7 @@ void handle_start_game(Server *s)
 
 void handle_play_again(Server *s)
 {
-    if (s->state.phase == GAME_CREWMATES_WIN || s->state.phase == GAME_IMPOSTOR_WIN)
+    if (s->state.phase == GAME_CREWMATES_WIN || s->state.phase == GAME_KILLER_WIN)
     {
         start_new_round(&s->state, &s->state_start_time);
         printf("Play again: game is now GAME_SHOW_ROLE\n");

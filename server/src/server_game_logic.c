@@ -30,7 +30,7 @@ void check_win_condition(gameState *state)
     if (alive_impostor == 0)
         state->phase = GAME_CREWMATES_WIN;
     else if (alive_impostor >= alive_crewmates)
-        state->phase = GAME_IMPOSTOR_WIN;
+        state->phase = GAME_KILLER_WIN;
     else if (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
         state->phase = GAME_CREWMATES_WIN;
 }
