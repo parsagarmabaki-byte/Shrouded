@@ -105,7 +105,7 @@ int main()
                 }
             }
 
-            collect_packets(&client, &state, NULL);
+            collect_packets(&client, &state, NULL, &audio);
 
             if (state.phase != GAME_LOBBY)
                 running = false;
@@ -117,7 +117,7 @@ int main()
         if (state.phase != GAME_LOBBY)
         {
             stop_music();
-            return_to_menu = runGame(&client, &lobby, &state);
+            return_to_menu = runGame(&client, &lobby, &state, &audio);
         }
 
         cleanup_audio(&audio);

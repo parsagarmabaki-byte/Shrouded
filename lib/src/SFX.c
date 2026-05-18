@@ -32,7 +32,27 @@ bool load_audio(AudioAssets *audio)
         return false;
     }
 
-    // HÄR LÄGGER MAN TILL YTTERLIGARE LJUD ENLIGT FORMATET OVAN
+    audio->kill_knife = Mix_LoadWAV("assets/SFX/kill_knife.mp3");
+    if (!audio->kill_knife){
+        printf("Failed to load knife_kill_effect: %s\n", Mix_GetError());
+        return false;
+    }
+    Mix_VolumeChunk(audio->kill_knife, MIX_MAX_VOLUME / 2);
+
+    audio->dramatic_kill = Mix_LoadWAV("assets/SFX/dramatic_kill.mp3");
+    if (!audio->dramatic_kill){
+        printf("Failed to load dramatic_kill_effect: %s\n", Mix_GetError());
+        return false;
+    }
+    Mix_VolumeChunk(audio->dramatic_kill, MIX_MAX_VOLUME / 3);
+
+    audio->meeting_horn = Mix_LoadWAV("assets/SFX/meeting_horn.mp3");
+    if (!audio->meeting_horn){
+        printf("Failed to load meeting_horn_effect: %s\n", Mix_GetError());
+        return false;
+    }
+    Mix_VolumeChunk(audio->meeting_horn, MIX_MAX_VOLUME / 2);
+
     return true;
 }
 void cleanup_audio(AudioAssets *audio)
@@ -43,6 +63,15 @@ void cleanup_audio(AudioAssets *audio)
 
     if (audio->lobby_music){
         Mix_FreeMusic(audio->lobby_music);
+    }
+    if (audio->kill_knife){
+        Mix_FreeChunk(audio->kill_knife);
+    }
+    if (audio->dramatic_kill){
+        Mix_FreeChunk(audio->dramatic_kill);
+    }
+    if (audio->meeting_horn){
+        Mix_FreeChunk(audio->meeting_horn);
     }
     // HÄR RENSAR MAN LJUD ENLIGT FORMATET OVAN
 
@@ -59,6 +88,36 @@ void play_lobby_music(Mix_Music *lobby_music, int loop)
     }
     if (Mix_PlayMusic(lobby_music, loop) == -1){
         printf("Mix_PlayMusic failed: %s\n", Mix_GetError());
+    }
+}
+
+void play_kill_knife(AudioAssets *audio)
+{
+    if (!audio || !audio->kill_knife){
+        return;
+    }
+    if (Mix_PlayChannel(-1, audio->kill_knife, 0) == -1){
+        printf("Mix_PlayChannel failed: %s\n", Mix_GetError());
+    }
+}
+
+void play_dramatic_kill(AudioAssets *audio)
+{
+    if (!audio || !audio->dramatic_kill){
+        return;
+    }
+    if (Mix_PlayChannel(-1, audio->dramatic_kill, 0) == -1){
+        printf("Mix_PlayChannel failed: %s\n", Mix_GetError());
+    }
+}
+
+void play_meeting_horn(AudioAssets *audio)
+{
+    if (!audio || !audio->meeting_horn){
+        return;
+    }
+    if (Mix_PlayChannel(-1, audio->meeting_horn, 0) == -1){
+        printf("Mix_PlayChannel failed: %s\n", Mix_GetError());
     }
 }
 

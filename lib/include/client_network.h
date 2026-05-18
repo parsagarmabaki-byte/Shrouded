@@ -5,6 +5,7 @@
 #include <SDL2/SDL_net.h>
 #include "game.h"
 #include "kill_animation.h"
+#include "SFX.h"
 
 int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size);
 void clean_client(Client *client);
@@ -14,7 +15,7 @@ int send_play_again(Client *client);
 void send_input(Client *client, gameState *state, Player *player);
 int send_task_complete(Client *client, int player_id, TaskType task_type);
 void request_kill(Client *client, gameState *state);
-void collect_packets(Client *client, gameState *state, KillAnimation *bodies);
+void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio);
 int send_leave_message(Client *client);
 void request_emergency_meeting(Client *client, gameState *state, int local_id);
 void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id);

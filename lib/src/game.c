@@ -7,12 +7,12 @@
 #include "time.h"
 
 static void game_context_cleanup(GameContext *ctx);
-static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby);
+static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby, AudioAssets *audio);
 
-int runGame(Client *client, waitForPlayers *lobby, gameState *state)
+int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets *audio)
 {
     srand(time(NULL));
-    GameContext ctx = game_context_init(client, state, lobby);
+    GameContext ctx = game_context_init(client, state, lobby, audio);
     render_game_show_role(ctx.renderer, ctx.show_role_asset, ctx.state, ctx.local_id);
     SDL_RenderPresent(ctx.renderer);
     ctx.assets = load_assets(ctx.renderer);
@@ -21,7 +21,7 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state)
     {
         ctx.dt = calculate_delta_time(&ctx.last_tick);
         process_events(&ctx);
-        collect_packets(ctx.client, ctx.state, ctx.bodies);
+        collect_packets(ctx.client, ctx.state, ctx.bodies, ctx.audio);
         ctx.is_local_impostor = ctx.state->players[ctx.local_id].isImpostor != 0;
         ctx.ui_open = ctx.emergency_window_open || ctx.task_map_open || ctx.pause_menu_open;
         if (ctx.state->phase == GAME_RUNNING)
@@ -33,12 +33,13 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state)
     return ctx.return_to_menu;
 }
 
-static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby)
+static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby, AudioAssets *audio)
 {
     GameContext ctx = {0};
 
     ctx.client = client;
     ctx.state = state;
+    ctx.audio = audio;
     ctx.renderer = lobby->renderer;
 
     SDL_RenderSetLogicalSize(ctx.renderer, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT);

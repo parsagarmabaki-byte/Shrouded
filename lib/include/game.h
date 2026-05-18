@@ -19,6 +19,7 @@
 #include "task_render.h"
 #include "task_init.h"
 #include "game_input.h"
+#include "SFX.h"
 
 typedef struct Client
 {
@@ -52,6 +53,7 @@ typedef struct GameContext {
     Client *client;
     SDL_Renderer *renderer;
     gameState *state;
+    AudioAssets *audio;
 
     Player *player;
     Task *task;
@@ -87,6 +89,6 @@ typedef struct GameContext {
     Uint64 last_tick;
 } GameContext;
 
-int runGame(Client *client, waitForPlayers *lobby, gameState *state);
+int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets *audio);
 
 #endif

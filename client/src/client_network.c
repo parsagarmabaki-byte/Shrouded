@@ -238,7 +238,7 @@ void send_vote(Client *client, int targeted_banner)
     send_client_vote_packet(client->socket,client->serverAddr,&vote);
 }
 
-void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
+void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio)
 {
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
@@ -253,7 +253,12 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
         {
             if (packet_has_size(client->recievepacket, sizeof(gameState), "MSG_GAME_STATE"))
             {
+                gamePhase previous_phase = state->phase;
                 memcpy(state, client->recievepacket->data, sizeof(gameState));
+                if (state->phase == GAME_INFO_MEETING && previous_phase != GAME_INFO_MEETING)
+                {
+                    play_meeting_horn(audio);
+                }
             }
         }
         else if (type == MSG_KILL_EVENT)
@@ -266,16 +271,23 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies)
                 printf("Kill received: killer=%d victim=%d\n",
                        msg.killer_id, msg.victim_id);
 
-                // start_kill_animation(state, msg.killer_id, msg.victim_id, msg.x, msg.y);
-                start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
-                                     state->players[msg.victim_id].x,
-                                     state->players[msg.victim_id].y);
-                printf("\nCLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
-                       state->local_player_id,
-                       msg.victim_id,
-                       bodies[msg.victim_id].active,
-                       bodies[msg.victim_id].x,
-                       bodies[msg.victim_id].y);
+                if (bodies)
+                {
+                    start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
+                                         state->players[msg.victim_id].x,
+                                         state->players[msg.victim_id].y);
+                    printf("\nCLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
+                           state->local_player_id,
+                           msg.victim_id,
+                           bodies[msg.victim_id].active,
+                           bodies[msg.victim_id].x,
+                           bodies[msg.victim_id].y);
+                }
+                if (state->local_player_id == msg.killer_id || state->local_player_id == msg.victim_id)
+                {
+                    play_kill_knife(audio);
+                    play_dramatic_kill(audio);
+                }
             }
         }
     }
