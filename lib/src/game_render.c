@@ -3,6 +3,58 @@
 #include "emergency_meeting.h"
 #include "wall_data.h"
 
+static void render_death_effect(SDL_Renderer *renderer, KillAnimation *local_death)
+{
+    if (!local_death || !local_death->active || local_death->current_frame > 24)
+        return;
+
+    int remaining = 24 - local_death->current_frame;
+    Uint8 red_alpha = (Uint8)(35 + remaining * 5);
+    Uint8 dark_alpha = (Uint8)(45 + remaining * 2);
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    SDL_Rect full = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, dark_alpha);
+    SDL_RenderFillRect(renderer, &full);
+
+    SDL_SetRenderDrawColor(renderer, 160, 0, 0, red_alpha);
+    SDL_RenderFillRect(renderer, &full);
+
+    int pulse = 10 + (local_death->current_frame % 4) * 3;
+    SDL_SetRenderDrawColor(renderer, 235, 15, 15, 210);
+    for (int i = 0; i < pulse; i++)
+    {
+        SDL_Rect border = {i, i, LOGICAL_SCREEN_WIDTH - i * 2, LOGICAL_SCREEN_HEIGHT - i * 2};
+        SDL_RenderDrawRect(renderer, &border);
+    }
+}
+
+static void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette, const playerState *local_player, KillAnimation *local_death)
+{
+    if (!vignette)
+        return;
+
+    Uint8 alpha = 255;
+    if (!local_player->isAlive)
+    {
+        if (!local_death || !local_death->active || local_death->current_frame > 24)
+            return;
+
+        const int fade_start_frame = 6;
+        if (local_death->current_frame > fade_start_frame)
+        {
+            int fade_frames = 24 - fade_start_frame;
+            int remaining = 24 - local_death->current_frame;
+            alpha = (Uint8)(255 * remaining / fade_frames);
+        }
+    }
+
+    SDL_SetTextureAlphaMod(vignette, alpha);
+    SDL_RenderCopy(renderer, vignette, NULL, NULL);
+    SDL_SetTextureAlphaMod(vignette, 255);
+}
+
 static const char *task_type_name(TaskType t)
 {
     switch (t)
@@ -276,8 +328,11 @@ void render_player_overlays(GameContext *ctx)
     Player *player = ctx->player;
     GameAssets *assets = &ctx->assets;
 
-    if (assets->vignette_img && !ctx->is_local_impostor && state->players[ctx->local_id].isAlive)
-        SDL_RenderCopy(renderer, assets->vignette_img, NULL, NULL);
+    if (!ctx->is_local_impostor)
+        render_vignette(renderer, assets->vignette_img, &state->players[ctx->local_id], &ctx->bodies[ctx->local_id]);
+
+    if (!state->players[ctx->local_id].isAlive)
+        render_death_effect(renderer, &ctx->bodies[ctx->local_id]);
 
     render_active_task_indicator(renderer, state, ctx->assets, &ctx->cam, ctx->local_id);
     render_info_text(renderer, state, ctx->local_id, ctx->small_text);
