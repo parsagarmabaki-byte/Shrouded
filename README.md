@@ -1,86 +1,175 @@
 ﻿# Shrouded
 
-A LAN-based multiplayer impostor game written in C using SDL2, developed for CM1008 at KTH.
+Shrouded is a LAN-based multiplayer social deduction game inspired by the gameplay structure of *Among Us*. The project was developed in C using SDL2 as part of the CM1008 project course at KTH.
 
-Players connect over UDP. One player is the impostor and the rest are crewmates. Crewmates complete tasks, report bodies, call meetings, and vote. The impostor tries to eliminate crewmates without being caught.
-
----
-
-## Current Status
-
-Implemented:
-
-- UDP client-server architecture with SDL_net.
-- Server-authoritative game state: player slots, positions, alive/dead state, impostor role, kill cooldowns, and game phase transitions.
-- Lobby with server IP prompt and start-game flow.
-- Role reveal screen and player sprite animation.
-- Movement, camera follow, wall collision, and map rendering.
-- Kill request flow, body report detection, emergency meetings, voting, and vote-result display.
-- Local task minigames: timer, click, typing, reflex, logical order, and memory.
-- Task progress is tracked in server state and contributes to crew win conditions.
-- SDL_mixer audio initialization and lobby music playback.
-
-Work-in-progress:
-
-- UI polish and additional in-game feedback.
-- More map and asset coverage.
-- Improved network robustness and resynchronization.
+The game uses a client-server architecture over UDP where one player becomes the **Killer** while the remaining players act as **Crewmates**. Crewmates must complete tasks, report bodies, participate in emergency meetings, and identify the Killer before the crew is eliminated.
 
 ---
 
-## Repository Structure
+# Features
+
+## Multiplayer Networking
+
+* UDP-based client-server architecture using SDL_net
+* Server-authoritative game state synchronization
+* LAN multiplayer support
+* Player join and disconnect handling
+* Real-time player movement synchronization
+* Voting and meeting synchronization
+* Packet-loss handling for critical interactions such as voting
+
+## Gameplay Systems
+
+### Crewmate Features
+
+* Complete multiple task minigames
+* Report dead bodies
+* Call emergency meetings
+* Vote during meetings
+* Ghost state after death
+
+### Killer Features
+
+* Eliminate nearby players
+* Use kill cooldown mechanics
+* Blend in during meetings and gameplay
+
+### Meeting System
+
+* Emergency meeting screen
+* Body report flow
+* Voting system
+* Skip vote support
+* Tie vote handling
+* Voting result screen
+* Player elimination system
+
+---
+
+# Implemented Task Minigames
+
+The game currently contains multiple local minigames:
+
+1. Timer task
+2. Click task
+3. Typing task
+4. Reflex task
+5. Logical order task
+6. Memory task
+
+Task completion contributes to the crewmates' win condition.
+
+---
+
+# Technical Features
+
+* Camera system with player follow
+* Sprite animations
+* Collision detection and wall systems
+* Custom UI rendering
+* Audio playback using SDL_mixer
+* Lobby system and role reveal screens
+* Win screens for both teams
+* Task map overlay
+* Transparent UI button rendering
+* Cross-platform support
+
+---
+
+# Repository Structure
 
 ```text
 .
 |-- Makefile
 |-- README.md
 |-- assets/
+|-- Fonts/
 |-- build/
 |-- client/
-|   `-- src/
-|-- lib/
-|   |-- include/
 |   `-- src/
 |-- server/
 |   |-- include/
 |   `-- src/
-|-- Fonts/
-`
+|-- lib/
+|   |-- include/
+|   `-- src/
 ```
 
-- `client/src/`: client entrypoint, lobby flow, network client, and input handling.
-- `server/src/`: authoritative server loop, packet handling, meeting/voting logic, and win-condition management.
-- `lib/include/`: shared type definitions, network data, and public interfaces.
-- `lib/src/`: shared game systems such as rendering, input, tasks, movement, and audio.
+## Directory Overview
+
+### `client/src/`
+
+Contains the client-side networking, rendering, input handling, lobby flow, and local gameplay logic.
+
+### `server/src/`
+
+Contains the authoritative server implementation including:
+
+* game loop
+* packet handling
+* voting logic
+* meeting management
+* round transitions
+* win-condition validation
+
+### `lib/include/`
+
+Shared headers and public interfaces used by both client and server.
+
+### `lib/src/`
+
+Shared gameplay systems including:
+
+* rendering
+* player movement
+* task systems
+* emergency meetings
+* map logic
+* audio systems
+* networking helpers
+
+### `assets/`
+
+Contains all game assets including:
+
+* sprites
+* UI assets
+* sounds
+* voting result assets
+* lobby backgrounds
+* win screens
 
 ---
 
-## Architecture
+# Architecture
 
-The game uses a client-server model over UDP with SDL_net.
+Shrouded uses a server-authoritative architecture.
 
-The server is authoritative for:
+The server controls:
 
-- shared `gameState`
-- player positions and alive state
-- impostor assignment
-- task completion and win conditions
-- emergency meetings and voting
+* player states
+* positions
+* role assignment
+* alive/dead status
+* task progress
+* meeting states
+* voting results
+* win conditions
 
-Clients send requests and input, then render locally from the latest server state.
+Clients send user input and gameplay requests while rendering the latest synchronized game state locally.
 
-Shared network definitions are in `lib/include/network_data.h`.
+This prevents clients from directly controlling important gameplay state.
 
 ---
 
-## Game Phases
+# Game State Flow
 
-The shared `gamePhase` enum includes:
+The game uses a shared `gamePhase` enum to transition between gameplay states.
 
 ```c
 GAME_LOBBY
-GAME_RUNNING
 GAME_SHOW_ROLE
+GAME_RUNNING
 GAME_INFO_MEETING
 GAME_MEETING
 SHOW_VOTE_RESULT
@@ -88,56 +177,91 @@ GAME_CREWMATES_WIN
 GAME_KILLER_WIN
 ```
 
-Typical flow:
+## Typical Game Flow
 
 ```text
 GAME_LOBBY
-  -> GAME_SHOW_ROLE
-  -> GAME_RUNNING
-  -> GAME_INFO_MEETING
-  -> GAME_MEETING
-  -> SHOW_VOTE_RESULT
-  -> GAME_RUNNING
+    ↓
+GAME_SHOW_ROLE
+    ↓
+GAME_RUNNING
+    ↓
+GAME_INFO_MEETING
+    ↓
+GAME_MEETING
+    ↓
+SHOW_VOTE_RESULT
+    ↓
+GAME_RUNNING
 ```
 
-Win phases are used for crew/impostor victory display.
+The game eventually transitions into either:
+
+* `GAME_CREWMATES_WIN`
+* `GAME_KILLER_WIN`
 
 ---
 
-## Networking
+# Networking
 
-Both client and server use `lib/include/network_data.h` for shared packet formats. UDP packets are sent by copying structs into packet data.
+The project uses SDL_net with UDP sockets.
 
-Important shared packet types include:
+Shared packet definitions are located in:
 
-- `MSG_JOIN`
-- `MSG_LEAVE`
-- `MSG_START_GAME`
-- `MSG_CLIENT_INPUT`
-- `MSG_GAME_STATE`
-- `MSG_KILL_REQUEST`
-- `MSG_KILL_EVENT`
-- `MSG_EMERGENCY_MEETING`
-- `MSG_BODY_FOUND`
-- `MSG_TASK_COMPLETE`
-- `MSG_VOTE_REQUEST`
+```text
+lib/include/network_data.h
+```
+
+## Important Packet Types
+
+```text
+MSG_JOIN
+MSG_LEAVE
+MSG_START_GAME
+MSG_CLIENT_INPUT
+MSG_GAME_STATE
+MSG_KILL_REQUEST
+MSG_KILL_EVENT
+MSG_EMERGENCY_MEETING
+MSG_BODY_FOUND
+MSG_TASK_COMPLETE
+MSG_VOTE_REQUEST
+```
+
+The server continuously broadcasts synchronized game state updates to connected clients.
 
 ---
 
-## Build
+# Build Instructions
+
+## Requirements
+
+Install the following libraries:
+
+* SDL2
+* SDL2_image
+* SDL2_ttf
+* SDL2_mixer
+* SDL2_net
+
+---
+
+## Build the Project
 
 ```bash
 make all
 ```
 
-Outputs:
+Generated executables:
 
 ```text
 build/client
 build/server
 ```
 
-Other useful targets:
+---
+
+## Additional Make Targets
 
 ```bash
 make run_server
@@ -147,60 +271,64 @@ make clean
 
 ---
 
-## Run
+# Running the Game
 
-Start the server first:
+## Start the Server
 
 ```bash
 ./build/server
 ```
 
-Then start one or more clients:
+## Start the Client
 
 ```bash
 ./build/client
 ```
 
-The client prompts for the server IP address. For local testing, use `127.0.0.1`.
+The client prompts for a server IP address.
 
-For LAN play, use the host machine's local address.
+For local testing:
 
----
+```text
+127.0.0.1
+```
 
-## Controls
-
-| Key / Input | Action |
-|---|---|
-| `W A S D` | Move |
-| `Space` | Start game in lobby |
-| `Escape` | Quit or close emergency/vote screens |
-| `M` | Toggle task map overlay |
-| `E` | Open emergency meeting view when near the table |
-| Mouse click on emergency button | Request emergency meeting |
-| `K` | Kill as impostor when allowed |
-| Mouse click on kill button | Kill as impostor when allowed |
-| `R` | Report nearby body |
-| Mouse click on report button | Report nearby body |
-| `1` | Start timer task |
-| `2` | Start click task |
-| `3` | Start typing task |
-| `4` | Start reflex task |
-| `5` | Start logical order task |
-| `6` | Start memory task |
-| `Q` | Cancel active task |
-| Mouse click | Interact with task UI |
+For LAN play, enter the host computer's local IP address.
 
 ---
 
-## Tech Stack
+# Controls
 
-| Area | Technology |
-|---|---|
-| Language | C |
-| Graphics | SDL2, SDL2_image |
-| Text | SDL2_ttf |
-| Audio | SDL2_mixer |
-| Networking | SDL_net over UDP |
-| Build system | Make |
-| Supported platforms | macOS, Windows/MSYS2, Linux |
-`
+| Input       | Action                             |
+| ----------- | ---------------------------------- |
+| `W A S D`   | Move                               |
+| `Space`     | Start game in lobby                |
+| `Escape`    | Exit or close menus                |
+| `M`         | Toggle task map                    |
+| `E`         | Open emergency meeting and task interaction |
+| `K`         | Kill nearby player as Killer       |
+| `R`         | Report nearby body                 |
+| `Q`         | Cancel active task                 |
+| `1`         | Start timer task                   |
+| `2`         | Start click task                   |
+| `3`         | Start typing task                  |
+| `4`         | Start reflex task                  |
+| `5`         | Start logical order task           |
+| `6`         | Start memory task                  |
+| Mouse click | Interact with UI buttons and tasks |
+
+---
+
+# Tech Stack
+
+| Area                 | Technology            |
+| -------------------- | --------------------- |
+| Programming Language | C                     |
+| Graphics             | SDL2, SDL2_image      |
+| Text Rendering       | SDL2_ttf              |
+| Audio                | SDL2_mixer            |
+| Networking           | SDL_net               |
+| Build System         | Make                  |
+| Platforms            | Windows, Linux, macOS |
+
+---
