@@ -59,7 +59,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
     asset.pause_resume = loading_img(renderer, "assets/images/Client_UI/resume_quit.png");
     asset.pause_exit = loading_img(renderer, "assets/images/Client_UI/exit_quit.png");
 
-    asset.task_indicator = loading_img(renderer, "assets/images/tasks_assets/marker.png");
+    asset.task_indicator = loading_img(renderer, "assets/images/task_assets/marker.png");
 
     if (!asset.emergency_meeting_info)
         printf("image not loaded\n");
