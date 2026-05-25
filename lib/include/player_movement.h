@@ -20,7 +20,6 @@ typedef struct{
     Uint32 kill_cooldown_end;
 } Player;
 
-// ADT
 Player *player_create(gameState *state, int local_id);
 void player_destroy(Player *p);
 
