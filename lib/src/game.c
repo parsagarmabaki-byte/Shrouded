@@ -93,5 +93,5 @@ static void game_context_cleanup(GameContext *ctx)
     if (ctx->task)
         destroy_task(ctx->task);
 
-    destroy_assets(&ctx->assets);
+    destroy_assets(&ctx->assets, &ctx->show_role_asset);
 }
