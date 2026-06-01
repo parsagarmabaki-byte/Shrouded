@@ -246,12 +246,9 @@ void render_killer_win(SDL_Renderer *renderer, GameAssets assets, gameState stat
 
 void render_game_show_role(SDL_Renderer *renderer, SDL_Texture *game_role)
 {
-    int x_pos = (LOGICAL_SCREEN_WIDTH-SHOW_ROLE_IMG_WIDTH)/2;
-    int y_pos = (LOGICAL_SCREEN_HEIGHT-SHOW_ROLE_IMG_HEIGHT)/2;
-    SDL_Rect size ={x_pos,y_pos,SHOW_ROLE_IMG_WIDTH,SHOW_ROLE_IMG_HEIGHT};
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, game_role, NULL, &size);
+    SDL_RenderCopy(renderer, game_role, NULL, NULL);
 }
 
 void render_world(GameContext *ctx)
