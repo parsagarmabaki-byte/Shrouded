@@ -11,6 +11,8 @@
 #define GAME_MAP_HEIGHT 2024
 #define LOGICAL_SCREEN_WIDTH 1280
 #define LOGICAL_SCREEN_HEIGHT 720
+#define SHOW_ROLE_IMG_WIDTH 1121
+#define SHOW_ROLE_IMG_HEIGHT 747
 #define FRAME_SIZE 256
 #define PLAYER_SLOTS 6
 
@@ -78,6 +80,6 @@ void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h);
 Game_Show_Role_asset load_show_role_assets(SDL_Renderer *renderer);
 static void destroy_texture(SDL_Texture **texture);
-void destroy_assets(GameAssets *asset, Game_Show_Role_asset *role_asset);
+void destroy_assets(GameAssets *asset, SDL_Texture *player_role);
 
 #endif

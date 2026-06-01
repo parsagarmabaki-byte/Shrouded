@@ -135,7 +135,7 @@ static void destroy_texture(SDL_Texture **texture)
     }
 }
 
-void destroy_assets(GameAssets *asset, Game_Show_Role_asset *role_asset)
+void destroy_assets(GameAssets *asset, SDL_Texture *player_role)
 {
     if (!asset)
         return;
@@ -189,12 +189,7 @@ void destroy_assets(GameAssets *asset, Game_Show_Role_asset *role_asset)
         destroy_texture(&asset->crewmates_win_screens[i]);
     }
 
-    if (role_asset)
-    {
-        destroy_texture(&role_asset->innocent_img);
-        destroy_texture(&role_asset->killer_img);
-        destroy_texture(&role_asset->role_art_img);
-    }
+    destroy_texture(&player_role);
 }
 
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)
