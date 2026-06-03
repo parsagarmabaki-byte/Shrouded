@@ -400,11 +400,11 @@ void render_game_info_meeting(GameContext *ctx)
     SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
     SDL_RenderFillRect(ctx->renderer, &backdrop);
 
-    if (state->type == MSG_EMERGENCY_MEETING)
+    if (state->meeting_reason == MEETING_EMERGENCY)
     {
         meeting_info_texture = ctx->assets.emergency_meeting_info;
     }
-    else if (state->type == MSG_BODY_FOUND)
+    else if (state->meeting_reason == MEETING_BODY)
     {
         meeting_info_texture = assets.dead_body_reported_info;
         for (int i = 0; i < MAX_PLAYERS; i++)
@@ -412,6 +412,8 @@ void render_game_info_meeting(GameContext *ctx)
             bodies[i].active = false;
         }
     }
+    if (!meeting_info_texture)
+        return;
     SDL_RenderCopy(ctx->renderer, meeting_info_texture, NULL, &meeting_info_rect);
 }
 

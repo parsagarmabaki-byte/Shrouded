@@ -22,6 +22,9 @@ int designateImpostor(gameState *state)
     int chosen_active_player = 0;
     int active_player_index = 0;
 
+    if (active_player_count <= 0)
+        return -1;
+
     chosen_active_player = rand() % active_player_count;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -32,7 +35,7 @@ int designateImpostor(gameState *state)
         if (active_player_index == chosen_active_player)
         {
             state->players[i].isImpostor = 1;
-            return chosen_active_player;
+            return i;
         }
 
         active_player_index++;
@@ -55,6 +58,7 @@ void start_new_round(gameState *state, Uint64 *state_start_time)
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         state->players[i].isImpostor = 0;
+        state->players[i].player_voted = 0;
 
         if (!state->players[i].active)
             continue;
@@ -69,7 +73,8 @@ void start_new_round(gameState *state, Uint64 *state_start_time)
     spawn_players(state);
 
     int active_chosen_player = designateImpostor(state);
-    printf("Player %d is impostor\n", active_chosen_player);
+    if (active_chosen_player >= 0)
+        printf("Player %d is impostor\n", active_chosen_player);
 
     printf("\n=== TASK ORDER ASSIGNMENT ===\n");
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -87,6 +92,10 @@ void start_new_round(gameState *state, Uint64 *state_start_time)
     printf("=============================\n");
 
     state->emergency_meeting_reported_id = -1;
+    state->meeting_reason = MEETING_NONE;
+    state->voting_result = -1;
+    for (int i = 0; i < MAX_PLAYERS + 1; i++)
+        state->voting_results[i] = 0;
     state->total_tasks_completed = 0;
     state->phase = GAME_SHOW_ROLE;
     *state_start_time = SDL_GetTicks64();

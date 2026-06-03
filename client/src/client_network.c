@@ -247,7 +247,8 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             continue;
         }
 
-        uint8_t type = client->recievepacket->data[0];
+        MessageType type;
+        memcpy(&type, client->recievepacket->data, sizeof(type));
 
         if (type == MSG_GAME_STATE || type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
         {

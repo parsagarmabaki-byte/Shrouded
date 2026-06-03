@@ -21,7 +21,7 @@
 void update_server_tick(Server *s);
 void handle_join(Server *s, IPaddress sender);
 void handle_leave(Server *s, IPaddress sender);
-void handle_start_game(Server *s);
+void handle_start_game(Server *s, IPaddress sender);
 void handle_play_again(Server *s);
 void handle_client_input(Server *s, IPaddress sender);
 void handle_kill(Server *s, IPaddress sender);
@@ -40,6 +40,9 @@ int main(void)
 
     server.state.type = MSG_GAME_STATE;
     server.state.phase = GAME_LOBBY;
+    server.state.host_player_id = -1;
+    server.state.meeting_reason = MEETING_NONE;
+    server.state.emergency_meeting_reported_id = -1;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
         server.lastInput[i].player_id = -1;
@@ -85,7 +88,7 @@ int main(void)
                 handle_leave(&server, sender);
                 break;
             case MSG_START_GAME:
-                handle_start_game(&server);
+                handle_start_game(&server, sender);
                 break;
             case MSG_PLAY_AGAIN:
                 handle_play_again(&server);
@@ -109,10 +112,14 @@ int main(void)
                 handle_vote(&server, sender,&server.state);
                 break;
             case MSG_DEBUG_CREWMATES_WIN:
+#ifdef DEBUG
                 server.state.phase = GAME_CREWMATES_WIN;
+#endif
                 break;
             case MSG_DEBUG_IMPOSTOR_WIN:
+#ifdef DEBUG
                 server.state.phase = GAME_KILLER_WIN;
+#endif
                 break;
             default:
                 break;
@@ -176,6 +183,9 @@ void update_server_tick(Server *s)
         if (SDL_GetTicks64() - s->phase_time >= VOTE_RESULT_DURATION)
         {
             resolve_voting(&s->state, s->meeting_info, s->state.voting_results);
+            s->state.meeting_reason = MEETING_NONE;
+            for (int i = 0; i < MAX_PLAYERS; i++)
+                s->deadBodyActive[i] = 0;
             spawn_players(&s->state);
             s->state.phase = GAME_RUNNING;
             check_win_condition(&s->state);
@@ -213,6 +223,8 @@ void handle_join(Server *s, IPaddress sender)
         int newPlayer = addToLobby(&s->state, s->clientAddresses, s->clientUsed, sender);
         if (newPlayer >= 0)
         {
+            if (s->state.host_player_id < 0)
+                s->state.host_player_id = newPlayer;
             printf("Player %d joined\n", newPlayer);
             broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
         }
@@ -225,14 +237,39 @@ void handle_leave(Server *s, IPaddress sender)
     if (removed >= 0)
     {
         printf("Player %d left\n", removed);
+        if (s->state.host_player_id == removed)
+        {
+            s->state.host_player_id = -1;
+            for (int i = 0; i < MAX_PLAYERS; i++)
+            {
+                if (s->clientUsed[i])
+                {
+                    s->state.host_player_id = i;
+                    break;
+                }
+            }
+        }
         broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
-void handle_start_game(Server *s)
+void handle_start_game(Server *s, IPaddress sender)
 {
+    int sender_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+    if (sender_id != s->state.host_player_id)
+    {
+        printf("[SERVER] Ignored start request from non-host player %d\n", sender_id);
+        return;
+    }
+    if (countActivePlayers(&s->state) < 2)
+    {
+        printf("[SERVER] Ignored start request: at least 2 players are required\n");
+        return;
+    }
     if (s->state.phase == GAME_LOBBY)
     {
+        for (int i = 0; i < MAX_PLAYERS; i++)
+            s->deadBodyActive[i] = 0;
         start_new_round(&s->state, &s->state_start_time);
         printf("Game is now GAME_SHOW_ROLE\n");
         broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
@@ -243,6 +280,8 @@ void handle_play_again(Server *s)
 {
     if (s->state.phase == GAME_CREWMATES_WIN || s->state.phase == GAME_KILLER_WIN)
     {
+        for (int i = 0; i < MAX_PLAYERS; i++)
+            s->deadBodyActive[i] = 0;
         start_new_round(&s->state, &s->state_start_time);
         printf("Play again: game is now GAME_SHOW_ROLE\n");
         broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
@@ -269,17 +308,25 @@ void handle_client_input(Server *s, IPaddress sender)
 
 void handle_kill(Server *s, IPaddress sender)
 {
+    if (s->state.phase != GAME_RUNNING)
+        return;
+
     if (!packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_KILL_REQUEST"))
         return;
 
     int killer_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
     if (killer_id < 0 || killer_id >= MAX_PLAYERS)
         return;
+    if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isImpostor)
+        return;
 
     int target_id = handle_kill_request(&s->state, killer_id);
     if (target_id != -1)
     {
         s->state.players[target_id].isAlive = 0;
+        s->deadBodies[target_id].x = (int)s->state.players[target_id].x;
+        s->deadBodies[target_id].y = (int)s->state.players[target_id].y;
+        s->deadBodyActive[target_id] = 1;
         KillEventMsg msg = {0};
         msg.type = MSG_KILL_EVENT;
         msg.killer_id = killer_id;
@@ -294,6 +341,9 @@ void handle_kill(Server *s, IPaddress sender)
 
 void handle_emergency_meeting(Server *s, IPaddress sender)
 {
+    if (s->state.phase != GAME_RUNNING)
+        return;
+
     if (!packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_EMERGENCY_MEETING"))
         return;
 
@@ -301,7 +351,8 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
     if (local_id >= 0 && local_id < MAX_PLAYERS && s->state.players[local_id].isAlive && s->state.players[local_id].emergency_meeting == 1)
     {
         s->state.phase = GAME_INFO_MEETING;
-        s->state.type = MSG_EMERGENCY_MEETING;
+        s->state.type = MSG_GAME_STATE;
+        s->state.meeting_reason = MEETING_EMERGENCY;
         s->state.players[local_id].emergency_meeting = 0;
         s->state.emergency_meeting_reported_id = local_id;
         printf("[SERVER] Accept: player %d started an emergency meeting.\n", local_id);
@@ -312,6 +363,9 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
 
 void handle_body_found(Server *s, IPaddress sender)
 {
+    if (s->state.phase != GAME_RUNNING)
+        return;
+
     if (!packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_BODY_FOUND"))
         return;
 
@@ -322,14 +376,19 @@ void handle_body_found(Server *s, IPaddress sender)
     clientInput report;
     memcpy(&report, s->receive_packet->data, sizeof(report));
 
-    Position dead_body = report.dead_body;
+    int target_id = report.target_id;
+    if (target_id < 0 || target_id >= MAX_PLAYERS || !s->deadBodyActive[target_id])
+        return;
+
+    Position dead_body = s->deadBodies[target_id];
     int player_x = s->state.players[local_id].x;
     int player_y = s->state.players[local_id].y;
 
     if (s->state.players[local_id].isAlive && find_target_report_body(dead_body, player_x, player_y))
     {
         s->state.phase = GAME_INFO_MEETING;
-        s->state.type = MSG_BODY_FOUND;
+        s->state.type = MSG_GAME_STATE;
+        s->state.meeting_reason = MEETING_BODY;
         s->state.emergency_meeting_reported_id = local_id;
         printf("[SERVER] Accept: player %d found a body.\n", local_id);
         s->phase_time = SDL_GetTicks64();
@@ -376,6 +435,9 @@ void handle_task_complete(Server *s, IPaddress sender)
 
 void handle_vote(Server *s, IPaddress sender, gameState *state)
 {
+    if (state->phase != GAME_MEETING)
+        return;
+
     if (!packet_has_size(s->receive_packet, sizeof(VoteRequest), "VoteRequest"))
         return;
 
@@ -383,6 +445,10 @@ void handle_vote(Server *s, IPaddress sender, gameState *state)
     memcpy(&vote, s->receive_packet->data, sizeof(vote));
     int pid = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
     vote.voter_id = pid;
+    if (vote.target_id != VOTE_SKIP && (vote.target_id < 0 || vote.target_id >= MAX_PLAYERS))
+        return;
+    if (vote.target_id >= 0 && (!state->players[vote.target_id].active || !state->players[vote.target_id].isAlive))
+        return;
     if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_recieved < s->meeting_info.alive_players_count)
     {
         cast_vote(&s->meeting_info, vote);

@@ -42,7 +42,6 @@ void apply_player_input(gameState *state, clientInput *input, float dt)
         return;
     if (!state->players[id].active)
         return;
-
     state->players[id].current_frame = input->current_frame;
     state->players[id].direction = input->direction;
 

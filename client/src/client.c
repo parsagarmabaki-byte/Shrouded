@@ -99,7 +99,7 @@ int main()
                     }
                     else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
                     {
-                        if (countActivePlayers(&state) >= 1 && state.phase == GAME_LOBBY)
+                        if (state.local_player_id == state.host_player_id && countActivePlayers(&state) >= 2 && state.phase == GAME_LOBBY)
                             send_start_game(&client);
                     }
                 }

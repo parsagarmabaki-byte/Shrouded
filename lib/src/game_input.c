@@ -191,11 +191,15 @@ static void game_running_events(GameContext *ctx)
         }
         else if (ctx->event.key.keysym.scancode == SDL_SCANCODE_F1)
         {
+#ifdef DEBUG
             send_debug_win(ctx->client, MSG_DEBUG_CREWMATES_WIN);
+#endif
         }
         else if (ctx->event.key.keysym.scancode == SDL_SCANCODE_F2)
         {
+#ifdef DEBUG
             send_debug_win(ctx->client, MSG_DEBUG_IMPOSTOR_WIN);
+#endif
         }
         if (ctx->event.key.keysym.scancode == SDL_SCANCODE_TAB && !task_active_check(ctx->task))
         {

@@ -85,7 +85,7 @@ SERVER_OUT = $(OBJDIR)/server$(EXE)
 
 # ─── Compiler ───────────────────────────────────────────
 CC = gcc
-CFLAGS = -g -Ilib/include -Iserver/include
+CFLAGS = -g -Wall -Wextra -Wpedantic -Ilib/include -Iserver/include
 LDFLAGS = -lm
 
 # ─── Platform-specific settings ─────────────────────────

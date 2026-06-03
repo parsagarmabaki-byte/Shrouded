@@ -33,11 +33,30 @@ int can_cast_vote(Meeting meeting_info, int voter_id)
     if (meeting_info.has_voted[voter_id])
         return 0;
 
+    int is_alive_voter = 0;
+    for (int i = 0; i < meeting_info.alive_players_count; i++)
+    {
+        if (meeting_info.alive_players_id[i] == voter_id)
+        {
+            is_alive_voter = 1;
+            break;
+        }
+    }
+    if (!is_alive_voter)
+        return 0;
+
     return 1;
 }
 
 void cast_vote(Meeting *meeting_info, VoteRequest vote)
 {
+    if (meeting_info->votes_recieved < 0 || meeting_info->votes_recieved >= MAX_PLAYERS)
+        return;
+    if (vote.voter_id < 0 || vote.voter_id >= MAX_PLAYERS)
+        return;
+    if (vote.target_id != VOTE_SKIP && (vote.target_id < 0 || vote.target_id >= MAX_PLAYERS))
+        return;
+
     int index = meeting_info->votes_recieved;
     meeting_info->votes[index] = vote;
     meeting_info->has_voted[vote.voter_id] = 1;
@@ -66,7 +85,10 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
             voting_result[MAX_PLAYERS] += 1;
             continue;
         }
-        voting_result[target_id]++;
+        else if (target_id >= 0 && target_id < MAX_PLAYERS)
+        {
+            voting_result[target_id]++;
+        }
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -89,7 +111,7 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
     return player_id;
 }
 
-void resolve_voting(gameState *state, Meeting meeting_info, int vote_results[MAX_PLAYERS])
+void resolve_voting(gameState *state, Meeting meeting_info, int vote_results[MAX_PLAYERS + 1])
 {
     int vote_result = calculate_votes(meeting_info, vote_results);
     if (vote_result != -1)

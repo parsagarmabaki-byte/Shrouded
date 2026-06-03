@@ -48,6 +48,12 @@ typedef enum{
     MSG_DEBUG_IMPOSTOR_WIN
 } MessageType;
 
+typedef enum{
+    MEETING_NONE,
+    MEETING_EMERGENCY,
+    MEETING_BODY
+} MeetingReason;
+
 
 typedef struct 
 {
@@ -125,6 +131,8 @@ typedef struct {
     playerState players[MAX_PLAYERS];
     gamePhase phase;
     int local_player_id;
+    int host_player_id;
+    MeetingReason meeting_reason;
     int emergency_meeting_reported_id;
     int voting_results[MAX_PLAYERS+1];
     int voting_result;
