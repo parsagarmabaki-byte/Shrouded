@@ -96,7 +96,7 @@ void render_game_phase(GameContext *ctx)
         break;
 
     case GAME_SHOW_ROLE:
-        render_game_show_role(ctx->renderer, ctx->show_role_asset, state, ctx->local_id);
+        render_game_show_role(ctx->renderer, ctx->player_role);
         break;
 
     case GAME_INFO_MEETING:
@@ -244,28 +244,11 @@ void render_killer_win(SDL_Renderer *renderer, GameAssets assets, gameState stat
     }
 }
 
-void render_game_show_role(SDL_Renderer *renderer, Game_Show_Role_asset assets, gameState *state, int local_id)
+void render_game_show_role(SDL_Renderer *renderer, SDL_Texture *game_role)
 {
-    SDL_Texture *role_img = NULL;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, assets.role_art_img, NULL, NULL);
-    if (state->players[local_id].isImpostor)
-    {
-        role_img = assets.killer_img;
-    }
-    else
-    {
-        role_img = assets.innocent_img;
-    }
-
-    SDL_Rect role_rect;
-    role_rect.w = 380;
-    role_rect.h = 200;
-    role_rect.x = (LOGICAL_SCREEN_WIDTH - role_rect.w) / 2;
-    role_rect.y = (LOGICAL_SCREEN_HEIGHT - role_rect.h) / 4;
-
-    SDL_RenderCopy(renderer, role_img, NULL, &role_rect);
+    SDL_RenderCopy(renderer, game_role, NULL, NULL);
 }
 
 void render_world(GameContext *ctx)

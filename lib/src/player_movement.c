@@ -62,9 +62,9 @@ void compare_server_position(gameState state, Player *player,int local_id)
     float dx = state.players[local_id].x - player->Hitbox.x;
     float dy = state.players[local_id].y - player->Hitbox.y;
 
-    if (fabsf(dx) > 18.0f)
+    if (fabsf(dx) > 24.0f)
         player->Hitbox.x = state.players[local_id].x;
-    if (fabsf(dy) > 18.0f)
+    if (fabsf(dy) > 24.0f)
         player->Hitbox.y = state.players[local_id].y;
 }
 

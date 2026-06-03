@@ -71,9 +71,9 @@ int showMainMenu(waitForPlayers *pWait)
     SDL_Event event;
 
     // ── Ladda bakgrund + två "lit" knapp-bilder ──
-    SDL_Texture *bgDefault   = load_texture(pWait->renderer, "assets/lobbyscreen/mainmenu_default.png");
-    SDL_Texture *startButton = load_texture(pWait->renderer, "assets/lobbyscreen/start_button_on.png");
-    SDL_Texture *exitButton  = load_texture(pWait->renderer, "assets/lobbyscreen/exit_button_on.png");
+    SDL_Texture *bgDefault   = load_texture(pWait->renderer, "assets/images/lobbyscreen/mainmenu_default.png");
+    SDL_Texture *startButton = load_texture(pWait->renderer, "assets/images/lobbyscreen/start_button_on.png");
+    SDL_Texture *exitButton  = load_texture(pWait->renderer, "assets/images/lobbyscreen/exit_button_on.png");
 
     if (!bgDefault || !startButton || !exitButton)
     {

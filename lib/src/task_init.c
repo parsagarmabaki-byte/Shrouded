@@ -49,7 +49,7 @@ static bool begin_task(Task *task, TaskType type, SDL_Renderer *renderer, const 
 
 void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
 {
-    if (!begin_task(task, TASK_TIMER, renderer, "assets/images/tasks/mannequin.png", "SCAN IN PROGRESS"))
+    if (!begin_task(task, TASK_TIMER, renderer, "assets/images/task_assets/mannequin.png", "SCAN IN PROGRESS"))
         return;
 
     task->timer = duration;
@@ -58,7 +58,7 @@ void start_timer_task(Task *task, SDL_Renderer *renderer, float duration)
 
 void start_click_task(Task *task, SDL_Renderer *renderer, int target)
 {
-    if (!begin_task(task, TASK_CLICK, renderer, "assets/images/tasks/crystal.png", "CLEAN THE CRYSTAL (CLICK!)"))
+    if (!begin_task(task, TASK_CLICK, renderer, "assets/images/task_assets/crystal.png", "CLEAN THE CRYSTAL (CLICK!)"))
         return;
     
     task->click_count = 0;
@@ -67,7 +67,7 @@ void start_click_task(Task *task, SDL_Renderer *renderer, int target)
 
 void start_letter_task(Task *task, SDL_Renderer *renderer)
 {
-    if (!begin_task(task, TASK_LETTER, renderer, "assets/images/tasks/desk.png", "WRITE THE LETTER"))
+    if (!begin_task(task, TASK_LETTER, renderer, "assets/images/task_assets/desk.png", "WRITE THE LETTER"))
         return;
 
     const char *letters = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
@@ -85,7 +85,7 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
 
 void start_reflex_task(Task *task, SDL_Renderer *renderer)
 {
-    if (!begin_task(task, TASK_REFLEX, renderer, "assets/images/tasks/fireplace.png", "STOKE THE FIRE (PRESS SPACE!)"))
+    if (!begin_task(task, TASK_REFLEX, renderer, "assets/images/task_assets/fireplace.png", "STOKE THE FIRE (PRESS SPACE!)"))
         return;
 
     task->cursor_pos = 0.0f;
@@ -105,7 +105,7 @@ void start_reflex_task(Task *task, SDL_Renderer *renderer)
 
 void start_logical_order_task(Task *task, SDL_Renderer *renderer)
 {
-    if (!begin_task(task, TASK_LOGICAL_ORDER, renderer, "assets/images/tasks/shelf.png", "ORGANIZE THE SHELF (ASCENDING ORDER)"))
+    if (!begin_task(task, TASK_LOGICAL_ORDER, renderer, "assets/images/task_assets/shelf.png", "ORGANIZE THE SHELF (ASCENDING ORDER)"))
             return;
 
     task->next_expected_idx = 0;
@@ -161,7 +161,7 @@ void start_logical_order_task(Task *task, SDL_Renderer *renderer)
 
 void start_memory_task(Task *task, SDL_Renderer *renderer)
 {
-    if (!begin_task(task, TASK_MEMORY, renderer, "assets/images/tasks/twocrystals.png", "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)"))
+    if (!begin_task(task, TASK_MEMORY, renderer, "assets/images/task_assets/twocrystals.png", "GAZE INTO THE CRYSTALS (REMEMBER THE SEQUENCE!)"))
         return;
 
     task->round = 0;
@@ -185,7 +185,7 @@ void start_memory_task(Task *task, SDL_Renderer *renderer)
 
 void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
 {
-    if (!begin_task(task, TASK_HOLD, renderer, "assets/images/tasks/mess.png", "CLEAN THE MESS (HOLD SPACE!)"))
+    if (!begin_task(task, TASK_HOLD, renderer, "assets/images/task_assets/mess.png", "CLEAN THE MESS (HOLD SPACE!)"))
         return;
 
     task->hold_timer = 0.0f;
@@ -195,7 +195,7 @@ void start_hold_task(Task *task, SDL_Renderer *renderer, float duration)
 
 void start_alternate_task(Task *task, SDL_Renderer *renderer, int target)
 {
-    if (!begin_task(task, TASK_ALTERNATE, renderer, "assets/images/tasks/bulb.png", "REPLACE THE LIGHTBULB (MASH A AND D ALTERNATING!)"))
+    if (!begin_task(task, TASK_ALTERNATE, renderer, "assets/images/task_assets/bulb.png", "REPLACE THE LIGHTBULB (MASH A AND D ALTERNATING!)"))
         return;
 
     task->alternate_count = 0;

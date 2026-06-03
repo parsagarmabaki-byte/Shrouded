@@ -226,7 +226,7 @@ void render_voting_banners(SDL_Renderer *renderer, gameState *state, GameAssets 
 
 void render_voting_results(SDL_Renderer *renderer, gameState *state, int voting_results[MAX_PLAYERS])
 {
-    Text Font_texture = text_create(renderer, "Fonts/Cinzel_Decorative/CinzelDecorative-Bold.ttf", 32);
+    Text Font_texture = text_create(renderer, "assets/fonts/Cinzel_Decorative/CinzelDecorative-Bold.ttf", 32);
     int x_postion = 153;
     SDL_Color color = {0, 0, 0, 255};
     char buffer[4];

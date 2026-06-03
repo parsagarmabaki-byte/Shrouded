@@ -26,98 +26,103 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
 GameAssets load_assets(SDL_Renderer *renderer)
 {
     GameAssets asset = {0};
-    asset.map_texture = loading_img(renderer,"assets/images/Game_map.png");
-    asset.vignette_img = loading_img(renderer, "assets/images/vignette2.png");
+
+    asset.map_texture = loading_img(renderer, "assets/images/Map_assets/Game_map.png");
+    asset.vignette_img = loading_img(renderer, "assets/images/Map_assets/vignette2.png");
+
     if (asset.vignette_img)
         SDL_SetTextureBlendMode(asset.vignette_img, SDL_BLENDMODE_BLEND);
 
-    asset.kill_button_active = loading_img(renderer, "assets/images/kill_button_active.png");
-    asset.kill_button_deactive = loading_img(renderer, "assets/images/kill_button_deactive.png");
+    asset.kill_button_active = loading_img(renderer, "assets/images/Client_UI/kill_button_active.png");
+    asset.kill_button_deactive = loading_img(renderer, "assets/images/Client_UI/kill_button_deactive.png");
 
-    asset.report_button_deactive = loading_img(renderer, "assets/images/report_button_deactive.png");
-    asset.report_button_active = loading_img(renderer, "assets/images/report_button_active.png");
+    asset.report_button_deactive = loading_img(renderer, "assets/images/Client_UI/report_button_deactive.png");
+    asset.report_button_active = loading_img(renderer, "assets/images/Client_UI/report_button_active.png");
 
-    asset.emergency_button_view = loading_img(renderer, "assets/images/emergency_button_view.png");
-    asset.emergency_button_hover = loading_img(renderer, "assets/images/Emergencybutton_light_up.png");
-    asset.dead_body_reported_info = loading_img(renderer, "assets/images/body_reported.png");
-    asset.emergency_meeting_info = loading_img(renderer, "assets/images/Emergency_meeting_info.png");
-    asset.emergency_meeting_alive = loading_img(renderer, "assets/images/emergency_meeting_alive.png");
+    asset.emergency_button_view = loading_img(renderer, "assets/images/Meeting_assets/emergency_button_view.png");
+    asset.emergency_button_hover = loading_img(renderer, "assets/images/Meeting_assets/Emergencybutton_light_up.png");
 
-    asset.emergency_meeting_submit = loading_img(renderer, "assets/images/emergency_meeting_submit_hover.png");
-    asset.emergency_meeting_skip = loading_img(renderer, "assets/images/emergency_meeting_skip_hover.png");
-    
-    asset.emergency_meeting_dead = loading_img(renderer, "assets/images/emergency_meeting_dead.png");
-    asset.emergency_meeting_icon = loading_img(renderer, "assets/images/meeting-ikon.png");
+    asset.dead_body_reported_info = loading_img(renderer, "assets/images/Meeting_assets/body_reported.png");
+    asset.emergency_meeting_info = loading_img(renderer, "assets/images/Meeting_assets/Emergency_meeting_info.png");
+    asset.emergency_meeting_alive = loading_img(renderer, "assets/images/Meeting_assets/emergency_meeting_alive.png");
 
-    asset.skip_vote_banner = loading_img(renderer, "assets/voting_result_assets/Skip_banner.png");
-    asset.no_one_eliminated = loading_img(renderer, "assets/voting_result_assets/No_one_eliminated.png");
-    
-    // Pausmeny-bilder
-    asset.pause_bg     = loading_img(renderer, "assets/Images/quit.png");
-    asset.pause_resume = loading_img(renderer, "assets/Images/resume_quit.png");
-    asset.pause_exit   = loading_img(renderer, "assets/Images/exit_quit.png");
+    asset.emergency_meeting_submit = loading_img(renderer, "assets/images/Meeting_assets/emergency_meeting_submit_hover.png");
+    asset.emergency_meeting_skip = loading_img(renderer, "assets/images/Meeting_assets/emergency_meeting_skip_hover.png");
 
-    asset.task_indicator = loading_img(renderer, "assets/images/marker.png");
+    asset.emergency_meeting_dead = loading_img(renderer, "assets/images/Meeting_assets/emergency_meeting_dead.png");
+    asset.emergency_meeting_icon = loading_img(renderer, "assets/images/Meeting_assets/meeting-ikon.png");
+
+    asset.skip_vote_banner = loading_img(renderer, "assets/images/voting_result_assets/Skip_banner.png");
+    asset.no_one_eliminated = loading_img(renderer, "assets/images/voting_result_assets/No_one_eliminated.png");
+
+    asset.pause_bg = loading_img(renderer, "assets/images/Client_UI/quit.png");
+    asset.pause_resume = loading_img(renderer, "assets/images/Client_UI/resume_quit.png");
+    asset.pause_exit = loading_img(renderer, "assets/images/Client_UI/exit_quit.png");
+
+    asset.task_indicator = loading_img(renderer, "assets/images/task_assets/marker.png");
 
     if (!asset.emergency_meeting_info)
-        printf("image not loaded");
+        printf("image not loaded\n");
 
-    char path[64];
+    char path[128];
+
     const char *killer_win_screen_paths[PLAYER_SLOTS] = {
-        "assets/win_screens/GREEN_KILLER_WINS.png",
-        "assets/win_screens/RED_KILLER_WINS.png",
-        "assets/win_screens/BLUE_KILLER_WINS.png",
-        "assets/win_screens/PURPLE_KILLER_WINS.png",
-        "assets/win_screens/YELLOW_KILLER_WINS.png",
-        "assets/win_screens/BLACK_KILLER_WINS.png"
+        "assets/images/win_screens/GREEN_KILLER_WINS.png",
+        "assets/images/win_screens/RED_KILLER_WINS.png",
+        "assets/images/win_screens/BLUE_KILLER_WINS.png",
+        "assets/images/win_screens/PURPLE_KILLER_WINS.png",
+        "assets/images/win_screens/YELLOW_KILLER_WINS.png",
+        "assets/images/win_screens/BLACK_KILLER_WINS.png"
     };
+
     const char *crewmates_win_screen_paths[PLAYER_SLOTS] = {
-        "assets/win_screens/W_OUTGREEN.png",
-        "assets/win_screens/W_OUTRED.png",
-        "assets/win_screens/W_OUTBLUE.png",
-        "assets/win_screens/W_OUTPURPLE.png",
-        "assets/win_screens/W_OUTYELLOW.png",
-        "assets/win_screens/W_OUTBLACK.png"
+        "assets/images/win_screens/W_OUTGREEN.png",
+        "assets/images/win_screens/W_OUTRED.png",
+        "assets/images/win_screens/W_OUTBLUE.png",
+        "assets/images/win_screens/W_OUTPURPLE.png",
+        "assets/images/win_screens/W_OUTYELLOW.png",
+        "assets/images/win_screens/W_OUTBLACK.png"
     };
 
     for (int i = 0; i < PLAYER_SLOTS; i++)
     {
-        snprintf(path, sizeof(path), "assets/sprites/skin%d.png", i);
+        snprintf(path, sizeof(path), "assets/images/sprites/skin%d.png", i);
         asset.skins[i] = loading_img(renderer, path);
-        
-        snprintf(path, sizeof(path), "assets/sprites/dead_skin%d.png", i);
+
+        snprintf(path, sizeof(path), "assets/images/sprites/dead_skin%d.png", i);
         asset.dead_skins[i] = loading_img(renderer, path);
-        
-        snprintf(path, sizeof(path), "assets/images/player%d_alive.png", i+1);
+
+        snprintf(path, sizeof(path), "assets/images/Meeting_assets/player%d_alive.png", i + 1);
         asset.players_alive_banner[i] = loading_img(renderer, path);
 
-        snprintf(path, sizeof(path), "assets/images/player%d_alive_hover.png", i+1);
+        snprintf(path, sizeof(path), "assets/images/Meeting_assets/player%d_alive_hover.png", i + 1);
         asset.players_alive_banner_hover[i] = loading_img(renderer, path);
-        
-        snprintf(path, sizeof(path), "assets/images/player%d_dead_transparent.png", i+1);
+
+        snprintf(path, sizeof(path), "assets/images/Meeting_assets/player%d_dead_transparent.png", i + 1);
         asset.players_dead_banner[i] = loading_img(renderer, path);
 
-        snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_banner_dead.png", i+1);
+        snprintf(path, sizeof(path), "assets/images/voting_result_assets/Player%d_banner_dead.png", i + 1);
         asset.players_voting_result_dead[i] = loading_img(renderer, path);
 
-        snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_banner.png", i+1);
+        snprintf(path, sizeof(path), "assets/images/voting_result_assets/Player%d_banner.png", i + 1);
         asset.players_voting_result_alive[i] = loading_img(renderer, path);
 
-        snprintf(path, sizeof(path), "assets/voting_result_assets/Player%d_Eliminated.png", i+1);
+        snprintf(path, sizeof(path), "assets/images/voting_result_assets/Player%d_Eliminated.png", i + 1);
         asset.players_kicked_out[i] = loading_img(renderer, path);
 
         asset.killer_win_screens[i] = loading_img(renderer, killer_win_screen_paths[i]);
         asset.crewmates_win_screens[i] = loading_img(renderer, crewmates_win_screen_paths[i]);
     }
-    return asset;   
+
+    return asset;
 }
 
 Game_Show_Role_asset load_show_role_assets(SDL_Renderer *renderer)
 {
     Game_Show_Role_asset asset;
-    asset.innocent_img = loading_img(renderer, "assets/images/innocent.png");
-    asset.killer_img   = loading_img(renderer, "assets/images/killer.png"); 
-    asset.role_art_img = loading_img(renderer, "assets/images/show_role.png");
+    asset.innocent_img = loading_img(renderer, "assets/images/show_role_assets/innocent.png");
+    asset.killer_img   = loading_img(renderer, "assets/images/show_role_assets/killer.png"); 
+    asset.role_art_img = loading_img(renderer, "assets/images/show_role_assets/show_role.png");
     return asset;
 }
 
@@ -130,32 +135,61 @@ static void destroy_texture(SDL_Texture **texture)
     }
 }
 
-void destroy_assets(GameAssets *assets)
+void destroy_assets(GameAssets *asset, SDL_Texture *player_role)
 {
-    if (!assets) return;
+    if (!asset)
+        return;
+
+    destroy_texture(&asset->map_texture);
+    destroy_texture(&asset->vignette_img);
+
+    destroy_texture(&asset->kill_button_active);
+    destroy_texture(&asset->kill_button_deactive);
+
+    destroy_texture(&asset->report_button_active);
+    destroy_texture(&asset->report_button_deactive);
+
+    destroy_texture(&asset->emergency_button_view);
+    destroy_texture(&asset->emergency_button_hover);
+
+    destroy_texture(&asset->dead_body_reported_info);
+    destroy_texture(&asset->emergency_meeting_info);
+    destroy_texture(&asset->emergency_meeting_alive);
+
+    destroy_texture(&asset->emergency_meeting_submit);
+    destroy_texture(&asset->emergency_meeting_skip);
+
+    destroy_texture(&asset->emergency_meeting_dead);
+    destroy_texture(&asset->emergency_meeting_icon);
+
+    destroy_texture(&asset->skip_vote_banner);
+    destroy_texture(&asset->no_one_eliminated);
+
+    destroy_texture(&asset->pause_bg);
+    destroy_texture(&asset->pause_resume);
+    destroy_texture(&asset->pause_exit);
+
+    destroy_texture(&asset->task_indicator);
 
     for (int i = 0; i < PLAYER_SLOTS; i++)
     {
-        destroy_texture(&assets->skins[i]);
-        destroy_texture(&assets->dead_skins[i]);
-        destroy_texture(&assets->killer_win_screens[i]);
-        destroy_texture(&assets->crewmates_win_screens[i]);
+        destroy_texture(&asset->skins[i]);
+        destroy_texture(&asset->dead_skins[i]);
+
+        destroy_texture(&asset->players_alive_banner[i]);
+        destroy_texture(&asset->players_alive_banner_hover[i]);
+        destroy_texture(&asset->players_dead_banner[i]);
+
+        destroy_texture(&asset->players_voting_result_dead[i]);
+        destroy_texture(&asset->players_voting_result_alive[i]);
+
+        destroy_texture(&asset->players_kicked_out[i]);
+
+        destroy_texture(&asset->killer_win_screens[i]);
+        destroy_texture(&asset->crewmates_win_screens[i]);
     }
 
-    destroy_texture(&assets->map_texture);
-    destroy_texture(&assets->vignette_img);
-    destroy_texture(&assets->kill_button_active);
-    destroy_texture(&assets->kill_button_deactive);
-    destroy_texture(&assets->report_button_deactive);
-    destroy_texture(&assets->report_button_active);
-    destroy_texture(&assets->emergency_button_view);
-    destroy_texture(&assets->emergency_meeting_info);
-    destroy_texture(&assets->dead_body_reported_info);
-    destroy_texture(&assets->emergency_meeting_alive);
-    destroy_texture(&assets->pause_bg);
-    destroy_texture(&assets->pause_resume);
-    destroy_texture(&assets->pause_exit);
-    destroy_texture(&assets->emergency_button_hover);
+    destroy_texture(&player_role);
 }
 
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h)

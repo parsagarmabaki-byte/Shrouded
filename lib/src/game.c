@@ -13,7 +13,7 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets
 {
     srand(time(NULL));
     GameContext ctx = game_context_init(client, state, lobby, audio);
-    render_game_show_role(ctx.renderer, ctx.show_role_asset, ctx.state, ctx.local_id);
+    render_game_show_role(ctx.renderer, ctx.player_role);
     SDL_RenderPresent(ctx.renderer);
     ctx.assets = load_assets(ctx.renderer);
 
@@ -64,7 +64,14 @@ static GameContext game_context_init(Client *client, gameState *state, waitForPl
     ctx.player = player_create(state, ctx.local_id);
     ctx.task = create_task(ctx.renderer);
     ctx.cam = (Camera){0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
-    ctx.show_role_asset = load_show_role_assets(ctx.renderer);
+    // ctx.show_role_asset = load_show_role_assets(ctx.renderer);
+    char path[128];
+    if (ctx.is_local_impostor)
+        snprintf(path, sizeof(path), "assets/images/show_role_assets/player%d_killer.png", ctx.local_id);
+    else
+        snprintf(path, sizeof(path), "assets/images/show_role_assets/player%d_innocent.png", ctx.local_id);
+
+    ctx.player_role = loading_img(ctx.renderer,path);
 
     ctx.small_text = text_create(ctx.renderer, "assets/fonts/BebasNeue-Regular.ttf", 18);
     ctx.generic_text = text_create(ctx.renderer, "assets/fonts/BebasNeue-Regular.ttf", 24);
@@ -93,5 +100,5 @@ static void game_context_cleanup(GameContext *ctx)
     if (ctx->task)
         destroy_task(ctx->task);
 
-    destroy_assets(&ctx->assets);
+    destroy_assets(&ctx->assets, ctx->player_role);
 }

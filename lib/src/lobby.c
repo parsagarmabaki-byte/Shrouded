@@ -53,7 +53,7 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
-    SDL_Surface *bgSurface = IMG_Load("assets/lobbyscreen/waitingforplayers.png");
+    SDL_Surface *bgSurface = IMG_Load("assets/images/lobbyscreen/waitingforplayers.png");
     if (!bgSurface)
     {
         printf("IMG_Load: %s\n", IMG_GetError());
@@ -74,7 +74,7 @@ int initiate(waitForPlayers *pWait)
         return 0;
     }
 
-    SDL_Surface *enterIpSurface = IMG_Load("assets/lobbyscreen/ENTERIP.png");
+    SDL_Surface *enterIpSurface = IMG_Load("assets/images/lobbyscreen/ENTERIP.png");
     if (!enterIpSurface)
     {
         printf("IMG_Load ENTERIP.png: %s\n", IMG_GetError());
