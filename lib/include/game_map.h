@@ -77,7 +77,6 @@ SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path);
 void render_map(SDL_Renderer *renderer, SDL_Texture *background_img, Camera *cam);
 void camera_follow(Camera *cam, float player_x, float player_y, int player_w, int player_h);
 Game_Show_Role_asset load_show_role_assets(SDL_Renderer *renderer);
-static void destroy_texture(SDL_Texture **texture);
 void destroy_assets(GameAssets *asset, SDL_Texture *player_role);
 
 #endif

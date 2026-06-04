@@ -10,27 +10,29 @@
 
 #define SERVER_TICK_INTERVAL 0.016f
 
-#define PLAYER_SPEED 200 //DELAD DATA MELLAN SERVER OCH CLIENT
+#define PLAYER_SPEED 200 // DELAD DATA MELLAN SERVER OCH CLIENT
 #define PLAYER_SIZE 70
 
 #define TASK_COUNT 8 // uppdatera  när fler tasks läggs till
 
-//Milliseconds
-#define MEETING_DURATION        60000 
-#define VOTE_RESULT_DURATION    10000
-#define INFO_MEETING_DURATION   3000
-#define SHOW_ROLE_DURATION      6000
+// Milliseconds
+#define MEETING_DURATION 60000
+#define VOTE_RESULT_DURATION 10000
+#define INFO_MEETING_DURATION 3000
+#define SHOW_ROLE_DURATION 6000
 
 // BARA RÖRELSER OCH ROLLER IMPLEMENTERADE
 // MER SKA LÄGGAS TILL
-typedef enum {
+typedef enum
+{
     DIR_LEFT,
     DIR_RIGHT,
     DIR_DOWN,
     DIR_UP
 } Direction;
 
-typedef enum{
+typedef enum
+{
     MSG_JOIN,
     MSG_LEAVE,
     MSG_START_GAME,
@@ -45,24 +47,24 @@ typedef enum{
     MSG_TASK_COMPLETE,
     MSG_VOTE_REQUEST,
     MSG_DEBUG_CREWMATES_WIN,
-    MSG_DEBUG_IMPOSTOR_WIN
+    MSG_DEBUG_IMPOSTOR_WIN,
 } MessageType;
 
-typedef enum{
+typedef enum
+{
     MEETING_NONE,
     MEETING_EMERGENCY,
     MEETING_BODY
 } MeetingReason;
 
-
-typedef struct 
+typedef struct
 {
     int x;
     int y;
 } Position;
 
-
-typedef struct { // Info som användaren klickar in
+typedef struct
+{ // Info som användaren klickar in
     MessageType type;
     int player_id;
     int up;
@@ -78,9 +80,8 @@ typedef struct { // Info som användaren klickar in
     Direction direction;
     Position dead_body;
     int target_id;
-    
-} clientInput; 
 
+} clientInput;
 
 typedef struct
 {
@@ -91,10 +92,11 @@ typedef struct
     float y;
 } KillEventMsg;
 
-typedef struct {
+typedef struct
+{
     int active;
     int player_id;
-    
+
     float x;
     float y;
 
@@ -111,11 +113,12 @@ typedef struct {
     int player_voted;
     Direction direction;
 
-    TaskType task_order[TASK_COUNT];   // shuffled player task list
+    TaskType task_order[TASK_COUNT]; // shuffled player task list
     int tasks_completed;
 } playerState;
 
-typedef enum{
+typedef enum
+{
     GAME_LOBBY,
     GAME_RUNNING,
     GAME_SHOW_ROLE,
@@ -126,7 +129,8 @@ typedef enum{
     GAME_KILLER_WIN
 } gamePhase;
 
-typedef struct {
+typedef struct
+{
     MessageType type;
     playerState players[MAX_PLAYERS];
     gamePhase phase;
@@ -134,7 +138,7 @@ typedef struct {
     int host_player_id;
     MeetingReason meeting_reason;
     int emergency_meeting_reported_id;
-    int voting_results[MAX_PLAYERS+1];
+    int voting_results[MAX_PLAYERS + 1];
     int voting_result;
     int total_tasks_completed;
     int meeting_time_remaining; // milliseconds left in meeting
@@ -159,16 +163,84 @@ typedef struct
 
 } Meeting;
 
-typedef struct {
+typedef struct
+{
+    MessageType type;
+    int player_id;
+
+} EmergencyMeetingMsg;
+
+typedef struct
+{
+    MessageType type;
+
+} KillReadyMsg;
+
+typedef struct
+{
+    MessageType type;
+    gamePhase phase;
+
+} PhaseChangeMsg;
+
+typedef struct
+{
+    MessageType type;
+
+    int player_id;
+
+    float x;
+    float y;
+
+    int current_frame;
+
+    Direction direction;
+
+} PlayerUpdateMsg;
+
+typedef struct
+{
+    MessageType type;
+    int player_id;
+
+    int up;
+    int down;
+    int left;
+    int right;
+
+    int current_frame;
+    Direction direction;
+} InputMsg;
+
+typedef struct
+{
+    MessageType type;
+
+    int reporter_id;
+    int body_id;
+
+} ReportBodyMsg;
+
+typedef struct
+{
+    MessageType type;
+    int target_id;
+} KillRequestMsg;
+
+typedef struct
+{
     MessageType type;
 } joinMessage;
-typedef struct{
+typedef struct
+{
     MessageType type;
 } leaveMessage;
-typedef struct{
+typedef struct
+{
     MessageType type;
 } startGameMessage;
-typedef struct {
+typedef struct
+{
     MessageType type;
     int player_id;
     TaskType task_type;

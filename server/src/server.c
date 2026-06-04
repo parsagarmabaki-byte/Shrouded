@@ -308,34 +308,42 @@ void handle_client_input(Server *s, IPaddress sender)
 
 void handle_kill(Server *s, IPaddress sender)
 {
+    int killer_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+
     if (s->state.phase != GAME_RUNNING)
         return;
 
-    if (!packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_KILL_REQUEST"))
+    if (!packet_has_size(s->receive_packet, sizeof(KillRequestMsg), "MSG_KILL_REQUEST"))
         return;
-
-    int killer_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+    
     if (killer_id < 0 || killer_id >= MAX_PLAYERS)
         return;
-    if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isImpostor)
+    
+        if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isImpostor)
         return;
 
+    KillRequestMsg request;
+    memcpy(&request, s->receive_packet->data, sizeof(request));
     int target_id = handle_kill_request(&s->state, killer_id);
-    if (target_id != -1)
+
+    if (request.target_id == target_id)
     {
         s->state.players[target_id].isAlive = 0;
         s->deadBodies[target_id].x = (int)s->state.players[target_id].x;
         s->deadBodies[target_id].y = (int)s->state.players[target_id].y;
         s->deadBodyActive[target_id] = 1;
+
         KillEventMsg msg = {0};
         msg.type = MSG_KILL_EVENT;
         msg.killer_id = killer_id;
         msg.victim_id = target_id;
         msg.x = s->state.players[killer_id].x;
         msg.y = s->state.players[killer_id].y;
+        
+        activate_kill_cooldown(&s->state, killer_id);
         broadcast_Kill_msg(s->socket, s->send_packet, &msg, s->clientAddresses, s->clientUsed);
         check_win_condition(&s->state);
-        broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        // broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 

@@ -70,12 +70,18 @@ void compare_server_position(gameState state, Player *player,int local_id)
 
 Player init_player(gameState state, int local_id)
 {
-    Player player = {{state.players[local_id].x, state.players[local_id].y, HITBOX_SIZE, HITBOX_SIZE}};
+    Player player={0};
+    player.Hitbox.x = state.players[local_id].x;
+    player.Hitbox.y = state.players[local_id].y;
+    player.Hitbox.w = HITBOX_SIZE;
+    player.Hitbox.h = HITBOX_SIZE;
+
     player.current_frame = state.players[local_id].current_frame;
     player.direction = state.players[local_id].direction;
     player.animation_timer = 0.0f;
     player.kill_cooldown_active = state.players[local_id].kill_cooldown_active;
     player.kill_cooldown_end = state.players[local_id].kill_cooldown_start;
+
     return player;
 }
 

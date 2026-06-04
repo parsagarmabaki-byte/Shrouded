@@ -111,13 +111,16 @@ static void emergency_meeting_events(GameContext *ctx)
 static void kill_events(GameContext *ctx)
 {
     SDL_Rect kill_button = {1077, 550, 150, 145};
+    int target_id = -1;
     if (ctx->event.type == SDL_KEYDOWN)
     {
         if (!ctx->player->kill_cooldown_active && ctx->is_local_impostor)
         {
             if (ctx->event.key.keysym.scancode == SDL_SCANCODE_K)
             {
-                request_kill(ctx->client, ctx->state);
+                target_id = handle_kill_request(ctx->state, ctx->local_id);
+                if (target_id)
+                    request_kill(ctx->client, target_id);
             }
         }
     }
@@ -125,7 +128,9 @@ static void kill_events(GameContext *ctx)
     {
         if (is_hovering(ctx->renderer, kill_button))
         {
-            request_kill(ctx->client, ctx->state);
+            target_id = handle_kill_request(ctx->state, ctx->local_id);
+            if (target_id)
+                request_kill(ctx->client, target_id);
         }
     }
 }
@@ -267,28 +272,36 @@ static void try_start_current_task(GameContext *ctx)
     switch (required_task)
     {
     case TASK_REFLEX:
-        if (tile_type == 7) start_reflex_task(ctx->task, ctx->renderer);
+        if (tile_type == 7)
+            start_reflex_task(ctx->task, ctx->renderer);
         break;
     case TASK_HOLD:
-        if (tile_type == 3) start_hold_task(ctx->task, ctx->renderer, 10);
+        if (tile_type == 3)
+            start_hold_task(ctx->task, ctx->renderer, 10);
         break;
     case TASK_MEMORY:
-        if (tile_type == 4) start_memory_task(ctx->task, ctx->renderer);
+        if (tile_type == 4)
+            start_memory_task(ctx->task, ctx->renderer);
         break;
     case TASK_LOGICAL_ORDER:
-        if (tile_type == 5) start_logical_order_task(ctx->task, ctx->renderer);
+        if (tile_type == 5)
+            start_logical_order_task(ctx->task, ctx->renderer);
         break;
     case TASK_CLICK:
-        if (tile_type == 6) start_click_task(ctx->task, ctx->renderer, 25);
+        if (tile_type == 6)
+            start_click_task(ctx->task, ctx->renderer, 25);
         break;
     case TASK_TIMER:
-        if (tile_type == 8) start_timer_task(ctx->task, ctx->renderer, 15);
+        if (tile_type == 8)
+            start_timer_task(ctx->task, ctx->renderer, 15);
         break;
     case TASK_LETTER:
-        if (tile_type == 9) start_letter_task(ctx->task, ctx->renderer);
+        if (tile_type == 9)
+            start_letter_task(ctx->task, ctx->renderer);
         break;
     case TASK_ALTERNATE:
-        if (tile_type == 10) start_alternate_task(ctx->task, ctx->renderer, 25);
+        if (tile_type == 10)
+            start_alternate_task(ctx->task, ctx->renderer, 25);
         break;
     default:
         break;

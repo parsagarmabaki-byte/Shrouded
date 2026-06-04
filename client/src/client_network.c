@@ -6,6 +6,7 @@
 #include "game.h"
 #include "imposter_ability.h"
 
+
 int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size)
 {
     if (!init_network_socket(&client->socket, 0))
@@ -90,15 +91,14 @@ int send_play_again(Client *client)
     return send_client_message(client->socket, client->serverAddr, MSG_PLAY_AGAIN);
 }
 
-static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, clientInput *input)
+
+static int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size)
 {
     UDPpacket *packet = create_packet(512);
     if (!packet)
-    {
         return 0;
-    }
 
-    if (!send_packet_data(socket, packet, server_addr, input, sizeof(*input)))
+    if (!send_packet_data(socket, packet,server_addr, data, size))
     {
         SDLNet_FreePacket(packet);
         return 0;
@@ -108,23 +108,6 @@ static int send_client_input_packet(UDPsocket socket, IPaddress server_addr, cli
     return 1;
 }
 
-static int send_client_vote_packet(UDPsocket socket, IPaddress server_addr, VoteRequest *vote)
-{
-    UDPpacket *packet = create_packet(512);
-    if (!packet)
-    {
-        return 0;
-    }
-
-    if (!send_packet_data(socket, packet, server_addr, vote, sizeof(*vote)))
-    {
-        SDLNet_FreePacket(packet);
-        return 0;
-    }
-
-    SDLNet_FreePacket(packet);
-    return 1;
-}
 int send_leave_message(Client *client)
 {
     leaveMessage leave = {0};
@@ -153,7 +136,7 @@ void send_input(Client *client, gameState *state, Player *player)
     input.current_frame = player->current_frame;
     input.direction = player->direction;
 
-    send_client_input_packet(client->socket, client->serverAddr, &input);
+    send_packet(client->socket, client->serverAddr, &input, sizeof(clientInput));
 }
 
 int send_task_complete(Client *client, int player_id, TaskType task_type)
@@ -196,12 +179,12 @@ int send_debug_win(Client *client, MessageType type)
     return 1;
 }
 
-void request_kill(Client *client, gameState *state)
+void request_kill(Client *client, int target_id)
 {
-    clientInput input = {0};
-    input.type = MSG_KILL_REQUEST;
-    input.player_id = state->local_player_id;
-    send_client_input_packet(client->socket, client->serverAddr, &input);
+    KillRequestMsg req = {0};
+    req.type = MSG_KILL_REQUEST;
+    req.target_id = target_id;
+    send_packet(client->socket, client->serverAddr, &req, sizeof(KillRequestMsg));
 }
 
 void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id)
@@ -217,7 +200,7 @@ void request_report_body(Client *client, gameState *state, KillAnimation dead_bo
     //        input.player_id, input.target_id);
     // printf("[CLIENT] dead_body=(%d, %d)\n",
     //        input.dead_body.x, input.dead_body.y);
-    send_client_input_packet(client->socket, client->serverAddr, &input);
+    send_packet(client->socket, client->serverAddr, &input, sizeof(clientInput));
 }
 
 void request_emergency_meeting(Client *client, gameState *state, int local_id)
@@ -227,7 +210,7 @@ void request_emergency_meeting(Client *client, gameState *state, int local_id)
     request.emergency_meeting_left = state->players[local_id].emergency_meeting;
     request.isAlive = state->players[local_id].isAlive;
     request.player_id = local_id;
-    send_client_input_packet(client->socket, client->serverAddr, &request);
+    send_packet(client->socket, client->serverAddr, &request, sizeof(clientInput));
 }
 
 void send_vote(Client *client, int targeted_banner)
@@ -235,7 +218,7 @@ void send_vote(Client *client, int targeted_banner)
     VoteRequest vote;
     vote.type = MSG_VOTE_REQUEST;
     vote.target_id = targeted_banner;
-    send_client_vote_packet(client->socket,client->serverAddr,&vote);
+    send_packet(client->socket, client->serverAddr, &vote,sizeof(VoteRequest));
 }
 
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio)
@@ -268,10 +251,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             if (packet_has_size(client->recievepacket, sizeof(KillEventMsg), "MSG_KILL_EVENT"))
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
-
-                printf("Kill received: killer=%d victim=%d\n",
-                       msg.killer_id, msg.victim_id);
-
+                state->players[msg.victim_id].isAlive = 0;
                 if (bodies)
                 {
                     start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,

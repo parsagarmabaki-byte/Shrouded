@@ -68,8 +68,7 @@ int handle_kill_request(gameState *state, int killer_id)
         }
     }
     if (target_id != -1 && !imposter.kill_cooldown_active)
-    {
-        activate_kill_cooldown(state, killer_id);
+    {        
         return target_id;
     }
     return -1;

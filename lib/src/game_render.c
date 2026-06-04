@@ -3,6 +3,18 @@
 #include "emergency_meeting.h"
 #include "wall_data.h"
 
+static TaskMarker markers[] =
+{
+    { TASK_HOLD,          {320, 140, 24, 24},  208,  304 },
+    { TASK_LETTER,        {453, 310, 24, 24},  710, 970 },
+    { TASK_CLICK,         {835, 310, 24, 24}, 1950, 940 },
+    { TASK_MEMORY,        {675, 140, 24, 24}, 1392,  304 },
+    { TASK_ALTERNATE,     {790, 130, 24, 24}, 1770,  304 },
+    { TASK_LOGICAL_ORDER, {900, 130, 24, 24}, 2183,  304 },
+    { TASK_TIMER,         {825, 570, 24, 24}, 1920, 1795 },
+    { TASK_REFLEX,        {415, 505, 24, 24},  570, 1505 }
+};
+
 static void render_death_effect(SDL_Renderer *renderer, KillAnimation *local_death)
 {
     if (!local_death || !local_death->active || local_death->current_frame > 24)

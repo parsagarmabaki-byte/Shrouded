@@ -1,5 +1,8 @@
 #include "game_map.h"
 
+static void destroy_texture(SDL_Texture **texture);
+
+
 SDL_Texture *loading_img(SDL_Renderer *renderer, const char *path)
 {
     SDL_Surface *surface = IMG_Load(path);
