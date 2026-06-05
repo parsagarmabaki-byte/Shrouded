@@ -181,6 +181,7 @@ int send_debug_win(Client *client, MessageType type)
 
 void request_kill(Client *client, int target_id)
 {
+    printf("SENDING TARGET_ID %d", target_id);
     KillRequestMsg req = {0};
     req.type = MSG_KILL_REQUEST;
     req.target_id = target_id;

@@ -210,7 +210,7 @@ void update_server_tick(Server *s)
         }
     }
 
-    broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+    broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 }
 
 // ===================== MESSAGE HANDLERS =====================
@@ -226,7 +226,7 @@ void handle_join(Server *s, IPaddress sender)
             if (s->state.host_player_id < 0)
                 s->state.host_player_id = newPlayer;
             printf("Player %d joined\n", newPlayer);
-            broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+            broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
         }
     }
 }
@@ -249,7 +249,7 @@ void handle_leave(Server *s, IPaddress sender)
                 }
             }
         }
-        broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -272,7 +272,7 @@ void handle_start_game(Server *s, IPaddress sender)
             s->deadBodyActive[i] = 0;
         start_new_round(&s->state, &s->state_start_time);
         printf("Game is now GAME_SHOW_ROLE\n");
-        broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -284,7 +284,7 @@ void handle_play_again(Server *s)
             s->deadBodyActive[i] = 0;
         start_new_round(&s->state, &s->state_start_time);
         printf("Play again: game is now GAME_SHOW_ROLE\n");
-        broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -309,6 +309,7 @@ void handle_client_input(Server *s, IPaddress sender)
 void handle_kill(Server *s, IPaddress sender)
 {
     int killer_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+    printf("\nRECIEVED KILL REQUEST FROM KILL ID %d\n", killer_id);
 
     if (s->state.phase != GAME_RUNNING)
         return;
@@ -325,6 +326,7 @@ void handle_kill(Server *s, IPaddress sender)
     KillRequestMsg request;
     memcpy(&request, s->receive_packet->data, sizeof(request));
     int target_id = handle_kill_request(&s->state, killer_id);
+    printf("\nCLOSEST PLAYER TO THE PLAYER IS %d and PLAYER WANT TO KILL ID %d", target_id, request.target_id);
 
     if (request.target_id == target_id)
     {
@@ -341,9 +343,9 @@ void handle_kill(Server *s, IPaddress sender)
         msg.y = s->state.players[killer_id].y;
         
         activate_kill_cooldown(&s->state, killer_id);
-        broadcast_Kill_msg(s->socket, s->send_packet, &msg, s->clientAddresses, s->clientUsed);
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
         check_win_condition(&s->state);
-        // broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -365,7 +367,7 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
         s->state.emergency_meeting_reported_id = local_id;
         printf("[SERVER] Accept: player %d started an emergency meeting.\n", local_id);
         s->phase_time = SDL_GetTicks64();
-        broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -400,7 +402,7 @@ void handle_body_found(Server *s, IPaddress sender)
         s->state.emergency_meeting_reported_id = local_id;
         printf("[SERVER] Accept: player %d found a body.\n", local_id);
         s->phase_time = SDL_GetTicks64();
-        broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -438,7 +440,7 @@ void handle_task_complete(Server *s, IPaddress sender)
             }
         }
     }
-    broadcastGameState(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+    broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 }
 
 void handle_vote(Server *s, IPaddress sender, gameState *state)

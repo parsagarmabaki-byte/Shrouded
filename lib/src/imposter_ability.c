@@ -59,16 +59,19 @@ int handle_kill_request(gameState *state, int killer_id)
 
         if (state->players[i].isAlive && state->players[i].active)
         {
+            // printf("\nPlayer %d is ALIVE and ACTIVE\n");
             float distance = find_kill_target(imposter, state->players[i]);
             if (distance > 0 && distance < best_distance)
             {
+                // printf("\nTARGET ID %d found\n", i);
                 target_id = i;
                 best_distance = distance;
             }
         }
     }
     if (target_id != -1 && !imposter.kill_cooldown_active)
-    {        
+    {   
+        // printf("returnng id %d", target_id);
         return target_id;
     }
     return -1;

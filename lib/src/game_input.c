@@ -119,7 +119,7 @@ static void kill_events(GameContext *ctx)
             if (ctx->event.key.keysym.scancode == SDL_SCANCODE_K)
             {
                 target_id = handle_kill_request(ctx->state, ctx->local_id);
-                if (target_id)
+                if (target_id != -1)
                     request_kill(ctx->client, target_id);
             }
         }
@@ -129,7 +129,7 @@ static void kill_events(GameContext *ctx)
         if (is_hovering(ctx->renderer, kill_button))
         {
             target_id = handle_kill_request(ctx->state, ctx->local_id);
-            if (target_id)
+            if (target_id != -1)
                 request_kill(ctx->client, target_id);
         }
     }
