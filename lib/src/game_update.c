@@ -10,7 +10,7 @@ void update_game(GameContext *ctx)
     ctx->player->kill_cooldown_active = ctx->state->players[ctx->local_id].kill_cooldown_active;
 
     update_player_movement(ctx->player, &ctx->user_input, task_active, ctx->ui_open, &ctx->accumulator);
-    send_player_input(ctx->client, ctx->state, ctx->player, task_active, ctx->ui_open);
+    send_player_input(ctx->client, ctx->player, ctx->user_input, task_active, ctx->ui_open);
     compare_server_position(*ctx->state, ctx->player, ctx->local_id);
     update_kill_animation(ctx->bodies, ctx->dt);
     update_task_check_completion(ctx->client, ctx->task, ctx->state, ctx->local_id, ctx->dt, &ctx->was_task_active);
@@ -28,7 +28,7 @@ float calculate_delta_time(Uint64 *last_tick)
     return dt;
 }
 
-void update_player_direction(Player *player, clientInput *user_input)
+void update_player_direction(Player *player, InputMsg *user_input)
 {
     if (user_input->up)
         player->direction = DIR_UP;
@@ -40,7 +40,7 @@ void update_player_direction(Player *player, clientInput *user_input)
         player->direction = DIR_RIGHT;
 }
 
-void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator)
+void update_player_movement(Player *player, InputMsg *user_input, bool task_is_active, bool emergency_window_open, float *accumulator)
 {
     *user_input = read_input(task_is_active);
     while (*accumulator >= SERVER_TICK_INTERVAL && !emergency_window_open)
@@ -51,11 +51,11 @@ void update_player_movement(Player *player, clientInput *user_input, bool task_i
     }
 }
 
-void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open)
+void send_player_input(Client *client, Player *player, InputMsg input, bool task_is_active, bool emergency_window_open)
 {
     if (!task_is_active && !emergency_window_open)
     {
-        send_input(client, state, player);
+        send_input(client, player, input);
     }
 }
 

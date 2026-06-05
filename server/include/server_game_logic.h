@@ -4,6 +4,6 @@
 #include "network_data.h"
 
 void check_win_condition(gameState *state);
-void apply_player_input(gameState *state, clientInput *input, float dt);
+void apply_player_input(gameState *state, InputMsg *input, float dt);
 
 #endif

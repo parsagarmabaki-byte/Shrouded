@@ -13,10 +13,10 @@ void update_game(GameContext *ctx);
 
 float calculate_delta_time(Uint64 *last_tick);
 
-void update_player_direction(Player *player, clientInput *user_input);
-void update_player_movement(Player *player, clientInput *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
+void update_player_direction(Player *player, InputMsg *user_input);
+void update_player_movement(Player *player, InputMsg *user_input, bool task_is_active, bool emergency_window_open, float *accumulator);
 
-void send_player_input(Client *client, gameState *state, Player *player, bool task_is_active, bool emergency_window_open);
+void send_player_input(Client *client, Player *player, InputMsg input, bool task_is_active, bool emergency_window_open);
 void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, bool *was_task_active);
 
 #endif

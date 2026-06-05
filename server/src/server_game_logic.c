@@ -35,7 +35,7 @@ void check_win_condition(gameState *state)
         state->phase = GAME_CREWMATES_WIN;
 }
 
-void apply_player_input(gameState *state, clientInput *input, float dt)
+void apply_player_input(gameState *state, InputMsg *input, float dt)
 {
     int id = input->player_id;
     if (id < 0 || id >= MAX_PLAYERS)

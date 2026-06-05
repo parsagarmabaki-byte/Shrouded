@@ -25,7 +25,7 @@ void player_destroy(Player *p)
         free(p);
 }
 
-void apply_movement(float *x, float *y, clientInput input, float dt)
+void apply_movement(float *x, float *y, InputMsg input, float dt)
 {
     float dx = (input.right - input.left);
     float dy = (input.down - input.up);

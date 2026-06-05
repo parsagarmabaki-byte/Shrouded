@@ -12,7 +12,7 @@ typedef struct {
     Meeting meeting_info;
     IPaddress clientAddresses[MAX_PLAYERS];
     int clientUsed[MAX_PLAYERS];
-    clientInput lastInput[MAX_PLAYERS];
+    InputMsg lastInput[MAX_PLAYERS];
     Position deadBodies[MAX_PLAYERS];
     int deadBodyActive[MAX_PLAYERS];
     Uint64 state_start_time;

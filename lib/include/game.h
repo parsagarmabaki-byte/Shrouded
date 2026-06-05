@@ -55,7 +55,7 @@ typedef struct GameContext {
     Text timer_meeting_text;
 
     SDL_Event event;
-    clientInput user_input;
+    InputMsg user_input;
 
     int local_id;
     int targeted_banner_id;

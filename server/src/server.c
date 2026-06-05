@@ -200,13 +200,6 @@ void update_server_tick(Server *s)
             {
                 s->state.players[i].kill_cooldown_active = update_kill_cooldown(s->state, i);
             }
-            s->lastInput[i].player_id = -1;
-            s->lastInput[i].up = 0;
-            s->lastInput[i].down = 0;
-            s->lastInput[i].left = 0;
-            s->lastInput[i].right = 0;
-            s->lastInput[i].current_frame = 0;
-            s->lastInput[i].direction = DIR_DOWN;
         }
     }
 
@@ -293,15 +286,15 @@ void handle_client_input(Server *s, IPaddress sender)
     if (s->state.phase != GAME_RUNNING)
         return;
 
-    if (packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_CLIENT_INPUT"))
+    if (packet_has_size(s->receive_packet, sizeof(InputMsg), "MSG_CLIENT_INPUT"))
     {
-        clientInput input;
-        memcpy(&input, s->receive_packet->data, sizeof(clientInput));
+        InputMsg input_msg;
+        memcpy(&input_msg, s->receive_packet->data, sizeof(InputMsg));
         int sender_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
         if (sender_id >= 0)
         {
-            input.player_id = sender_id;
-            s->lastInput[sender_id] = input;
+            input_msg.player_id = sender_id;
+            s->lastInput[sender_id] = input_msg;
         }
     }
 }

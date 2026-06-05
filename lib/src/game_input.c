@@ -44,9 +44,9 @@ void process_events(GameContext *ctx)
     }
 }
 
-clientInput read_input(bool tasks_active)
+InputMsg read_input(bool tasks_active)
 {
-    clientInput input = {0};
+    InputMsg input = {0};
     const Uint8 *key = SDL_GetKeyboardState(NULL);
     if (!tasks_active)
     {
@@ -54,7 +54,6 @@ clientInput read_input(bool tasks_active)
         input.down = key[SDL_SCANCODE_S];
         input.left = key[SDL_SCANCODE_A];
         input.right = key[SDL_SCANCODE_D];
-        input.kill = key[SDL_SCANCODE_K];
     }
     else
     {

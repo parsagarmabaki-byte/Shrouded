@@ -7,6 +7,6 @@
 typedef struct GameContext GameContext;
 
 void process_events(GameContext *ctx);
-clientInput read_input(bool tasks_active);
+InputMsg read_input(bool tasks_active);
 
 #endif

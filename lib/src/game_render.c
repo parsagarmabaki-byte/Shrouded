@@ -646,7 +646,7 @@ void render_controls_screen(SDL_Renderer *renderer, gameState *state, int local_
     }
 }
 
-void run_animations(float *animation_timer, int *current_frame, clientInput input, float dt)
+void run_animations(float *animation_timer, int *current_frame, InputMsg input, float dt)
 {
     bool moving = input.up || input.down || input.left || input.right;
     if (moving)

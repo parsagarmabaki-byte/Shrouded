@@ -12,7 +12,7 @@ void clean_client(Client *client);
 int send_join(Client *client);
 int send_start_game(Client *client);
 int send_play_again(Client *client);
-void send_input(Client *client, gameState *state, Player *player);
+void send_input(Client *client, Player *player, InputMsg input_msg);
 int send_task_complete(Client *client, int player_id, TaskType task_type);
 void request_kill(Client *client, int target_id);
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio);

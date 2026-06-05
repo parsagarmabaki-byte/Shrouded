@@ -128,15 +128,12 @@ int send_leave_message(Client *client)
     SDLNet_FreePacket(packet);
     return 1;
 }
-void send_input(Client *client, gameState *state, Player *player)
+void send_input(Client *client, Player *player, InputMsg input_msg)
 {
-    clientInput input = read_input(false);
-    input.type = MSG_CLIENT_INPUT;
-    input.player_id = state->local_player_id;
-    input.current_frame = player->current_frame;
-    input.direction = player->direction;
-
-    send_packet(client->socket, client->serverAddr, &input, sizeof(clientInput));
+    input_msg.type = MSG_CLIENT_INPUT;
+    input_msg.current_frame = player->current_frame;
+    input_msg.direction = player->direction;
+    send_packet(client->socket, client->serverAddr, &input_msg, sizeof(InputMsg));
 }
 
 int send_task_complete(Client *client, int player_id, TaskType task_type)
