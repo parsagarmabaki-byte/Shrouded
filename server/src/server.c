@@ -345,7 +345,7 @@ void handle_kill(Server *s, IPaddress sender)
         activate_kill_cooldown(&s->state, killer_id);
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
         check_win_condition(&s->state);
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        // broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
 
@@ -376,31 +376,31 @@ void handle_body_found(Server *s, IPaddress sender)
     if (s->state.phase != GAME_RUNNING)
         return;
 
-    if (!packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_BODY_FOUND"))
+    if (!packet_has_size(s->receive_packet, sizeof(ReportBodyMsg), "MSG_BODY_FOUND"))
         return;
 
-    int local_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
-    if (local_id < 0 || local_id >= MAX_PLAYERS)
+    int reported_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+    if (reported_id < 0 || reported_id >= MAX_PLAYERS)
         return;
 
-    clientInput report;
+    ReportBodyMsg report;
     memcpy(&report, s->receive_packet->data, sizeof(report));
 
-    int target_id = report.target_id;
-    if (target_id < 0 || target_id >= MAX_PLAYERS || !s->deadBodyActive[target_id])
+    int body_id = report.body_id;
+    if (body_id < 0 || body_id >= MAX_PLAYERS || !s->deadBodyActive[body_id])
         return;
 
-    Position dead_body = s->deadBodies[target_id];
-    int player_x = s->state.players[local_id].x;
-    int player_y = s->state.players[local_id].y;
+    Position dead_body = s->deadBodies[body_id];
+    int player_x = s->state.players[reported_id].x;
+    int player_y = s->state.players[reported_id].y;
 
-    if (s->state.players[local_id].isAlive && find_target_report_body(dead_body, player_x, player_y))
+    if (s->state.players[reported_id].isAlive && find_target_report_body(dead_body, player_x, player_y))
     {
         s->state.phase = GAME_INFO_MEETING;
         s->state.type = MSG_GAME_STATE;
         s->state.meeting_reason = MEETING_BODY;
-        s->state.emergency_meeting_reported_id = local_id;
-        printf("[SERVER] Accept: player %d found a body.\n", local_id);
+        s->state.emergency_meeting_reported_id = reported_id;
+        printf("[SERVER] Accept: player %d found a body.\n", reported_id);
         s->phase_time = SDL_GetTicks64();
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }

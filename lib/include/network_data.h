@@ -215,10 +215,7 @@ typedef struct
 typedef struct
 {
     MessageType type;
-
-    int reporter_id;
     int body_id;
-
 } ReportBodyMsg;
 
 typedef struct

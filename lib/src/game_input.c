@@ -65,20 +65,20 @@ clientInput read_input(bool tasks_active)
 
 static void report_body_events(GameContext *ctx)
 {
-    int target_id = target_report_body(ctx->bodies, *ctx->player);
+    int body_id = target_report_body(ctx->bodies, *ctx->player);
     if (ctx->event.type == SDL_KEYDOWN)
     {
-        if (ctx->event.key.keysym.scancode == SDL_SCANCODE_R && target_id != -1 && ctx->state->players[ctx->state->local_player_id].isAlive && !task_active_check(ctx->task))
+        if (ctx->event.key.keysym.scancode == SDL_SCANCODE_R && body_id != -1 && ctx->state->players[ctx->state->local_player_id].isAlive && !task_active_check(ctx->task))
         {
-            request_report_body(ctx->client, ctx->state, ctx->bodies[target_id], target_id);
+            request_report_body(ctx->client, body_id);
         }
     }
     else if (ctx->event.type == SDL_MOUSEBUTTONDOWN)
     {
         SDL_Rect report_button = {1075, 400, 120, 120};
-        if (is_hovering(ctx->renderer, report_button) && target_id != -1 && ctx->state->players[ctx->state->local_player_id].isAlive && !task_active_check(ctx->task))
+        if (is_hovering(ctx->renderer, report_button) && body_id != -1 && ctx->state->players[ctx->state->local_player_id].isAlive && !task_active_check(ctx->task))
         {
-            request_report_body(ctx->client, ctx->state, ctx->bodies[target_id], target_id);
+            request_report_body(ctx->client, body_id);
         }
     }
 }

@@ -188,20 +188,12 @@ void request_kill(Client *client, int target_id)
     send_packet(client->socket, client->serverAddr, &req, sizeof(KillRequestMsg));
 }
 
-void request_report_body(Client *client, gameState *state, KillAnimation dead_body, int target_id)
+void request_report_body(Client *client, int body_id)
 {
-    clientInput input = {0};
+    ReportBodyMsg input = {0};
     input.type = MSG_BODY_FOUND;
-    input.player_id = state->local_player_id;
-    input.target_id = target_id;
-    input.dead_body.x = dead_body.x;
-    input.dead_body.y = dead_body.y;
-    // printf("[CLIENT] Sending MSG_BODY_FOUND\n");
-    // printf("[CLIENT] local_player_id=%d target_id=%d\n",
-    //        input.player_id, input.target_id);
-    // printf("[CLIENT] dead_body=(%d, %d)\n",
-    //        input.dead_body.x, input.dead_body.y);
-    send_packet(client->socket, client->serverAddr, &input, sizeof(clientInput));
+    input.body_id = body_id;
+    send_packet(client->socket, client->serverAddr, &input, sizeof(ReportBodyMsg));
 }
 
 void request_emergency_meeting(Client *client, gameState *state, int local_id)
