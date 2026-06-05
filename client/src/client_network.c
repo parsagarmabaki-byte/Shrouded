@@ -6,7 +6,6 @@
 #include "game.h"
 #include "imposter_ability.h"
 
-
 int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size)
 {
     if (!init_network_socket(&client->socket, 0))
@@ -91,14 +90,13 @@ int send_play_again(Client *client)
     return send_client_message(client->socket, client->serverAddr, MSG_PLAY_AGAIN);
 }
 
-
 static int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size)
 {
     UDPpacket *packet = create_packet(512);
     if (!packet)
         return 0;
 
-    if (!send_packet_data(socket, packet,server_addr, data, size))
+    if (!send_packet_data(socket, packet, server_addr, data, size))
     {
         SDLNet_FreePacket(packet);
         return 0;
@@ -195,12 +193,9 @@ void request_report_body(Client *client, int body_id)
 
 void request_emergency_meeting(Client *client, gameState *state, int local_id)
 {
-    clientInput request = {0};
+    EmergencyMeetingMsg request = {0};
     request.type = MSG_EMERGENCY_MEETING;
-    request.emergency_meeting_left = state->players[local_id].emergency_meeting;
-    request.isAlive = state->players[local_id].isAlive;
-    request.player_id = local_id;
-    send_packet(client->socket, client->serverAddr, &request, sizeof(clientInput));
+    send_packet(client->socket, client->serverAddr, &request, sizeof(EmergencyMeetingMsg));
 }
 
 void send_vote(Client *client, int targeted_banner)
@@ -208,7 +203,7 @@ void send_vote(Client *client, int targeted_banner)
     VoteRequest vote;
     vote.type = MSG_VOTE_REQUEST;
     vote.target_id = targeted_banner;
-    send_packet(client->socket, client->serverAddr, &vote,sizeof(VoteRequest));
+    send_packet(client->socket, client->serverAddr, &vote, sizeof(VoteRequest));
 }
 
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio)
@@ -223,16 +218,31 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
         MessageType type;
         memcpy(&type, client->recievepacket->data, sizeof(type));
 
-        if (type == MSG_GAME_STATE || type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
+        if (type == MSG_GAME_STATE)
         {
             if (packet_has_size(client->recievepacket, sizeof(gameState), "MSG_GAME_STATE"))
             {
-                gamePhase previous_phase = state->phase;
                 memcpy(state, client->recievepacket->data, sizeof(gameState));
-                if (state->phase == GAME_INFO_MEETING && previous_phase != GAME_INFO_MEETING)
+            }
+        }
+        else if (type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
+        {
+            if (packet_has_size(client->recievepacket, sizeof(EmergencyMeetingEvent), "MSG_GAME_STATE"))
+            {
+                EmergencyMeetingEvent meeting_info = {0};
+                memcpy(&meeting_info, client->recievepacket->data, sizeof(EmergencyMeetingEvent));
+
+                state->phase = meeting_info.phase;
+                state->meeting_reason = meeting_info.meeting_reason;
+                int reporter_id = meeting_info.emergency_meeting_reported_id;
+                state->emergency_meeting_reported_id = reporter_id;
+
+                if (type == MSG_EMERGENCY_MEETING)
                 {
-                    play_meeting_horn(audio);
+                    state->players[reporter_id].emergency_meeting = 0;
                 }
+
+                play_meeting_horn(audio);
             }
         }
         else if (type == MSG_KILL_EVENT)

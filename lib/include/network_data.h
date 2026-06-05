@@ -166,9 +166,15 @@ typedef struct
 typedef struct
 {
     MessageType type;
-    int player_id;
-
 } EmergencyMeetingMsg;
+
+typedef struct
+{
+    MessageType type;
+    gamePhase phase;
+    MeetingReason meeting_reason;
+    int emergency_meeting_reported_id;
+} EmergencyMeetingEvent;
 
 typedef struct
 {

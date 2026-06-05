@@ -347,20 +347,28 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
     if (s->state.phase != GAME_RUNNING)
         return;
 
-    if (!packet_has_size(s->receive_packet, sizeof(clientInput), "MSG_EMERGENCY_MEETING"))
+    if (!packet_has_size(s->receive_packet, sizeof(EmergencyMeetingMsg), "MSG_EMERGENCY_MEETING"))
         return;
 
-    int local_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
-    if (local_id >= 0 && local_id < MAX_PLAYERS && s->state.players[local_id].isAlive && s->state.players[local_id].emergency_meeting == 1)
+    int sender_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+    if (sender_id >= 0 && sender_id < MAX_PLAYERS && s->state.players[sender_id].isAlive && s->state.players[sender_id].emergency_meeting == 1)
     {
         s->state.phase = GAME_INFO_MEETING;
         s->state.type = MSG_GAME_STATE;
         s->state.meeting_reason = MEETING_EMERGENCY;
-        s->state.players[local_id].emergency_meeting = 0;
-        s->state.emergency_meeting_reported_id = local_id;
-        printf("[SERVER] Accept: player %d started an emergency meeting.\n", local_id);
+        s->state.players[sender_id].emergency_meeting = 0;
+        s->state.emergency_meeting_reported_id = sender_id;
+
+        EmergencyMeetingEvent msg ={0};
+        msg.phase = GAME_INFO_MEETING;
+        msg.type = MSG_GAME_STATE;
+        msg.meeting_reason = MEETING_EMERGENCY;
+        msg.emergency_meeting_reported_id = sender_id;
+
+
+        printf("[SERVER] Accept: player %d started an emergency meeting.\n", sender_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
     }
 }
 
@@ -393,9 +401,16 @@ void handle_body_found(Server *s, IPaddress sender)
         s->state.type = MSG_GAME_STATE;
         s->state.meeting_reason = MEETING_BODY;
         s->state.emergency_meeting_reported_id = reported_id;
+
+        EmergencyMeetingEvent msg ={0};
+        msg.phase = GAME_INFO_MEETING;
+        msg.type = MSG_GAME_STATE;
+        msg.meeting_reason = MEETING_EMERGENCY;
+        msg.emergency_meeting_reported_id = reported_id;
+
         printf("[SERVER] Accept: player %d found a body.\n", reported_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
     }
 }
 
