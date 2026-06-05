@@ -271,5 +271,15 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                 }
             }
         }
+        else if (type == MSG_TASK_COMPLETE)
+        {
+            TaskCompletedEvent msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(TaskCompletedEvent), "MSG_KILL_EVENT"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(TaskCompletedEvent));
+                state->total_tasks_completed += 1;
+                state->players[msg.player_id].tasks_completed += 1;
+            }
+        }
     }
 }

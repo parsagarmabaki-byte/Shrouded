@@ -168,6 +168,13 @@ typedef struct
     MessageType type;
 } EmergencyMeetingMsg;
 
+typedef struct 
+{
+    MessageType type;
+    int player_id;
+}TaskCompletedEvent;
+
+
 typedef struct
 {
     MessageType type;

@@ -336,7 +336,7 @@ void handle_kill(Server *s, IPaddress sender)
         msg.y = s->state.players[killer_id].y;
         
         activate_kill_cooldown(&s->state, killer_id);
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(KillEventMsg));
         check_win_condition(&s->state);
         // broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
@@ -368,7 +368,7 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
 
         printf("[SERVER] Accept: player %d started an emergency meeting.\n", sender_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(EmergencyMeetingEvent));
     }
 }
 
@@ -410,7 +410,7 @@ void handle_body_found(Server *s, IPaddress sender)
 
         printf("[SERVER] Accept: player %d found a body.\n", reported_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(msg));
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(EmergencyMeetingEvent));
     }
 }
 
@@ -435,12 +435,18 @@ void handle_task_complete(Server *s, IPaddress sender)
                 s->state.total_tasks_completed++;
                 check_win_condition(&s->state);
 
+                TaskCompletedEvent task_completed_msg = {0};
+                task_completed_msg.type = MSG_TASK_COMPLETE;
+                task_completed_msg.player_id = pid;
+
                 int active_count = countActivePlayers(&s->state);
                 int total_expected_tasks = TASK_COUNT * (active_count - 1);
                 printf("\n=== TASK COMPLETE ===\n");
                 printf("Player %d finished task %d/%d (TaskType %d)\n", pid, s->state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
                 printf("Team progress: %d/%d\n", s->state.total_tasks_completed, total_expected_tasks);
                 printf("=====================\n");
+                broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &task_completed_msg, sizeof(TaskCompletedEvent));
+
             }
             else
             {
@@ -448,7 +454,6 @@ void handle_task_complete(Server *s, IPaddress sender)
             }
         }
     }
-    broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 }
 
 void handle_vote(Server *s, IPaddress sender, gameState *state)
