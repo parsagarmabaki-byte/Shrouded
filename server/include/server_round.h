@@ -5,6 +5,6 @@
 #include "network_data.h"
 
 int designateImpostor(gameState *state);
-void start_new_round(gameState *state, Uint64 *state_start_time);
+void start_new_round(gameState *state, Uint64 *state_start_time, int *killer_id);
 
 #endif

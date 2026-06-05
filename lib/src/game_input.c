@@ -113,7 +113,7 @@ static void kill_events(GameContext *ctx)
     int target_id = -1;
     if (ctx->event.type == SDL_KEYDOWN)
     {
-        if (!ctx->player->kill_cooldown_active && ctx->is_local_impostor)
+        if (!ctx->state->kill_cooldown_active && ctx->is_local_impostor)
         {
             if (ctx->event.key.keysym.scancode == SDL_SCANCODE_K)
             {
@@ -123,7 +123,7 @@ static void kill_events(GameContext *ctx)
             }
         }
     }
-    if (!ctx->player->kill_cooldown_active && ctx->is_local_impostor && ctx->event.type == SDL_MOUSEBUTTONDOWN)
+    if (!ctx->state->kill_cooldown_active && ctx->is_local_impostor && ctx->event.type == SDL_MOUSEBUTTONDOWN)
     {
         if (is_hovering(ctx->renderer, kill_button))
         {

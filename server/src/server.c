@@ -151,6 +151,8 @@ void update_server_tick(Server *s)
             s->state.phase = GAME_RUNNING;
             printf("Game is now GAME_RUNNING\n");
         }
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+
     }
     else if (s->state.phase == GAME_INFO_MEETING)
     {
@@ -161,6 +163,8 @@ void update_server_tick(Server *s)
             s->phase_time = SDL_GetTicks64();
             printf("INFORMATION OF MEETING ENDED\n");
         }
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+
     }
     else if (s->state.phase == GAME_MEETING)
     {
@@ -177,6 +181,8 @@ void update_server_tick(Server *s)
             printf("MEETING ENDED\n");
             s->phase_time = SDL_GetTicks64();
         }
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+
     }
     else if (s->state.phase == SHOW_VOTE_RESULT)
     {
@@ -188,22 +194,31 @@ void update_server_tick(Server *s)
                 s->deadBodyActive[i] = 0;
             spawn_players(&s->state);
             s->state.phase = GAME_RUNNING;
-            check_win_condition(&s->state);
+        check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
         }
+        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
     else if (s->state.phase == GAME_RUNNING)
     {
+        PlayerSyncMsg msg = {0};
+        msg.type = MSG_PLAYER_SYNC_DATA;
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
             apply_player_input(&s->state, &s->lastInput[i], SERVER_TICK_INTERVAL);
-            if (s->state.players[i].kill_cooldown_active)
-            {
-                s->state.players[i].kill_cooldown_active = update_kill_cooldown(s->state, i);
-            }
+            
+            msg.player[i].x = s->state.players[i].x;
+            msg.player[i].y = s->state.players[i].y;
+            msg.player[i].direction = s->state.players[i].direction;
+            msg.player[i].player_id = i;
+            msg.player[i].current_frame = s->state.players[i].current_frame;
+            
+            if (s->kill_cooldown_start != -1)
+                update_kill_cooldown(s->socket,s->send_packet,s->clientAddresses[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
+            
         }
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PlayerSyncMsg));
     }
 
-    broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 }
 
 // ===================== MESSAGE HANDLERS =====================
@@ -263,7 +278,7 @@ void handle_start_game(Server *s, IPaddress sender)
     {
         for (int i = 0; i < MAX_PLAYERS; i++)
             s->deadBodyActive[i] = 0;
-        start_new_round(&s->state, &s->state_start_time);
+        start_new_round(&s->state, &s->state_start_time, &s->killer_id);
         printf("Game is now GAME_SHOW_ROLE\n");
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
@@ -275,7 +290,7 @@ void handle_play_again(Server *s)
     {
         for (int i = 0; i < MAX_PLAYERS; i++)
             s->deadBodyActive[i] = 0;
-        start_new_round(&s->state, &s->state_start_time);
+        start_new_round(&s->state, &s->state_start_time, &s->killer_id);
         printf("Play again: game is now GAME_SHOW_ROLE\n");
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
@@ -335,10 +350,9 @@ void handle_kill(Server *s, IPaddress sender)
         msg.x = s->state.players[killer_id].x;
         msg.y = s->state.players[killer_id].y;
         
-        activate_kill_cooldown(&s->state, killer_id);
+        activate_kill_cooldown(&s->kill_cooldown_start, &s->state.kill_cooldown_active, killer_id);
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(KillEventMsg));
-        check_win_condition(&s->state);
-        // broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
     }
 }
 
@@ -433,7 +447,7 @@ void handle_task_complete(Server *s, IPaddress sender)
             {
                 s->state.players[pid].tasks_completed++;
                 s->state.total_tasks_completed++;
-                check_win_condition(&s->state);
+                check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
 
                 TaskCompletedEvent task_completed_msg = {0};
                 task_completed_msg.type = MSG_TASK_COMPLETE;

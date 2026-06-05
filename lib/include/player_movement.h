@@ -16,7 +16,6 @@ typedef struct{
     Direction direction;
     int current_frame;
     float animation_timer;
-    bool kill_cooldown_active;
     Uint32 kill_cooldown_end;
 } Player;
 

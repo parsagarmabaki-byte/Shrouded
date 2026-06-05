@@ -7,7 +7,6 @@ void update_game(GameContext *ctx)
 {
     bool task_active = task_active_check(ctx->task);
     ctx->accumulator += ctx->dt;
-    ctx->player->kill_cooldown_active = ctx->state->players[ctx->local_id].kill_cooldown_active;
 
     update_player_movement(ctx->player, &ctx->user_input, task_active, ctx->ui_open, &ctx->accumulator);
     send_player_input(ctx->client, ctx->player, ctx->user_input, task_active, ctx->ui_open);

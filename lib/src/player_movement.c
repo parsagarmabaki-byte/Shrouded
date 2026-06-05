@@ -79,8 +79,6 @@ Player init_player(gameState state, int local_id)
     player.current_frame = state.players[local_id].current_frame;
     player.direction = state.players[local_id].direction;
     player.animation_timer = 0.0f;
-    player.kill_cooldown_active = state.players[local_id].kill_cooldown_active;
-    player.kill_cooldown_end = state.players[local_id].kill_cooldown_start;
 
     return player;
 }

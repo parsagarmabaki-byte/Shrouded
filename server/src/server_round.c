@@ -43,7 +43,7 @@ int designateImpostor(gameState *state)
     return -1;
 }
 
-void start_new_round(gameState *state, Uint64 *state_start_time)
+void start_new_round(gameState *state, Uint64 *state_start_time, int *killer_id)
 {
     TaskType all_tasks[TASK_COUNT] = {
         TASK_TIMER,
@@ -72,9 +72,9 @@ void start_new_round(gameState *state, Uint64 *state_start_time)
 
     spawn_players(state);
 
-    int active_chosen_player = designateImpostor(state);
-    if (active_chosen_player >= 0)
-        printf("Player %d is impostor\n", active_chosen_player);
+    *killer_id = designateImpostor(state);
+    if (*killer_id >= 0)
+        printf("Player %d is impostor\n", *killer_id);
 
     printf("\n=== TASK ORDER ASSIGNMENT ===\n");
     for (int i = 0; i < MAX_PLAYERS; i++)

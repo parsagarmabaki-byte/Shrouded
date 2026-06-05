@@ -336,10 +336,8 @@ void render_player_overlays(GameContext *ctx)
         render_player_ability(renderer, *player, ctx->assets, ctx->bodies);
 
     if (ctx->is_local_impostor)
-    {
-        player->kill_cooldown_active = state->players[ctx->local_id].kill_cooldown_active;
-        render_imposter_ability(renderer, *state, assets->kill_button_active, assets->kill_button_deactive, player->kill_cooldown_active, ctx->local_id);
-    }
+        render_imposter_ability(renderer, *state, assets->kill_button_active, assets->kill_button_deactive, ctx->state->kill_cooldown_active, ctx->local_id);
+    
 }
 
 void render_info_text(SDL_Renderer *renderer, gameState *state, int local_id, Text text)

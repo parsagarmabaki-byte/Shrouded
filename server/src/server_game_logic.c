@@ -1,7 +1,8 @@
 #include "server_game_logic.h"
 #include "player_movement.h"
+#include "server_broadcast.h"
 
-void check_win_condition(gameState *state)
+void check_win_condition(UDPsocket socket, UDPpacket *packet, IPaddress *clients, int *used, gameState *state)
 {
     int alive_impostor = 0;
     int alive_crewmates = 0;
@@ -26,13 +27,19 @@ void check_win_condition(gameState *state)
         if (state->players[i].isAlive)
             alive_crewmates++;
     }
-
-    if (alive_impostor == 0)
-        state->phase = GAME_CREWMATES_WIN;
-    else if (alive_impostor >= alive_crewmates)
-        state->phase = GAME_KILLER_WIN;
-    else if (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
-        state->phase = GAME_CREWMATES_WIN;
+    if (alive_impostor == 0 || alive_impostor >= alive_crewmates || active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
+    {
+        PhaseChangeMsg msg = {0};
+        msg.type = MSG_PHASE_CHANGE;
+        if (alive_impostor == 0)
+            msg.phase = GAME_CREWMATES_WIN;
+        else if (alive_impostor >= alive_crewmates)
+            msg.phase = GAME_KILLER_WIN;
+        else if (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
+            msg.phase = GAME_CREWMATES_WIN;
+        state->phase = msg.phase;
+        broadcast_msg(socket, packet, clients, used, &msg, sizeof(PhaseChangeMsg));
+    }
 }
 
 void apply_player_input(gameState *state, InputMsg *input, float dt)

@@ -4,6 +4,7 @@
 #include "network_data.h"
 #include "game.h"
 #include "player_movement.h"
+#include "client_network.h"
 
 void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
 {
@@ -30,23 +31,28 @@ bool is_hovering(SDL_Renderer *renderer, SDL_Rect rect)
             ly <= rect.y + rect.h);
 }
 
-void activate_kill_cooldown(gameState *state, int local_id)
+void activate_kill_cooldown(Uint64 *kill_cooldown_start, bool *kill_cooldown_active, int killer_id)
 {
-    state->players[local_id].kill_cooldown_start = SDL_GetTicks64();
-    state->players[local_id].kill_cooldown_active = true;
+    *kill_cooldown_start= SDL_GetTicks64();
+    *kill_cooldown_active = true;
 }
 
-bool update_kill_cooldown(gameState state, int local_id)
+void update_kill_cooldown(UDPsocket socket, UDPpacket *packet, IPaddress address, Uint64 *kill_cooldown_start, bool *kill_cooldown)
 {
     Uint64 now = SDL_GetTicks64();
-    if (now - state.players[local_id].kill_cooldown_start >= COOLDOWN)
-        return false;
-    return true;
+    if (now - *kill_cooldown_start >= COOLDOWN)
+    {
+        KillReadyMsg msg = {MSG_KILL_READY};
+        send_packet_data(socket, packet, address, &msg, sizeof(KillReadyMsg));
+        *kill_cooldown_start = 0;
+        *kill_cooldown = false;
+
+    }
 }
 
 int handle_kill_request(gameState *state, int killer_id)
 {
-    playerState imposter = state->players[killer_id];
+    playerState killer = state->players[killer_id];
     float best_distance = KILL_RADIUS * KILL_RADIUS;
     int target_id = -1;
 
@@ -60,7 +66,7 @@ int handle_kill_request(gameState *state, int killer_id)
         if (state->players[i].isAlive && state->players[i].active)
         {
             // printf("\nPlayer %d is ALIVE and ACTIVE\n");
-            float distance = find_kill_target(imposter, state->players[i]);
+            float distance = find_kill_target(killer, state->players[i]);
             if (distance > 0 && distance < best_distance)
             {
                 // printf("\nTARGET ID %d found\n", i);
@@ -69,8 +75,8 @@ int handle_kill_request(gameState *state, int killer_id)
             }
         }
     }
-    if (target_id != -1 && !imposter.kill_cooldown_active)
-    {   
+    if (target_id != -1 && !state->kill_cooldown_active)
+    {
         // printf("returnng id %d", target_id);
         return target_id;
     }
@@ -184,14 +190,14 @@ bool find_target_report_body(Position bodies, int player_x, int player_y)
 
     float player_center_x = player_x + 20 / 2.0f;
     float player_center_y = player_y + 20 / 2.0f;
-    
+
     float dx = player_center_x - bodies.x;
     float dy = player_center_y - bodies.y;
     float dist_sq = dx * dx + dy * dy;
 
     if (dist_sq < shortest_distance)
     {
-       return true;
+        return true;
     }
     return false;
 }

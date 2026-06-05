@@ -17,6 +17,8 @@ typedef struct {
     int deadBodyActive[MAX_PLAYERS];
     Uint64 state_start_time;
     Uint64 phase_time;
+    Uint64 kill_cooldown_start;
+    int killer_id;
 } Server;
 
 #endif

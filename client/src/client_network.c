@@ -90,7 +90,7 @@ int send_play_again(Client *client)
     return send_client_message(client->socket, client->serverAddr, MSG_PLAY_AGAIN);
 }
 
-static int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size)
+int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size)
 {
     UDPpacket *packet = create_packet(512);
     if (!packet)
@@ -252,6 +252,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
                 state->players[msg.victim_id].isAlive = 0;
+                state->kill_cooldown_active = true;
                 if (bodies)
                 {
                     start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
@@ -274,11 +275,39 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
         else if (type == MSG_TASK_COMPLETE)
         {
             TaskCompletedEvent msg = {0};
-            if (packet_has_size(client->recievepacket, sizeof(TaskCompletedEvent), "MSG_KILL_EVENT"))
+            if (packet_has_size(client->recievepacket, sizeof(TaskCompletedEvent), "TaskCompletedEvent"))
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(TaskCompletedEvent));
                 state->total_tasks_completed += 1;
                 state->players[msg.player_id].tasks_completed += 1;
+            }
+        }
+        else if (type == MSG_PLAYER_SYNC_DATA)
+        {
+            PlayerSyncMsg msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(PlayerSyncMsg), "PlayerSyncMsg"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(PlayerSyncMsg));
+                for (int i = 0; i < 6; i++)
+                {
+                    state->players[i].x = msg.player[i].x;
+                    state->players[i].y = msg.player[i].y;
+                    state->players[i].direction = msg.player[i].direction;
+                    state->players[i].current_frame = msg.player[i].current_frame;
+                }
+            }
+        }
+        else if (type == MSG_KILL_READY)
+        {
+            state->kill_cooldown_active = false;
+        }
+        else if (type == MSG_PHASE_CHANGE)
+        {
+            PhaseChangeMsg msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(PhaseChangeMsg), "PhaseChangeMsg"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(PhaseChangeMsg));
+                state->phase = msg.phase;
             }
         }
     }

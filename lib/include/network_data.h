@@ -48,6 +48,9 @@ typedef enum
     MSG_VOTE_REQUEST,
     MSG_DEBUG_CREWMATES_WIN,
     MSG_DEBUG_IMPOSTOR_WIN,
+    MSG_PLAYER_SYNC_DATA,
+    MSG_KILL_READY,
+    MSG_PHASE_CHANGE
 } MessageType;
 
 typedef enum
@@ -103,10 +106,7 @@ typedef struct
     int isAlive;
     int isImpostor;
     int isDoingTask;
-
-    bool kill_cooldown_active;
-    Uint32 kill_cooldown_start;
-
+    
     int emergency_meeting;
 
     int current_frame;
@@ -142,6 +142,8 @@ typedef struct
     int voting_result;
     int total_tasks_completed;
     int meeting_time_remaining; // milliseconds left in meeting
+    bool kill_cooldown_active;
+
 } gameState;
 
 typedef struct
@@ -210,6 +212,13 @@ typedef struct
     Direction direction;
 
 } PlayerUpdateMsg;
+
+typedef struct 
+{
+    MessageType type;
+    PlayerUpdateMsg player[MAX_PLAYERS];
+}PlayerSyncMsg;
+
 
 typedef struct
 {
