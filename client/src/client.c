@@ -105,7 +105,7 @@ int main()
                 }
             }
 
-            collect_packets(&client, &state, NULL, &audio, nullptr, nullptr);
+            collect_packets(&client, &state, NULL, &audio, NULL, NULL);
 
             if (state.phase != GAME_LOBBY)
                 running = false;

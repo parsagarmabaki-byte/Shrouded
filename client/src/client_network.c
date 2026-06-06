@@ -92,7 +92,7 @@ int send_play_again(Client *client)
 
 int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size)
 {
-    UDPpacket *packet = create_packet(512);
+    UDPpacket *packet = create_packet(550);
     if (!packet)
         return 0;
 
