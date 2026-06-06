@@ -281,6 +281,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                 state->total_tasks_completed += 1;
                 state->players[msg.player_id].tasks_completed += 1;
             }
+
         }
         else if (type == MSG_PLAYER_SYNC_DATA)
         {
@@ -308,6 +309,28 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(PhaseChangeMsg));
                 state->phase = msg.phase;
+            }
+        }
+        else if (type == MSG_MEETING_ENDED)
+        {
+            MeetingEndedEvent msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(MeetingEndedEvent), "MeetingEndedEvent"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(MeetingEndedEvent));
+                state->phase = msg.phase;
+                state->voting_result = msg.voting_result;
+                for (int i=0; i < 7; i++)
+                    state->voting_results[i] = msg.voting_results [i];
+                state->meeting_reason = msg.meeting_reason;
+            }
+        }
+        else if (type == MSG_MEETING_TIMER)
+        {
+            MeetingTimer msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(MeetingTimer), "MeetingTimer"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(MeetingTimer));
+                state->meeting_time_remaining = msg.meeting_time_remaining;
             }
         }
     }

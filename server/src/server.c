@@ -109,7 +109,7 @@ int main(void)
                 handle_task_complete(&server, sender);
                 break;
             case MSG_VOTE_REQUEST:
-                handle_vote(&server, sender,&server.state);
+                handle_vote(&server, sender, &server.state);
                 break;
             case MSG_DEBUG_CREWMATES_WIN:
 #ifdef DEBUG
@@ -150,9 +150,11 @@ void update_server_tick(Server *s)
         {
             s->state.phase = GAME_RUNNING;
             printf("Game is now GAME_RUNNING\n");
+            PhaseChangeMsg msg = {0};
+            msg.phase = GAME_RUNNING;
+            msg.type = MSG_PHASE_CHANGE;
+            broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PhaseChangeMsg));
         }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
-
     }
     else if (s->state.phase == GAME_INFO_MEETING)
     {
@@ -162,9 +164,12 @@ void update_server_tick(Server *s)
             inititate_meeting_info(&s->meeting_info, &s->state);
             s->phase_time = SDL_GetTicks64();
             printf("INFORMATION OF MEETING ENDED\n");
-        }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 
+            PhaseChangeMsg msg = {0};
+            msg.phase = GAME_MEETING;
+            msg.type = MSG_PHASE_CHANGE;
+            broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PhaseChangeMsg));
+        } 
     }
     else if (s->state.phase == GAME_MEETING)
     {
@@ -178,25 +183,37 @@ void update_server_tick(Server *s)
         {
             s->state.phase = SHOW_VOTE_RESULT;
             s->state.voting_result = calculate_votes(s->meeting_info, s->state.voting_results);
+            s->state.meeting_reason = MEETING_NONE;
             printf("MEETING ENDED\n");
+            
+            MeetingEndedEvent msg = {0};
+            msg.phase = SHOW_VOTE_RESULT;
+            for (int i=0; i < 7; i++)
+                msg.voting_results[i] = s->state.voting_results[i];
+            msg.type = MSG_MEETING_ENDED;
+            msg.voting_result = s->state.voting_result;
+            msg.meeting_reason = MEETING_NONE;
+            broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(MeetingEndedEvent));
+            
             s->phase_time = SDL_GetTicks64();
         }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
-
+        MeetingTimer msg;
+        msg.type = MSG_MEETING_TIMER;
+        msg.meeting_time_remaining = s->state.meeting_time_remaining;
+        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(MeetingTimer));
     }
     else if (s->state.phase == SHOW_VOTE_RESULT)
     {
         if (SDL_GetTicks64() - s->phase_time >= VOTE_RESULT_DURATION)
         {
+            s->state.phase = GAME_RUNNING;
             resolve_voting(&s->state, s->meeting_info, s->state.voting_results);
-            s->state.meeting_reason = MEETING_NONE;
             for (int i = 0; i < MAX_PLAYERS; i++)
                 s->deadBodyActive[i] = 0;
             spawn_players(&s->state);
-            s->state.phase = GAME_RUNNING;
-        check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
+            check_win_condition(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &s->state);
+            broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
         }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
     else if (s->state.phase == GAME_RUNNING)
     {
@@ -205,20 +222,18 @@ void update_server_tick(Server *s)
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
             apply_player_input(&s->state, &s->lastInput[i], SERVER_TICK_INTERVAL);
-            
+
             msg.player[i].x = s->state.players[i].x;
             msg.player[i].y = s->state.players[i].y;
             msg.player[i].direction = s->state.players[i].direction;
             msg.player[i].player_id = i;
             msg.player[i].current_frame = s->state.players[i].current_frame;
-            
+
             if (s->kill_cooldown_start != -1)
-                update_kill_cooldown(s->socket,s->send_packet,s->clientAddresses[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
-            
+                update_kill_cooldown(s->socket, s->send_packet, s->clientAddresses[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
         }
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PlayerSyncMsg));
     }
-
 }
 
 // ===================== MESSAGE HANDLERS =====================
@@ -324,11 +339,11 @@ void handle_kill(Server *s, IPaddress sender)
 
     if (!packet_has_size(s->receive_packet, sizeof(KillRequestMsg), "MSG_KILL_REQUEST"))
         return;
-    
+
     if (killer_id < 0 || killer_id >= MAX_PLAYERS)
         return;
-    
-        if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isImpostor)
+
+    if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isImpostor)
         return;
 
     KillRequestMsg request;
@@ -349,10 +364,10 @@ void handle_kill(Server *s, IPaddress sender)
         msg.victim_id = target_id;
         msg.x = s->state.players[killer_id].x;
         msg.y = s->state.players[killer_id].y;
-        
+
         activate_kill_cooldown(&s->kill_cooldown_start, &s->state.kill_cooldown_active, killer_id);
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(KillEventMsg));
-        check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
+        check_win_condition(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &s->state);
     }
 }
 
@@ -368,17 +383,16 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
     if (sender_id >= 0 && sender_id < MAX_PLAYERS && s->state.players[sender_id].isAlive && s->state.players[sender_id].emergency_meeting == 1)
     {
         s->state.phase = GAME_INFO_MEETING;
-        s->state.type = MSG_GAME_STATE;
+        s->state.type = MSG_EMERGENCY_MEETING;
         s->state.meeting_reason = MEETING_EMERGENCY;
         s->state.players[sender_id].emergency_meeting = 0;
         s->state.emergency_meeting_reported_id = sender_id;
 
-        EmergencyMeetingEvent msg ={0};
+        EmergencyMeetingEvent msg = {0};
         msg.phase = GAME_INFO_MEETING;
-        msg.type = MSG_GAME_STATE;
+        msg.type = MSG_EMERGENCY_MEETING;
         msg.meeting_reason = MEETING_EMERGENCY;
         msg.emergency_meeting_reported_id = sender_id;
-
 
         printf("[SERVER] Accept: player %d started an emergency meeting.\n", sender_id);
         s->phase_time = SDL_GetTicks64();
@@ -416,7 +430,7 @@ void handle_body_found(Server *s, IPaddress sender)
         s->state.meeting_reason = MEETING_BODY;
         s->state.emergency_meeting_reported_id = reported_id;
 
-        EmergencyMeetingEvent msg ={0};
+        EmergencyMeetingEvent msg = {0};
         msg.phase = GAME_INFO_MEETING;
         msg.type = MSG_GAME_STATE;
         msg.meeting_reason = MEETING_EMERGENCY;
@@ -447,7 +461,7 @@ void handle_task_complete(Server *s, IPaddress sender)
             {
                 s->state.players[pid].tasks_completed++;
                 s->state.total_tasks_completed++;
-                check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
+                check_win_condition(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &s->state);
 
                 TaskCompletedEvent task_completed_msg = {0};
                 task_completed_msg.type = MSG_TASK_COMPLETE;
@@ -460,7 +474,6 @@ void handle_task_complete(Server *s, IPaddress sender)
                 printf("Team progress: %d/%d\n", s->state.total_tasks_completed, total_expected_tasks);
                 printf("=====================\n");
                 broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &task_completed_msg, sizeof(TaskCompletedEvent));
-
             }
             else
             {
@@ -489,6 +502,6 @@ void handle_vote(Server *s, IPaddress sender, gameState *state)
     if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_recieved < s->meeting_info.alive_players_count)
     {
         cast_vote(&s->meeting_info, vote);
-        state->players[pid].player_voted=1;
+        state->players[pid].player_voted = 1;
     }
 }

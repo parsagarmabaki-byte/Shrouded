@@ -50,7 +50,9 @@ typedef enum
     MSG_DEBUG_IMPOSTOR_WIN,
     MSG_PLAYER_SYNC_DATA,
     MSG_KILL_READY,
-    MSG_PHASE_CHANGE
+    MSG_PHASE_CHANGE,
+    MSG_MEETING_ENDED,
+    MSG_MEETING_TIMER
 } MessageType;
 
 typedef enum
@@ -65,26 +67,6 @@ typedef struct
     int x;
     int y;
 } Position;
-
-typedef struct
-{ // Info som användaren klickar in
-    MessageType type;
-    int player_id;
-    int up;
-    int down;
-    int left;
-    int right;
-    int interact;
-    int kill;
-    int report;
-    int current_frame;
-    int isAlive;
-    int emergency_meeting_left;
-    Direction direction;
-    Position dead_body;
-    int target_id;
-
-} clientInput;
 
 typedef struct
 {
@@ -165,6 +147,13 @@ typedef struct
 
 } Meeting;
 
+typedef struct 
+{
+    MessageType type;
+    int meeting_time_remaining;
+} MeetingTimer;
+
+
 typedef struct
 {
     MessageType type;
@@ -184,6 +173,16 @@ typedef struct
     MeetingReason meeting_reason;
     int emergency_meeting_reported_id;
 } EmergencyMeetingEvent;
+
+typedef struct 
+{
+    MessageType type;
+    gamePhase phase;
+    MeetingReason meeting_reason;
+    int voting_results[MAX_PLAYERS + 1];
+    int voting_result;
+} MeetingEndedEvent;
+
 
 typedef struct
 {
