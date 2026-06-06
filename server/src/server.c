@@ -426,14 +426,14 @@ void handle_body_found(Server *s, IPaddress sender)
     if (s->state.players[reported_id].isAlive && find_target_report_body(dead_body, player_x, player_y))
     {
         s->state.phase = GAME_INFO_MEETING;
-        s->state.type = MSG_GAME_STATE;
+        s->state.type = MSG_BODY_FOUND;
         s->state.meeting_reason = MEETING_BODY;
         s->state.emergency_meeting_reported_id = reported_id;
 
         EmergencyMeetingEvent msg = {0};
         msg.phase = GAME_INFO_MEETING;
-        msg.type = MSG_GAME_STATE;
-        msg.meeting_reason = MEETING_EMERGENCY;
+        msg.type = MSG_BODY_FOUND;
+        msg.meeting_reason = MEETING_BODY;
         msg.emergency_meeting_reported_id = reported_id;
 
         printf("[SERVER] Accept: player %d found a body.\n", reported_id);
@@ -502,6 +502,5 @@ void handle_vote(Server *s, IPaddress sender, gameState *state)
     if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_recieved < s->meeting_info.alive_players_count)
     {
         cast_vote(&s->meeting_info, vote);
-        state->players[pid].player_voted = 1;
     }
 }

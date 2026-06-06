@@ -17,12 +17,12 @@ void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_butto
     }
 }
 
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int local_id)
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int local_id, int *player_voted)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    render_emergency_map(renderer, assets, state->players[state->local_player_id].isAlive, state->players[local_id].player_voted);
-    render_banners(renderer, assets, state, targeted_banner_id, state->players[local_id].player_voted);
+    render_emergency_map(renderer, assets, state->players[state->local_player_id].isAlive, *player_voted);
+    render_banners(renderer, assets, state, targeted_banner_id, *player_voted);
     render_emergency_icon(renderer, assets.emergency_meeting_icon, id_reported);
     SDL_Rect submit_button = {500, 800, 200, 200};
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -59,17 +59,22 @@ int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *eve
     return target_banner_id;
 }
 
-int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner, int player_voted)
+int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner, int *player_voted)
 {
     SDL_Rect submit_button = {VOTE_SUBMIT_X, VOTE_SUBMIT_Y, VOTE_SUBMIT_W, VOTE_SUBMIT_H};
     SDL_Rect skip_button = {VOTE_SKIP_X, VOTE_SKIP_Y, VOTE_SKIP_W, VOTE_SKIP_H};
-    if (event->type == SDL_MOUSEBUTTONDOWN && player_alive && player_voted == 0)
+    if (event->type == SDL_MOUSEBUTTONDOWN && player_alive && *player_voted == -1)
     {
         if (is_hovering(renderer, submit_button))
+        {
             send_vote(client, targeted_banner);
+            *player_voted = 1;
+        }
         else if (is_hovering(renderer, skip_button))
+        {
             send_vote(client, -1);
-        
+            *player_voted = 1;
+        }
     }
     return 0;
 }
@@ -79,7 +84,7 @@ void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_
     SDL_Rect submit_button = {VOTE_SUBMIT_X, VOTE_SUBMIT_Y, VOTE_SUBMIT_W, VOTE_SUBMIT_H};
     SDL_Rect skip_button = {VOTE_SKIP_X, VOTE_SKIP_Y, VOTE_SKIP_W, VOTE_SKIP_H};
     SDL_Texture *map_texture;
-    if (player_alive && !player_voted)
+    if (player_alive && player_voted == -1)
     {
         if (is_hovering(renderer, submit_button))
             map_texture = assets.emergency_meeting_submit;

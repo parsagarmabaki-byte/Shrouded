@@ -21,7 +21,7 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets
     {
         ctx.dt = calculate_delta_time(&ctx.last_tick);
         process_events(&ctx);
-        collect_packets(ctx.client, ctx.state, ctx.bodies, ctx.audio);
+        collect_packets(ctx.client, ctx.state, ctx.bodies, ctx.audio, &ctx.targeted_banner_id, &ctx.player_voted);
         ctx.is_local_impostor = ctx.state->players[ctx.local_id].isImpostor != 0;
         ctx.ui_open = ctx.emergency_window_open || ctx.task_map_open || ctx.pause_menu_open;
         if (ctx.state->phase == GAME_RUNNING)

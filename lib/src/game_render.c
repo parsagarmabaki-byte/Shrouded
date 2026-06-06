@@ -116,7 +116,7 @@ void render_game_phase(GameContext *ctx)
         break;
 
     case GAME_MEETING:
-        render_emergency_meeting(ctx->renderer, ctx->assets, state, state->emergency_meeting_reported_id, ctx->targeted_banner_id, ctx->timer_meeting_text, ctx->local_id);
+        render_emergency_meeting(ctx->renderer, ctx->assets, state, state->emergency_meeting_reported_id, ctx->targeted_banner_id, ctx->timer_meeting_text, ctx->local_id, &ctx->player_voted);
         ctx->emergency_window_open = false;
         break;
 
@@ -275,8 +275,8 @@ void render_world(GameContext *ctx)
 
     render_map(renderer, assets.map_texture, &ctx->cam);
     debug_walls(renderer, ctx->cam);
-    render_all_players(state, player, ctx->assets, &ctx->cam, renderer, ctx->local_id);
     render_kill_animation(renderer, ctx->bodies, ctx->assets, &ctx->cam);
+    render_all_players(state, player, ctx->assets, &ctx->cam, renderer, ctx->local_id);
 }
 
 static TaskMarker *find_marker(TaskType type)

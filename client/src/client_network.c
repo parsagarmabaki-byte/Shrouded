@@ -206,7 +206,7 @@ void send_vote(Client *client, int targeted_banner)
     send_packet(client->socket, client->serverAddr, &vote, sizeof(VoteRequest));
 }
 
-void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio)
+void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted)
 {
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
@@ -232,6 +232,8 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                 EmergencyMeetingEvent meeting_info = {0};
                 memcpy(&meeting_info, client->recievepacket->data, sizeof(EmergencyMeetingEvent));
 
+                *targeted_banner = -1;
+                *player_voted = -1;
                 state->phase = meeting_info.phase;
                 state->meeting_reason = meeting_info.meeting_reason;
                 int reporter_id = meeting_info.emergency_meeting_reported_id;

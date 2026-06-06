@@ -21,7 +21,6 @@ void inititate_meeting_info(Meeting *meeting_info, gameState *state)
 
         meeting_info->alive_players_id[meeting_info->alive_players_count] = i;
         meeting_info->alive_players_count++;
-        state->players[i].player_voted=0;
     }
 }
 
