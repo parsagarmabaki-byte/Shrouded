@@ -7,6 +7,7 @@
 #define MAX_PLAYERS 6
 #define VOTE_SKIP -1
 #define SERVER_PORT 2000
+#define SERVER_TCP_PORT (SERVER_PORT + 1)
 
 #define SERVER_TICK_INTERVAL 0.016f
 
@@ -50,7 +51,8 @@ typedef enum
     MSG_DEBUG_IMPOSTOR_WIN,
     MSG_PLAYER_SYNC_DATA,
     MSG_KILL_READY,
-    MSG_PHASE_CHANGE
+    MSG_PHASE_CHANGE,
+    MSG_VOTE_UPDATE
 } MessageType;
 
 typedef enum
@@ -152,6 +154,19 @@ typedef struct
     int target_id;
     int voter_id;
 } VoteRequest;
+
+typedef struct
+{
+    MessageType type;
+    gamePhase phase;
+    MeetingReason meeting_reason;
+    int emergency_meeting_reported_id;
+    int meeting_time_remaining;
+    int voting_results[MAX_PLAYERS + 1];
+    int voting_result;
+    int player_voted[MAX_PLAYERS];
+    int player_alive[MAX_PLAYERS];
+} VoteUpdateMsg;
 
 typedef struct
 {

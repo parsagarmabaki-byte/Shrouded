@@ -19,6 +19,9 @@
 
 // Forward declarations
 void update_server_tick(Server *s);
+void handle_tcp_vote_connections(Server *s);
+void handle_tcp_vote(Server *s, VoteRequest vote);
+void broadcast_vote_update(Server *s);
 void handle_join(Server *s, IPaddress sender);
 void handle_leave(Server *s, IPaddress sender);
 void handle_start_game(Server *s, IPaddress sender);
@@ -47,20 +50,28 @@ int main(void)
     for (int i = 0; i < MAX_PLAYERS; i++)
         server.lastInput[i].player_id = -1;
 
-    if (!init_server_socket(&server.socket))
+    if (!init_server_socket(&server.socket, &server.tcp_socket))
         return 1;
+
+    server.voteSocketSet = SDLNet_AllocSocketSet(MAX_PLAYERS);
+    if (!server.voteSocketSet)
+    {
+        printf("SDLNet_AllocSocketSet error: %s\n", SDLNet_GetError());
+        cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, NULL, NULL);
+        return 1;
+    }
 
     server.receive_packet = create_packet(PACKET_SIZE);
     if (!server.receive_packet)
     {
-        cleanupServer(server.socket, NULL, NULL);
+        cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, NULL, NULL);
         return 1;
     }
 
     server.send_packet = create_packet(PACKET_SIZE);
     if (!server.send_packet)
     {
-        cleanupServer(server.socket, server.receive_packet, NULL);
+        cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, server.receive_packet, NULL);
         return 1;
     }
 
@@ -70,6 +81,8 @@ int main(void)
 
     while (1)
     {
+        handle_tcp_vote_connections(&server);
+
         if (SDLNet_UDP_Recv(server.socket, server.receive_packet))
         {
             MessageType type;
@@ -109,7 +122,7 @@ int main(void)
                 handle_task_complete(&server, sender);
                 break;
             case MSG_VOTE_REQUEST:
-                handle_vote(&server, sender,&server.state);
+                printf("[SERVER] Ignored UDP vote request; votes must use TCP\n");
                 break;
             case MSG_DEBUG_CREWMATES_WIN:
 #ifdef DEBUG
@@ -136,8 +149,89 @@ int main(void)
         }
     }
 
-    cleanupServer(server.socket, server.receive_packet, server.send_packet);
+    cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, server.receive_packet, server.send_packet);
     return 0;
+}
+
+void handle_tcp_vote_connections(Server *s)
+{
+    TCPsocket incoming = NULL;
+    while ((incoming = SDLNet_TCP_Accept(s->tcp_socket)) != NULL)
+    {
+        int stored = 0;
+        for (int i = 0; i < MAX_PLAYERS; i++)
+        {
+            if (!s->voteSockets[i])
+            {
+                s->voteSockets[i] = incoming;
+                s->voteBytesRead[i] = 0;
+                SDLNet_TCP_AddSocket(s->voteSocketSet, incoming);
+                stored = 1;
+                break;
+            }
+        }
+
+        if (!stored)
+        {
+            printf("[SERVER] Rejected TCP vote connection: no free slot\n");
+            SDLNet_TCP_Close(incoming);
+        }
+    }
+
+    int ready = SDLNet_CheckSockets(s->voteSocketSet, 0);
+    if (ready <= 0)
+        return;
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        TCPsocket socket = s->voteSockets[i];
+        if (!socket || !SDLNet_SocketReady(socket))
+            continue;
+
+        int remaining = (int)sizeof(VoteRequest) - s->voteBytesRead[i];
+        int received = SDLNet_TCP_Recv(socket,
+                                       ((char *)&s->voteBuffers[i]) + s->voteBytesRead[i],
+                                       remaining);
+        if (received <= 0)
+        {
+            SDLNet_TCP_DelSocket(s->voteSocketSet, socket);
+            SDLNet_TCP_Close(socket);
+            s->voteSockets[i] = NULL;
+            s->voteBytesRead[i] = 0;
+            continue;
+        }
+
+        s->voteBytesRead[i] += received;
+        if (s->voteBytesRead[i] == (int)sizeof(VoteRequest))
+        {
+            VoteRequest vote = s->voteBuffers[i];
+            s->voteBytesRead[i] = 0;
+            if (vote.type == MSG_VOTE_REQUEST)
+                handle_tcp_vote(s, vote);
+        }
+    }
+}
+
+void broadcast_vote_update(Server *s)
+{
+    VoteUpdateMsg msg = {0};
+    msg.type = MSG_VOTE_UPDATE;
+    msg.phase = s->state.phase;
+    msg.meeting_reason = s->state.meeting_reason;
+    msg.emergency_meeting_reported_id = s->state.emergency_meeting_reported_id;
+    msg.meeting_time_remaining = s->state.meeting_time_remaining;
+    msg.voting_result = s->state.voting_result;
+
+    for (int i = 0; i < MAX_PLAYERS + 1; i++)
+        msg.voting_results[i] = s->state.voting_results[i];
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        msg.player_voted[i] = s->state.players[i].player_voted;
+        msg.player_alive[i] = s->state.players[i].isAlive;
+    }
+
+    broadcast_tcp_msg(s->voteSockets, &msg, sizeof(msg));
 }
 
 // ===================== SERVER TICK =====================
@@ -162,8 +256,12 @@ void update_server_tick(Server *s)
             inititate_meeting_info(&s->meeting_info, &s->state);
             s->phase_time = SDL_GetTicks64();
             printf("INFORMATION OF MEETING ENDED\n");
+            broadcast_vote_update(s);
         }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        else
+        {
+            broadcast_vote_update(s);
+        }
 
     }
     else if (s->state.phase == GAME_MEETING)
@@ -181,7 +279,7 @@ void update_server_tick(Server *s)
             printf("MEETING ENDED\n");
             s->phase_time = SDL_GetTicks64();
         }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+        broadcast_vote_update(s);
 
     }
     else if (s->state.phase == SHOW_VOTE_RESULT)
@@ -195,8 +293,8 @@ void update_server_tick(Server *s)
             spawn_players(&s->state);
             s->state.phase = GAME_RUNNING;
         check_win_condition(s->socket,s->send_packet,s->clientAddresses,s->clientUsed,&s->state);
+            broadcast_vote_update(s);
         }
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
     else if (s->state.phase == GAME_RUNNING)
     {
@@ -375,7 +473,7 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
 
         EmergencyMeetingEvent msg ={0};
         msg.phase = GAME_INFO_MEETING;
-        msg.type = MSG_GAME_STATE;
+        msg.type = MSG_EMERGENCY_MEETING;
         msg.meeting_reason = MEETING_EMERGENCY;
         msg.emergency_meeting_reported_id = sender_id;
 
@@ -418,8 +516,8 @@ void handle_body_found(Server *s, IPaddress sender)
 
         EmergencyMeetingEvent msg ={0};
         msg.phase = GAME_INFO_MEETING;
-        msg.type = MSG_GAME_STATE;
-        msg.meeting_reason = MEETING_EMERGENCY;
+        msg.type = MSG_BODY_FOUND;
+        msg.meeting_reason = MEETING_BODY;
         msg.emergency_meeting_reported_id = reported_id;
 
         printf("[SERVER] Accept: player %d found a body.\n", reported_id);
@@ -490,5 +588,28 @@ void handle_vote(Server *s, IPaddress sender, gameState *state)
     {
         cast_vote(&s->meeting_info, vote);
         state->players[pid].player_voted=1;
+    }
+}
+
+void handle_tcp_vote(Server *s, VoteRequest vote)
+{
+    gameState *state = &s->state;
+    if (state->phase != GAME_MEETING)
+        return;
+
+    int pid = vote.voter_id;
+    if (pid < 0 || pid >= MAX_PLAYERS)
+        return;
+    if (vote.target_id != VOTE_SKIP && (vote.target_id < 0 || vote.target_id >= MAX_PLAYERS))
+        return;
+    if (vote.target_id >= 0 && (!state->players[vote.target_id].active || !state->players[vote.target_id].isAlive))
+        return;
+
+    if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_recieved < s->meeting_info.alive_players_count)
+    {
+        cast_vote(&s->meeting_info, vote);
+        state->players[pid].player_voted = 1;
+        state->voting_result = calculate_votes(s->meeting_info, state->voting_results);
+        broadcast_vote_update(s);
     }
 }

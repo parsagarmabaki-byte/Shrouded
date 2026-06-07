@@ -24,6 +24,10 @@
 typedef struct Client
 {
     UDPsocket socket;
+    TCPsocket vote_socket;
+    SDLNet_SocketSet vote_socket_set;
+    VoteUpdateMsg vote_update_buffer;
+    int vote_update_bytes_read;
     IPaddress serverAddr;
     UDPpacket *recievepacket;
 } Client;

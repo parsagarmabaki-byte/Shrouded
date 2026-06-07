@@ -6,6 +6,11 @@
 
 typedef struct {
     UDPsocket socket;
+    TCPsocket tcp_socket;
+    TCPsocket voteSockets[MAX_PLAYERS];
+    VoteRequest voteBuffers[MAX_PLAYERS];
+    int voteBytesRead[MAX_PLAYERS];
+    SDLNet_SocketSet voteSocketSet;
     UDPpacket *send_packet;
     UDPpacket *receive_packet;
     gameState state;

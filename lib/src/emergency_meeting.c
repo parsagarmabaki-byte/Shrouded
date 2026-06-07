@@ -59,16 +59,16 @@ int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *eve
     return target_banner_id;
 }
 
-int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner, int player_voted)
+int handle_send_vote_button(Client *client, SDL_Renderer *renderer, SDL_Event *event, int player_alive, int targeted_banner, int player_voted, int voter_id)
 {
     SDL_Rect submit_button = {VOTE_SUBMIT_X, VOTE_SUBMIT_Y, VOTE_SUBMIT_W, VOTE_SUBMIT_H};
     SDL_Rect skip_button = {VOTE_SKIP_X, VOTE_SKIP_Y, VOTE_SKIP_W, VOTE_SKIP_H};
     if (event->type == SDL_MOUSEBUTTONDOWN && player_alive && player_voted == 0)
     {
         if (is_hovering(renderer, submit_button))
-            send_vote(client, targeted_banner);
+            send_vote(client, targeted_banner, voter_id);
         else if (is_hovering(renderer, skip_button))
-            send_vote(client, -1);
+            send_vote(client, -1, voter_id);
         
     }
     return 0;

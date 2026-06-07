@@ -24,10 +24,49 @@ int init_client(Client *client, const char *server_ip, char *error_message, size
         return 0;
     }
 
+    IPaddress tcp_addr;
+    if (SDLNet_ResolveHost(&tcp_addr, server_ip, SERVER_TCP_PORT) != 0)
+    {
+        snprintf(error_message, error_size, "Invalid TCP IP or unreachable host");
+        printf("SDLNet_ResolveHost TCP error: %s\n", SDLNet_GetError());
+        SDLNet_UDP_Close(client->socket);
+        client->socket = NULL;
+        SDLNet_Quit();
+        return 0;
+    }
+
+    client->vote_socket = SDLNet_TCP_Open(&tcp_addr);
+    if (!client->vote_socket)
+    {
+        snprintf(error_message, error_size, "Could not open TCP vote socket");
+        printf("SDLNet_TCP_Open error: %s\n", SDLNet_GetError());
+        SDLNet_UDP_Close(client->socket);
+        client->socket = NULL;
+        SDLNet_Quit();
+        return 0;
+    }
+
+    client->vote_socket_set = SDLNet_AllocSocketSet(1);
+    if (!client->vote_socket_set)
+    {
+        snprintf(error_message, error_size, "Could not allocate TCP vote socket set");
+        SDLNet_TCP_Close(client->vote_socket);
+        client->vote_socket = NULL;
+        SDLNet_UDP_Close(client->socket);
+        client->socket = NULL;
+        SDLNet_Quit();
+        return 0;
+    }
+    SDLNet_TCP_AddSocket(client->vote_socket_set, client->vote_socket);
+
     client->recievepacket = create_packet(1024);
     if (!client->recievepacket)
     {
         snprintf(error_message, error_size, "Could not allocate receive packet");
+        SDLNet_FreeSocketSet(client->vote_socket_set);
+        client->vote_socket_set = NULL;
+        SDLNet_TCP_Close(client->vote_socket);
+        client->vote_socket = NULL;
         SDLNet_UDP_Close(client->socket);
         client->socket = NULL;
         SDLNet_Quit();
@@ -44,6 +83,16 @@ void clean_client(Client *client)
     {
         SDLNet_FreePacket(client->recievepacket);
         client->recievepacket = NULL;
+    }
+    if (client->vote_socket_set)
+    {
+        SDLNet_FreeSocketSet(client->vote_socket_set);
+        client->vote_socket_set = NULL;
+    }
+    if (client->vote_socket)
+    {
+        SDLNet_TCP_Close(client->vote_socket);
+        client->vote_socket = NULL;
     }
     if (client->socket)
     {
@@ -198,16 +247,71 @@ void request_emergency_meeting(Client *client, gameState *state, int local_id)
     send_packet(client->socket, client->serverAddr, &request, sizeof(EmergencyMeetingMsg));
 }
 
-void send_vote(Client *client, int targeted_banner)
+void send_vote(Client *client, int targeted_banner, int voter_id)
 {
-    VoteRequest vote;
+    if (!client->vote_socket)
+        return;
+
+    VoteRequest vote = {0};
     vote.type = MSG_VOTE_REQUEST;
     vote.target_id = targeted_banner;
-    send_packet(client->socket, client->serverAddr, &vote, sizeof(VoteRequest));
+    vote.voter_id = voter_id;
+    send_tcp_data(client->vote_socket, &vote, sizeof(VoteRequest));
+}
+
+static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg)
+{
+    state->phase = msg->phase;
+    state->meeting_reason = msg->meeting_reason;
+    state->emergency_meeting_reported_id = msg->emergency_meeting_reported_id;
+    state->meeting_time_remaining = msg->meeting_time_remaining;
+    state->voting_result = msg->voting_result;
+
+    for (int i = 0; i < MAX_PLAYERS + 1; i++)
+        state->voting_results[i] = msg->voting_results[i];
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        state->players[i].player_voted = msg->player_voted[i];
+        state->players[i].isAlive = msg->player_alive[i];
+    }
+}
+
+static void collect_tcp_vote_packets(Client *client, gameState *state)
+{
+    if (!client->vote_socket || !client->vote_socket_set)
+        return;
+
+    int ready = SDLNet_CheckSockets(client->vote_socket_set, 0);
+    if (ready <= 0 || !SDLNet_SocketReady(client->vote_socket))
+        return;
+
+    int remaining = (int)sizeof(VoteUpdateMsg) - client->vote_update_bytes_read;
+    int received = SDLNet_TCP_Recv(client->vote_socket,
+                                   ((char *)&client->vote_update_buffer) + client->vote_update_bytes_read,
+                                   remaining);
+    if (received <= 0)
+    {
+        SDLNet_TCP_DelSocket(client->vote_socket_set, client->vote_socket);
+        SDLNet_TCP_Close(client->vote_socket);
+        client->vote_socket = NULL;
+        client->vote_update_bytes_read = 0;
+        return;
+    }
+
+    client->vote_update_bytes_read += received;
+    if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
+    {
+        if (client->vote_update_buffer.type == MSG_VOTE_UPDATE)
+            apply_vote_update(state, &client->vote_update_buffer);
+        client->vote_update_bytes_read = 0;
+    }
 }
 
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio)
 {
+    collect_tcp_vote_packets(client, state);
+
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
         if (!packet_has_size(client->recievepacket, sizeof(MessageType), "MessageType"))

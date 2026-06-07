@@ -20,7 +20,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
 int send_leave_message(Client *client);
 void request_emergency_meeting(Client *client, gameState *state, int local_id);
 void request_report_body(Client *client, int body_id);
-void send_vote(Client *client, int targeted_banner);
+void send_vote(Client *client, int targeted_banner, int voter_id);
 int send_debug_win(Client *client, MessageType type);
 
 #endif
