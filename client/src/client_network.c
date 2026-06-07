@@ -291,7 +291,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             if (packet_has_size(client->recievepacket, sizeof(PlayerSyncMsg), "PlayerSyncMsg"))
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(PlayerSyncMsg));
-                for (int i = 0; i < 6; i++)
+                for (int i = 0; i < MAX_PLAYERS; i++)
                 {
                     state->players[i].x = msg.player[i].x;
                     state->players[i].y = msg.player[i].y;

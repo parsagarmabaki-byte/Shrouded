@@ -43,6 +43,7 @@ int main(void)
     server.state.host_player_id = -1;
     server.state.meeting_reason = MEETING_NONE;
     server.state.emergency_meeting_reported_id = -1;
+    server.last_timer_second = -1;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
         server.lastInput[i].player_id = -1;
@@ -182,7 +183,7 @@ void update_server_tick(Server *s)
         if (elapsed >= meeting_duration || s->meeting_info.votes_recieved == s->meeting_info.alive_players_count)
         {
             s->state.phase = SHOW_VOTE_RESULT;
-            s->state.voting_result = resolve_voting(&s->state,s->meeting_info, s->state.voting_results);
+            s->state.voting_result = resolve_voting(&s->state, s->meeting_info, s->state.voting_results);
             s->state.meeting_reason = MEETING_NONE;
             printf("MEETING ENDED\n");
 
@@ -194,13 +195,18 @@ void update_server_tick(Server *s)
             msg.voting_result = s->state.voting_result;
             msg.meeting_reason = MEETING_NONE;
             broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(MeetingEndedEvent));
-
+            s->last_timer_second = -1;
             s->phase_time = SDL_GetTicks64();
         }
-        MeetingTimer msg;
-        msg.type = MSG_MEETING_TIMER;
-        msg.meeting_time_remaining = s->state.meeting_time_remaining;
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(MeetingTimer));
+        int current_second = (int) (s->state.meeting_time_remaining / 1000);
+        if (current_second != s->last_timer_second)
+        {
+            s->last_timer_second = current_second;
+            MeetingTimer timer_msg;
+            timer_msg.type = MSG_MEETING_TIMER;
+            timer_msg.meeting_time_remaining = s->state.meeting_time_remaining;
+            broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &timer_msg, sizeof(MeetingTimer));
+        }
     }
     else if (s->state.phase == SHOW_VOTE_RESULT)
     {
@@ -418,8 +424,8 @@ void handle_body_found(Server *s, IPaddress sender)
         return;
 
     Position dead_body = s->deadBodies[body_id];
-    int player_x = s->state.players[reported_id].x;
-    int player_y = s->state.players[reported_id].y;
+    float player_x = s->state.players[reported_id].x;
+    float player_y = s->state.players[reported_id].y;
 
     if (s->state.players[reported_id].isAlive && find_target_report_body(dead_body, player_x, player_y))
     {

@@ -18,6 +18,7 @@ typedef struct {
     Uint64 state_start_time;
     Uint64 phase_time;
     Uint64 kill_cooldown_start;
+    int last_timer_second;
     int killer_id;
 } Server;
 

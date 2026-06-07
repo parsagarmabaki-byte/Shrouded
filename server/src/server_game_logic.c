@@ -27,7 +27,7 @@ void check_win_condition(UDPsocket socket, UDPpacket *packet, IPaddress *clients
         if (state->players[i].isAlive)
             alive_crewmates++;
     }
-    if (alive_impostor == 0 || alive_impostor >= alive_crewmates || active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
+    if (alive_impostor == 0 || alive_impostor >= alive_crewmates || (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT))
     {
         PhaseChangeMsg msg = {0};
         msg.type = MSG_PHASE_CHANGE;
