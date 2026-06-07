@@ -21,7 +21,6 @@ void inititate_meeting_info(Meeting *meeting_info, gameState *state)
 
         meeting_info->alive_players_id[meeting_info->alive_players_count] = i;
         meeting_info->alive_players_count++;
-        state->players[i].player_voted=0;
     }
 }
 
@@ -111,11 +110,12 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
     return player_id;
 }
 
-void resolve_voting(gameState *state, Meeting meeting_info, int vote_results[MAX_PLAYERS + 1])
+int resolve_voting(gameState *state, Meeting meeting_info, int vote_results[MAX_PLAYERS + 1])
 {
     int vote_result = calculate_votes(meeting_info, vote_results);
     if (vote_result != -1)
     {
         state->players[vote_result].isAlive = 0;
     }
+    return vote_result;
 }

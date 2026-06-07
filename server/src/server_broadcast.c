@@ -55,6 +55,7 @@ void broadcast_msg(UDPsocket socket, UDPpacket *packet, IPaddress *clients, int 
 
 void broadcast_game_state(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clients, int *used)
 {
+    state->type = MSG_GAME_STATE;
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         if (!used[i])

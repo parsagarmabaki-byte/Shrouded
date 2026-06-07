@@ -141,7 +141,7 @@ int send_play_again(Client *client)
 
 int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size)
 {
-    UDPpacket *packet = create_packet(512);
+    UDPpacket *packet = create_packet(550);
     if (!packet)
         return 0;
 
@@ -259,7 +259,7 @@ void send_vote(Client *client, int targeted_banner, int voter_id)
     send_tcp_data(client->vote_socket, &vote, sizeof(VoteRequest));
 }
 
-static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg)
+static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg, int *player_voted)
 {
     state->phase = msg->phase;
     state->meeting_reason = msg->meeting_reason;
@@ -271,13 +271,13 @@ static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg)
         state->voting_results[i] = msg->voting_results[i];
 
     for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        state->players[i].player_voted = msg->player_voted[i];
         state->players[i].isAlive = msg->player_alive[i];
-    }
+
+    if (player_voted && state->local_player_id >= 0 && state->local_player_id < MAX_PLAYERS)
+        *player_voted = msg->player_voted[state->local_player_id] ? 1 : -1;
 }
 
-static void collect_tcp_vote_packets(Client *client, gameState *state)
+static void collect_tcp_vote_packets(Client *client, gameState *state, int *player_voted)
 {
     if (!client->vote_socket || !client->vote_socket_set)
         return;
@@ -303,14 +303,14 @@ static void collect_tcp_vote_packets(Client *client, gameState *state)
     if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
     {
         if (client->vote_update_buffer.type == MSG_VOTE_UPDATE)
-            apply_vote_update(state, &client->vote_update_buffer);
+            apply_vote_update(state, &client->vote_update_buffer, player_voted);
         client->vote_update_bytes_read = 0;
     }
 }
 
-void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio)
+void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted)
 {
-    collect_tcp_vote_packets(client, state);
+    collect_tcp_vote_packets(client, state, player_voted);
 
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
@@ -336,6 +336,8 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                 EmergencyMeetingEvent meeting_info = {0};
                 memcpy(&meeting_info, client->recievepacket->data, sizeof(EmergencyMeetingEvent));
 
+                *targeted_banner = -1;
+                *player_voted = -1;
                 state->phase = meeting_info.phase;
                 state->meeting_reason = meeting_info.meeting_reason;
                 int reporter_id = meeting_info.emergency_meeting_reported_id;
@@ -385,6 +387,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                 state->total_tasks_completed += 1;
                 state->players[msg.player_id].tasks_completed += 1;
             }
+
         }
         else if (type == MSG_PLAYER_SYNC_DATA)
         {
@@ -392,7 +395,7 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             if (packet_has_size(client->recievepacket, sizeof(PlayerSyncMsg), "PlayerSyncMsg"))
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(PlayerSyncMsg));
-                for (int i = 0; i < 6; i++)
+                for (int i = 0; i < MAX_PLAYERS; i++)
                 {
                     state->players[i].x = msg.player[i].x;
                     state->players[i].y = msg.player[i].y;
@@ -412,6 +415,28 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
             {
                 memcpy(&msg, client->recievepacket->data, sizeof(PhaseChangeMsg));
                 state->phase = msg.phase;
+            }
+        }
+        else if (type == MSG_MEETING_ENDED)
+        {
+            MeetingEndedEvent msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(MeetingEndedEvent), "MeetingEndedEvent"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(MeetingEndedEvent));
+                state->phase = msg.phase;
+                state->voting_result = msg.voting_result;
+                for (int i=0; i < 7; i++)
+                    state->voting_results[i] = msg.voting_results [i];
+                state->meeting_reason = msg.meeting_reason;
+            }
+        }
+        else if (type == MSG_MEETING_TIMER)
+        {
+            MeetingTimer msg = {0};
+            if (packet_has_size(client->recievepacket, sizeof(MeetingTimer), "MeetingTimer"))
+            {
+                memcpy(&msg, client->recievepacket->data, sizeof(MeetingTimer));
+                state->meeting_time_remaining = msg.meeting_time_remaining;
             }
         }
     }
