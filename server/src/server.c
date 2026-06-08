@@ -283,6 +283,7 @@ void handle_leave(Server *s, IPaddress sender)
                 }
             }
         }
+        check_win_condition(&s->state);
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
@@ -362,7 +363,7 @@ void handle_kill(Server *s, IPaddress sender)
     int target_id = handle_kill_request(&s->state, killer_id);
     printf("\nCLOSEST PLAYER TO THE PLAYER IS %d and PLAYER WANT TO KILL ID %d", target_id, request.target_id);
 
-    if (request.target_id == target_id)
+    if (request.target_id == target_id && target_id != -1)
     {
         s->state.players[target_id].isAlive = 0;
         s->deadBodies[target_id].x = (int)s->state.players[target_id].x;
@@ -476,6 +477,7 @@ void handle_task_complete(Server *s, IPaddress sender)
                 PhaseChangeMsg task_completed_msg = {0};
                 task_completed_msg.type = MSG_TASK_COMPLETE;
                 task_completed_msg.player_id = pid;
+                task_completed_msg.phase = s->state.phase;
 
                 int active_count = countActivePlayers(&s->state);
                 int total_expected_tasks = TASK_COUNT * (active_count - 1);

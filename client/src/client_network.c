@@ -285,7 +285,6 @@ static void collect_tcp_vote_packets(Client *client, gameState *state, int *play
                                    remaining);
     if (received < 0)
     {
-        // Verkligt fel — stäng
         SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
         SDLNet_TCP_Close(client->tcp_socket);
         client->tcp_socket = NULL;
@@ -293,7 +292,7 @@ static void collect_tcp_vote_packets(Client *client, gameState *state, int *play
         return;
     }
     if (received == 0)
-        return; // Inget data ännu — behåll bufferten
+        return; 
 
     client->vote_update_bytes_read += received;
     if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
@@ -317,6 +316,7 @@ static void apply_phase_change_msg(PhaseChangeMsg *msg, gameState *state,
     {
         state->total_tasks_completed++;
         state->players[msg->player_id].tasks_completed++;
+        state->phase= msg->phase;
     }
 
     else if (msg->type == MSG_EMERGENCY_MEETING || msg->type == MSG_BODY_FOUND)

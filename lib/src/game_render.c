@@ -4,16 +4,15 @@
 #include "wall_data.h"
 
 static TaskMarker markers[] =
-{
-    { TASK_HOLD,          {320, 140, 24, 24},  208,  304 },
-    { TASK_LETTER,        {453, 310, 24, 24},  710, 970 },
-    { TASK_CLICK,         {835, 310, 24, 24}, 1950, 940 },
-    { TASK_MEMORY,        {675, 140, 24, 24}, 1392,  304 },
-    { TASK_ALTERNATE,     {790, 130, 24, 24}, 1770,  304 },
-    { TASK_LOGICAL_ORDER, {900, 130, 24, 24}, 2183,  304 },
-    { TASK_TIMER,         {825, 570, 24, 24}, 1920, 1795 },
-    { TASK_REFLEX,        {415, 505, 24, 24},  570, 1505 }
-};
+    {
+        {TASK_HOLD, {320, 140, 24, 24}, 208, 304},
+        {TASK_LETTER, {453, 310, 24, 24}, 710, 970},
+        {TASK_CLICK, {835, 310, 24, 24}, 1950, 940},
+        {TASK_MEMORY, {675, 140, 24, 24}, 1392, 304},
+        {TASK_ALTERNATE, {790, 130, 24, 24}, 1770, 304},
+        {TASK_LOGICAL_ORDER, {900, 130, 24, 24}, 2183, 304},
+        {TASK_TIMER, {825, 570, 24, 24}, 1920, 1795},
+        {TASK_REFLEX, {415, 505, 24, 24}, 570, 1505}};
 
 static void render_death_effect(SDL_Renderer *renderer, KillAnimation *local_death)
 {
@@ -135,7 +134,7 @@ void render_game_phase(GameContext *ctx)
     default:
         break;
     }
-    
+
     render_win_fade(ctx, win_fade_start, win_fade_duration);
     render_pause_menu(ctx->renderer, ctx->assets, ctx->pause_menu_open);
 
@@ -337,7 +336,6 @@ void render_player_overlays(GameContext *ctx)
 
     if (ctx->is_local_impostor)
         render_imposter_ability(renderer, *state, assets->kill_button_active, assets->kill_button_deactive, ctx->state->kill_cooldown_active, ctx->local_id);
-    
 }
 
 void render_info_text(SDL_Renderer *renderer, gameState *state, int local_id, Text text)
@@ -562,6 +560,8 @@ void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Play
     }
     else
     {
+        if (state->players[state->local_player_id].tasks_completed >= TASK_COUNT)
+            return;
         SDL_SetRenderDrawColor(renderer, 80, 200, 120, 255);
         TaskType current_task = state->players[state->local_player_id].task_order[state->players[state->local_player_id].tasks_completed];
 

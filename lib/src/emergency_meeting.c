@@ -251,4 +251,6 @@ void render_voting_results(SDL_Renderer *renderer, gameState *state, int voting_
     snprintf(buffer, sizeof(buffer), "%d", voting_results[MAX_PLAYERS]);
     text_set(Font_texture, buffer, color);
     text_draw(Font_texture, x_postion, 597);
+    text_destroy(Font_texture);
+
 }
