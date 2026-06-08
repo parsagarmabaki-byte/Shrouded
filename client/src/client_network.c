@@ -284,14 +284,16 @@ static void collect_tcp_vote_packets(Client *client, gameState *state, int *play
     int received = SDLNet_TCP_Recv(client->tcp_socket,
                                    ((char *)&client->vote_update_buffer) + client->vote_update_bytes_read,
                                    remaining);
-    if (received <= 0)
-    {
-        SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
-        SDLNet_TCP_Close(client->tcp_socket);
-        client->tcp_socket = NULL;
-        client->vote_update_bytes_read = 0;
-        return;
-    }
+    f (received < 0)
+{
+    // Verkligt fel — stäng
+    SDLNet_TCP_DelSocket(...); SDLNet_TCP_Close(...);
+    client->tcp_socket = NULL;
+    client->vote_update_bytes_read = 0;
+    return;
+}
+if (received == 0)
+    return; // Inget data ännu — behåll bufferten
 
     client->vote_update_bytes_read += received;
     if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
@@ -359,7 +361,8 @@ static void apply_phase_change_msg(PhaseChangeMsg *msg, gameState *state,
     }
     else if (msg->type == MSG_MEETING_ENDED)
     {
-        state->players[state->voting_result].isAlive = 0;
+        if (state->voting_result != -1)
+            state->players[state->voting_result].isAlive = 0;
         state->phase = msg->phase;
     }
     else if (msg->type == MSG_KILL_READY)

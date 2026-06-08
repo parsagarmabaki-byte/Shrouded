@@ -61,6 +61,7 @@ void spawn_players(gameState *state)
 {
     float spawnX[MAX_PLAYERS] = {1290, 1150, 1420, 1000, 1290, 1150};
     float spawnY[MAX_PLAYERS] = {665, 665, 850, 850, 1000, 1000};
+    state->kill_cooldown_active = false;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
@@ -68,7 +69,6 @@ void spawn_players(gameState *state)
         state->players[i].y = spawnY[i];
         state->players[i].current_frame = 2;
         state->players[i].direction = DIR_DOWN;
-        state->kill_cooldown_active = false;
     }
 }
 
