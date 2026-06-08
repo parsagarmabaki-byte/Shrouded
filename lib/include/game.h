@@ -24,10 +24,18 @@
 typedef struct Client
 {
     UDPsocket socket;
-    TCPsocket vote_socket;
-    SDLNet_SocketSet vote_socket_set;
+    TCPsocket tcp_socket;
+    SDLNet_SocketSet tcp_socket_set;
+    
     VoteUpdateMsg vote_update_buffer;
     int vote_update_bytes_read;
+
+    PhaseChangeMsg phase_change_buffer;
+    int phase_change_bytes_read;
+
+    KillEventMsg kill_event_buffer;
+    int kill_event_bytes_read;
+
     IPaddress serverAddr;
     UDPpacket *recievepacket;
 } Client;
@@ -40,7 +48,8 @@ typedef struct
     int world_y;
 } TaskMarker;
 
-typedef struct GameContext {
+typedef struct GameContext
+{
     Client *client;
     SDL_Renderer *renderer;
     gameState *state;

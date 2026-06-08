@@ -12,7 +12,7 @@ void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Textur
 bool is_hovering(SDL_Renderer *renderer,SDL_Rect rect);
 int handle_kill_request(gameState *state, int killer_id);
 void activate_kill_cooldown(Uint64 *kill_cooldown_start, bool *kill_cooldown_active);
-void update_kill_cooldown(UDPsocket socket, UDPpacket *packet, IPaddress address, Uint64 *kill_cooldown_start, bool *kill_cooldown);
+void update_kill_cooldown(TCPsocket socket, Uint64 *kill_cooldown_start, bool *kill_cooldown);
 float find_kill_target(playerState imposter, playerState innocent);
 void get_forward_vector(Direction direction, float *fx, float *fy);
 void start_kill_animation(KillAnimation *anim, int killer_id, int victim_id, float x, float y);

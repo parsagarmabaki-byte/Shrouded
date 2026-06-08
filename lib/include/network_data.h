@@ -72,15 +72,6 @@ typedef struct
 
 typedef struct
 {
-    MessageType type;
-    int killer_id;
-    int victim_id;
-    float x;
-    float y;
-} KillEventMsg;
-
-typedef struct
-{
     int active;
     int player_id;
 
@@ -132,6 +123,16 @@ typedef struct
 typedef struct
 {
     MessageType type;
+    gamePhase phase;
+    int killer_id;
+    int victim_id;
+    float x;
+    float y;
+} KillEventMsg;
+
+typedef struct
+{
+    MessageType type;
     int target_id;
     int voter_id;
 } VoteRequest;
@@ -142,7 +143,6 @@ typedef struct
     gamePhase phase;
     MeetingReason meeting_reason;
     int emergency_meeting_reported_id;
-    int meeting_time_remaining;
     int voting_results[MAX_PLAYERS + 1];
     int voting_result;
     int player_voted[MAX_PLAYERS];
@@ -208,7 +208,9 @@ typedef struct
 {
     MessageType type;
     gamePhase phase;
-
+    MeetingReason meeting_reason;
+    int player_id;
+    int victim_id;
 } PhaseChangeMsg;
 
 typedef struct

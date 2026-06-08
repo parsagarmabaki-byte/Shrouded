@@ -22,14 +22,14 @@ int init_server_socket(UDPsocket *socket, TCPsocket *tcp_socket)
     return 1;
 }
 
-void cleanupServer(UDPsocket socket, TCPsocket tcp_socket, SDLNet_SocketSet socket_set, TCPsocket *vote_sockets, UDPpacket *recv, UDPpacket *send)
+void cleanupServer(UDPsocket socket, TCPsocket tcp_socket, SDLNet_SocketSet socket_set, TCPsocket *tcp_sockets, UDPpacket *recv, UDPpacket *send)
 {
-    if (vote_sockets)
+    if (tcp_sockets)
     {
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
-            if (vote_sockets[i])
-                SDLNet_TCP_Close(vote_sockets[i]);
+            if (tcp_sockets[i])
+                SDLNet_TCP_Close(tcp_sockets[i]);
         }
     }
     if (socket_set)

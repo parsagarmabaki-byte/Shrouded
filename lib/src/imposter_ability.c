@@ -37,13 +37,14 @@ void activate_kill_cooldown(Uint64 *kill_cooldown_start, bool *kill_cooldown_act
     *kill_cooldown_active = true;
 }
 
-void update_kill_cooldown(UDPsocket socket, UDPpacket *packet, IPaddress address, Uint64 *kill_cooldown_start, bool *kill_cooldown)
+void update_kill_cooldown(TCPsocket socket, Uint64 *kill_cooldown_start, bool *kill_cooldown)
 {
     Uint64 now = SDL_GetTicks64();
     if (now - *kill_cooldown_start >= COOLDOWN)
     {
-        KillReadyMsg msg = {MSG_KILL_READY};
-        send_packet_data(socket, packet, address, &msg, sizeof(KillReadyMsg));
+        PhaseChangeMsg msg = {0};
+        msg.phase = MSG_KILL_READY;
+        send_tcp_data(socket, &msg, sizeof(PhaseChangeMsg));
         *kill_cooldown_start = 0;
         *kill_cooldown = false;
 

@@ -6,6 +6,7 @@
 #include "game.h"
 #include "imposter_ability.h"
 
+
 int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size)
 {
     if (!init_network_socket(&client->socket, 0))
@@ -35,8 +36,8 @@ int init_client(Client *client, const char *server_ip, char *error_message, size
         return 0;
     }
 
-    client->vote_socket = SDLNet_TCP_Open(&tcp_addr);
-    if (!client->vote_socket)
+    client->tcp_socket = SDLNet_TCP_Open(&tcp_addr);
+    if (!client->tcp_socket)
     {
         snprintf(error_message, error_size, "Could not open TCP vote socket");
         printf("SDLNet_TCP_Open error: %s\n", SDLNet_GetError());
@@ -46,27 +47,27 @@ int init_client(Client *client, const char *server_ip, char *error_message, size
         return 0;
     }
 
-    client->vote_socket_set = SDLNet_AllocSocketSet(1);
-    if (!client->vote_socket_set)
+    client->tcp_socket_set = SDLNet_AllocSocketSet(1);
+    if (!client->tcp_socket_set)
     {
         snprintf(error_message, error_size, "Could not allocate TCP vote socket set");
-        SDLNet_TCP_Close(client->vote_socket);
-        client->vote_socket = NULL;
+        SDLNet_TCP_Close(client->tcp_socket);
+        client->tcp_socket = NULL;
         SDLNet_UDP_Close(client->socket);
         client->socket = NULL;
         SDLNet_Quit();
         return 0;
     }
-    SDLNet_TCP_AddSocket(client->vote_socket_set, client->vote_socket);
+    SDLNet_TCP_AddSocket(client->tcp_socket_set, client->tcp_socket);
 
     client->recievepacket = create_packet(1024);
     if (!client->recievepacket)
     {
         snprintf(error_message, error_size, "Could not allocate receive packet");
-        SDLNet_FreeSocketSet(client->vote_socket_set);
-        client->vote_socket_set = NULL;
-        SDLNet_TCP_Close(client->vote_socket);
-        client->vote_socket = NULL;
+        SDLNet_FreeSocketSet(client->tcp_socket_set);
+        client->tcp_socket_set = NULL;
+        SDLNet_TCP_Close(client->tcp_socket);
+        client->tcp_socket = NULL;
         SDLNet_UDP_Close(client->socket);
         client->socket = NULL;
         SDLNet_Quit();
@@ -84,15 +85,15 @@ void clean_client(Client *client)
         SDLNet_FreePacket(client->recievepacket);
         client->recievepacket = NULL;
     }
-    if (client->vote_socket_set)
+    if (client->tcp_socket_set)
     {
-        SDLNet_FreeSocketSet(client->vote_socket_set);
-        client->vote_socket_set = NULL;
+        SDLNet_FreeSocketSet(client->tcp_socket_set);
+        client->tcp_socket_set = NULL;
     }
-    if (client->vote_socket)
+    if (client->tcp_socket)
     {
-        SDLNet_TCP_Close(client->vote_socket);
-        client->vote_socket = NULL;
+        SDLNet_TCP_Close(client->tcp_socket);
+        client->tcp_socket = NULL;
     }
     if (client->socket)
     {
@@ -249,14 +250,14 @@ void request_emergency_meeting(Client *client, gameState *state, int local_id)
 
 void send_vote(Client *client, int targeted_banner, int voter_id)
 {
-    if (!client->vote_socket)
+    if (!client->tcp_socket)
         return;
 
     VoteRequest vote = {0};
     vote.type = MSG_VOTE_REQUEST;
     vote.target_id = targeted_banner;
     vote.voter_id = voter_id;
-    send_tcp_data(client->vote_socket, &vote, sizeof(VoteRequest));
+    send_tcp_data(client->tcp_socket, &vote, sizeof(VoteRequest));
 }
 
 static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg, int *player_voted)
@@ -264,37 +265,30 @@ static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg, int *p
     state->phase = msg->phase;
     state->meeting_reason = msg->meeting_reason;
     state->emergency_meeting_reported_id = msg->emergency_meeting_reported_id;
-    state->meeting_time_remaining = msg->meeting_time_remaining;
     state->voting_result = msg->voting_result;
 
     for (int i = 0; i < MAX_PLAYERS + 1; i++)
         state->voting_results[i] = msg->voting_results[i];
-
-    for (int i = 0; i < MAX_PLAYERS; i++)
-        state->players[i].isAlive = msg->player_alive[i];
-
-    if (player_voted && state->local_player_id >= 0 && state->local_player_id < MAX_PLAYERS)
-        *player_voted = msg->player_voted[state->local_player_id] ? 1 : -1;
 }
 
 static void collect_tcp_vote_packets(Client *client, gameState *state, int *player_voted)
 {
-    if (!client->vote_socket || !client->vote_socket_set)
+    if (!client->tcp_socket || !client->tcp_socket_set)
         return;
 
-    int ready = SDLNet_CheckSockets(client->vote_socket_set, 0);
-    if (ready <= 0 || !SDLNet_SocketReady(client->vote_socket))
+    int ready = SDLNet_CheckSockets(client->tcp_socket_set, 0);
+    if (ready <= 0 || !SDLNet_SocketReady(client->tcp_socket))
         return;
 
     int remaining = (int)sizeof(VoteUpdateMsg) - client->vote_update_bytes_read;
-    int received = SDLNet_TCP_Recv(client->vote_socket,
+    int received = SDLNet_TCP_Recv(client->tcp_socket,
                                    ((char *)&client->vote_update_buffer) + client->vote_update_bytes_read,
                                    remaining);
     if (received <= 0)
     {
-        SDLNet_TCP_DelSocket(client->vote_socket_set, client->vote_socket);
-        SDLNet_TCP_Close(client->vote_socket);
-        client->vote_socket = NULL;
+        SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
+        SDLNet_TCP_Close(client->tcp_socket);
+        client->tcp_socket = NULL;
         client->vote_update_bytes_read = 0;
         return;
     }
@@ -308,9 +302,109 @@ static void collect_tcp_vote_packets(Client *client, gameState *state, int *play
     }
 }
 
+static void apply_phase_change_msg(PhaseChangeMsg *msg, gameState *state,
+                                   AudioAssets *audio,
+                                   KillAnimation bodies[MAX_PLAYERS],
+                                   int *targeted_banner,
+                                   int *player_voted)
+{
+    if (msg->type == MSG_PHASE_CHANGE)
+        state->phase = msg->phase;
+
+    else if (msg->type == MSG_TASK_COMPLETE)
+    {
+        state->total_tasks_completed++;
+        state->players[msg->player_id].tasks_completed++;
+    }
+
+    else if (msg->type == MSG_EMERGENCY_MEETING || msg->type == MSG_BODY_FOUND)
+    {
+        *targeted_banner = -1;
+        *player_voted = -1;
+        state->phase = msg->phase;
+        state->meeting_reason = msg->meeting_reason;
+        state->emergency_meeting_reported_id = msg->player_id;
+
+        if (msg->type == MSG_EMERGENCY_MEETING)
+            state->players[msg->player_id].emergency_meeting = 0;
+
+        play_meeting_horn(audio);
+    }
+
+    else if (msg->type == MSG_KILL_EVENT)
+    {
+        state->players[msg->victim_id].isAlive = 0;
+        state->kill_cooldown_active = true;
+        state->phase = msg->phase;
+
+        if (bodies)
+        {
+            start_kill_animation(&bodies[msg->victim_id], msg->player_id, msg->victim_id,
+                                 state->players[msg->victim_id].x,
+                                 state->players[msg->victim_id].y);
+
+            printf("\nCLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
+                   state->local_player_id, msg->victim_id,
+                   bodies[msg->victim_id].active,
+                   bodies[msg->victim_id].x,
+                   bodies[msg->victim_id].y);
+        }
+
+        if (state->local_player_id == msg->player_id ||
+            state->local_player_id == msg->victim_id)
+        {
+            play_kill_knife(audio);
+            play_dramatic_kill(audio);
+        }
+    }
+    else if (msg->type == MSG_MEETING_ENDED)
+    {
+        state->players[state->voting_result].isAlive = 0;
+        state->phase = msg->phase;
+    }
+    else if (msg->type == MSG_KILL_READY)
+        state->kill_cooldown_active = false;
+}
+
+static void collect_event_packets(Client *client, gameState *state, AudioAssets *audio, KillAnimation bodies[MAX_PLAYERS], int *targeted_banner, int *player_voted)
+{
+    if (!client->tcp_socket || !client->tcp_socket_set)
+        return;
+
+    if (SDLNet_CheckSockets(client->tcp_socket_set, 0) <= 0 ||
+        !SDLNet_SocketReady(client->tcp_socket))
+        return;
+
+    int remaining = sizeof(PhaseChangeMsg) - client->phase_change_bytes_read;
+
+    int received = SDLNet_TCP_Recv(client->tcp_socket,
+                                   (char *)&client->phase_change_buffer + client->phase_change_bytes_read,
+                                   remaining);
+
+    if (received < 0)
+    {
+        client->phase_change_bytes_read = 0;
+        return;
+    }
+    if (received == 0)
+        return;
+
+    client->phase_change_bytes_read += received;
+
+    if (client->phase_change_bytes_read == sizeof(PhaseChangeMsg))
+    {
+        apply_phase_change_msg(&client->phase_change_buffer, state, audio, bodies, targeted_banner, player_voted);
+        client->phase_change_bytes_read = 0;
+    }
+}
+
+
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted)
 {
-    collect_tcp_vote_packets(client, state, player_voted);
+    if (state->phase == GAME_MEETING)
+        collect_tcp_vote_packets(client, state, player_voted);
+    else 
+        collect_event_packets(client, state, audio, bodies,targeted_banner, player_voted);
 
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {
@@ -329,66 +423,6 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                 memcpy(state, client->recievepacket->data, sizeof(gameState));
             }
         }
-        else if (type == MSG_EMERGENCY_MEETING || type == MSG_BODY_FOUND)
-        {
-            if (packet_has_size(client->recievepacket, sizeof(EmergencyMeetingEvent), "MSG_GAME_STATE"))
-            {
-                EmergencyMeetingEvent meeting_info = {0};
-                memcpy(&meeting_info, client->recievepacket->data, sizeof(EmergencyMeetingEvent));
-
-                *targeted_banner = -1;
-                *player_voted = -1;
-                state->phase = meeting_info.phase;
-                state->meeting_reason = meeting_info.meeting_reason;
-                int reporter_id = meeting_info.emergency_meeting_reported_id;
-                state->emergency_meeting_reported_id = reporter_id;
-
-                if (type == MSG_EMERGENCY_MEETING)
-                {
-                    state->players[reporter_id].emergency_meeting = 0;
-                }
-
-                play_meeting_horn(audio);
-            }
-        }
-        else if (type == MSG_KILL_EVENT)
-        {
-            KillEventMsg msg;
-            if (packet_has_size(client->recievepacket, sizeof(KillEventMsg), "MSG_KILL_EVENT"))
-            {
-                memcpy(&msg, client->recievepacket->data, sizeof(KillEventMsg));
-                state->players[msg.victim_id].isAlive = 0;
-                state->kill_cooldown_active = true;
-                if (bodies)
-                {
-                    start_kill_animation(&bodies[msg.victim_id], msg.killer_id, msg.victim_id,
-                                         state->players[msg.victim_id].x,
-                                         state->players[msg.victim_id].y);
-                    printf("\nCLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
-                           state->local_player_id,
-                           msg.victim_id,
-                           bodies[msg.victim_id].active,
-                           bodies[msg.victim_id].x,
-                           bodies[msg.victim_id].y);
-                }
-                if (state->local_player_id == msg.killer_id || state->local_player_id == msg.victim_id)
-                {
-                    play_kill_knife(audio);
-                    play_dramatic_kill(audio);
-                }
-            }
-        }
-        else if (type == MSG_TASK_COMPLETE)
-        {
-            TaskCompletedEvent msg = {0};
-            if (packet_has_size(client->recievepacket, sizeof(TaskCompletedEvent), "TaskCompletedEvent"))
-            {
-                memcpy(&msg, client->recievepacket->data, sizeof(TaskCompletedEvent));
-                state->total_tasks_completed += 1;
-                state->players[msg.player_id].tasks_completed += 1;
-            }
-
-        }
         else if (type == MSG_PLAYER_SYNC_DATA)
         {
             PlayerSyncMsg msg = {0};
@@ -402,32 +436,6 @@ void collect_packets(Client *client, gameState *state, KillAnimation *bodies, Au
                     state->players[i].direction = msg.player[i].direction;
                     state->players[i].current_frame = msg.player[i].current_frame;
                 }
-            }
-        }
-        else if (type == MSG_KILL_READY)
-        {
-            state->kill_cooldown_active = false;
-        }
-        else if (type == MSG_PHASE_CHANGE)
-        {
-            PhaseChangeMsg msg = {0};
-            if (packet_has_size(client->recievepacket, sizeof(PhaseChangeMsg), "PhaseChangeMsg"))
-            {
-                memcpy(&msg, client->recievepacket->data, sizeof(PhaseChangeMsg));
-                state->phase = msg.phase;
-            }
-        }
-        else if (type == MSG_MEETING_ENDED)
-        {
-            MeetingEndedEvent msg = {0};
-            if (packet_has_size(client->recievepacket, sizeof(MeetingEndedEvent), "MeetingEndedEvent"))
-            {
-                memcpy(&msg, client->recievepacket->data, sizeof(MeetingEndedEvent));
-                state->phase = msg.phase;
-                state->voting_result = msg.voting_result;
-                for (int i=0; i < 7; i++)
-                    state->voting_results[i] = msg.voting_results [i];
-                state->meeting_reason = msg.meeting_reason;
             }
         }
         else if (type == MSG_MEETING_TIMER)

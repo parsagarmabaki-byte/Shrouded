@@ -45,7 +45,7 @@ int main(void)
     server.state.host_player_id = -1;
     server.state.meeting_reason = MEETING_NONE;
     server.state.emergency_meeting_reported_id = -1;
-    server.last_timer_second = -1;
+    server.last_timer_half_second = -1;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
         server.lastInput[i].player_id = -1;
@@ -219,17 +219,10 @@ void broadcast_vote_update(Server *s)
     msg.phase = s->state.phase;
     msg.meeting_reason = s->state.meeting_reason;
     msg.emergency_meeting_reported_id = s->state.emergency_meeting_reported_id;
-    msg.meeting_time_remaining = s->state.meeting_time_remaining;
     msg.voting_result = s->state.voting_result;
 
     for (int i = 0; i < MAX_PLAYERS + 1; i++)
         msg.voting_results[i] = s->state.voting_results[i];
-
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        msg.player_voted[i] = s->meeting_info.has_voted[i];
-        msg.player_alive[i] = s->state.players[i].isAlive;
-    }
 
     broadcast_tcp_msg(s->voteSockets, &msg, sizeof(msg));
 }
@@ -247,7 +240,7 @@ void update_server_tick(Server *s)
             PhaseChangeMsg msg = {0};
             msg.phase = GAME_RUNNING;
             msg.type = MSG_PHASE_CHANGE;
-            broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PhaseChangeMsg));
+            broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
         }
     }
     else if (s->state.phase == GAME_INFO_MEETING)
@@ -258,7 +251,10 @@ void update_server_tick(Server *s)
             inititate_meeting_info(&s->meeting_info, &s->state);
             s->phase_time = SDL_GetTicks64();
             printf("INFORMATION OF MEETING ENDED\n");
-            broadcast_vote_update(s);
+            PhaseChangeMsg msg = {0};
+            msg.phase = s->state.phase;
+            msg.type = MSG_PHASE_CHANGE;
+            broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
         }
     }
     else if (s->state.phase == GAME_MEETING)
@@ -275,15 +271,19 @@ void update_server_tick(Server *s)
             s->state.voting_result = resolve_voting(&s->state, s->meeting_info, s->state.voting_results);
             s->state.meeting_reason = MEETING_NONE;
             printf("MEETING ENDED\n");
-            s->last_timer_second = -1;
+            s->last_timer_half_second = -1;
             s->phase_time = SDL_GetTicks64();
             broadcast_vote_update(s);
         }
-        int current_second = (int) (s->state.meeting_time_remaining / 1000);
-        if (current_second != s->last_timer_second)
+
+        int current_half_second = (int)(s->state.meeting_time_remaining / 500);
+        if (current_half_second != s->last_timer_half_second)
         {
-            s->last_timer_second = current_second;
-            broadcast_vote_update(s);
+            s->last_timer_half_second = current_half_second;
+            MeetingTimer timer_msg;
+            timer_msg.type = MSG_MEETING_TIMER;
+            timer_msg.meeting_time_remaining = s->state.meeting_time_remaining;
+            broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &timer_msg, sizeof(MeetingTimer));
         }
     }
     else if (s->state.phase == SHOW_VOTE_RESULT)
@@ -294,8 +294,11 @@ void update_server_tick(Server *s)
             for (int i = 0; i < MAX_PLAYERS; i++)
                 s->deadBodyActive[i] = 0;
             spawn_players(&s->state);
-            check_win_condition(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &s->state);
-            broadcast_vote_update(s);
+            check_win_condition(&s->state);
+            PhaseChangeMsg msg = {0};
+            msg.phase = s->state.phase;
+            msg.type = MSG_MEETING_ENDED;
+            broadcast_tcp_msg(s->voteSockets, &msg, sizeof(msg));
         }
     }
     else if (s->state.phase == GAME_RUNNING)
@@ -313,7 +316,7 @@ void update_server_tick(Server *s)
             msg.player[i].current_frame = s->state.players[i].current_frame;
         }
         if (s->kill_cooldown_start != 0)
-            update_kill_cooldown(s->socket, s->send_packet, s->clientAddresses[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
+            update_kill_cooldown(s->voteSockets[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PlayerSyncMsg));
     }
 }
@@ -440,16 +443,15 @@ void handle_kill(Server *s, IPaddress sender)
         s->deadBodies[target_id].y = (int)s->state.players[target_id].y;
         s->deadBodyActive[target_id] = 1;
 
-        KillEventMsg msg = {0};
+        PhaseChangeMsg msg = {0};
         msg.type = MSG_KILL_EVENT;
-        msg.killer_id = killer_id;
+        msg.player_id = killer_id;
         msg.victim_id = target_id;
-        msg.x = s->state.players[killer_id].x;
-        msg.y = s->state.players[killer_id].y;
 
         activate_kill_cooldown(&s->kill_cooldown_start, &s->state.kill_cooldown_active);
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(KillEventMsg));
-        check_win_condition(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &s->state);
+        check_win_condition(&s->state);
+        msg.phase = s->state.phase;
+        broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
     }
 }
 
@@ -470,15 +472,15 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
         s->state.players[sender_id].emergency_meeting = 0;
         s->state.emergency_meeting_reported_id = sender_id;
 
-        EmergencyMeetingEvent msg = {0};
+        PhaseChangeMsg msg = {0};
         msg.phase = GAME_INFO_MEETING;
         msg.type = MSG_EMERGENCY_MEETING;
         msg.meeting_reason = MEETING_EMERGENCY;
-        msg.emergency_meeting_reported_id = sender_id;
+        msg.player_id = sender_id;
 
         printf("[SERVER] Accept: player %d started an emergency meeting.\n", sender_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(EmergencyMeetingEvent));
+        broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
     }
 }
 
@@ -512,15 +514,15 @@ void handle_body_found(Server *s, IPaddress sender)
         s->state.meeting_reason = MEETING_BODY;
         s->state.emergency_meeting_reported_id = reported_id;
 
-        EmergencyMeetingEvent msg = {0};
+        PhaseChangeMsg msg = {0};
         msg.phase = GAME_INFO_MEETING;
         msg.type = MSG_BODY_FOUND;
         msg.meeting_reason = MEETING_BODY;
-        msg.emergency_meeting_reported_id = reported_id;
+        msg.player_id = reported_id;
 
         printf("[SERVER] Accept: player %d found a body.\n", reported_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(EmergencyMeetingEvent));
+        broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
     }
 }
 
@@ -543,9 +545,9 @@ void handle_task_complete(Server *s, IPaddress sender)
             {
                 s->state.players[pid].tasks_completed++;
                 s->state.total_tasks_completed++;
-                check_win_condition(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &s->state);
+                check_win_condition(&s->state);
 
-                TaskCompletedEvent task_completed_msg = {0};
+                PhaseChangeMsg task_completed_msg = {0};
                 task_completed_msg.type = MSG_TASK_COMPLETE;
                 task_completed_msg.player_id = pid;
 
@@ -555,7 +557,7 @@ void handle_task_complete(Server *s, IPaddress sender)
                 printf("Player %d finished task %d/%d (TaskType %d)\n", pid, s->state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
                 printf("Team progress: %d/%d\n", s->state.total_tasks_completed, total_expected_tasks);
                 printf("=====================\n");
-                broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &task_completed_msg, sizeof(TaskCompletedEvent));
+                broadcast_tcp_msg(s->voteSockets, &task_completed_msg, sizeof(PhaseChangeMsg));
             }
             else
             {
