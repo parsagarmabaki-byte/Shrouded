@@ -43,11 +43,10 @@ void update_kill_cooldown(TCPsocket socket, Uint64 *kill_cooldown_start, bool *k
     if (now - *kill_cooldown_start >= COOLDOWN)
     {
         PhaseChangeMsg msg = {0};
-        msg.phase = MSG_KILL_READY;
+        msg.type = MSG_KILL_READY;
         send_tcp_data(socket, &msg, sizeof(PhaseChangeMsg));
         *kill_cooldown_start = 0;
         *kill_cooldown = false;
-
     }
 }
 
@@ -92,7 +91,8 @@ float find_kill_target(playerState imposter, playerState innocent)
     float dy = innocent.y - imposter.y;
     float dist_sq = dx * dx + dy * dy;
     // printf("\n[TARGET %d] dx=%.2f dy=%.2f dist_sq=%.2f\n", innocent.player_id ,dx, dy, dist_sq);
-    if (dist_sq == 0.0f) return dist_sq;
+    if (dist_sq == 0.0f)
+        return dist_sq;
     if (dist_sq > KILL_RADIUS * KILL_RADIUS)
     {
         // printf(" -> too far\n");

@@ -317,6 +317,7 @@ void update_server_tick(Server *s)
         }
         if (s->kill_cooldown_start != 0)
             update_kill_cooldown(s->voteSockets[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
+        
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PlayerSyncMsg));
     }
 }

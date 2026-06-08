@@ -57,7 +57,8 @@ int send_packet_data(UDPsocket socket, UDPpacket *packet, IPaddress address, con
     {
         printf("ERROR: Send packet too small/big\n");
         return 0;
-    } else
+    }
+    else
     {
         memcpy(packet->data, data, size);
         packet->len = size;
