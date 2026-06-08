@@ -6,7 +6,6 @@
 #include "game.h"
 #include "imposter_ability.h"
 
-
 int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size)
 {
     if (!init_network_socket(&client->socket, 0))
@@ -284,16 +283,17 @@ static void collect_tcp_vote_packets(Client *client, gameState *state, int *play
     int received = SDLNet_TCP_Recv(client->tcp_socket,
                                    ((char *)&client->vote_update_buffer) + client->vote_update_bytes_read,
                                    remaining);
-    f (received < 0)
-{
-    // Verkligt fel — stäng
-    SDLNet_TCP_DelSocket(...); SDLNet_TCP_Close(...);
-    client->tcp_socket = NULL;
-    client->vote_update_bytes_read = 0;
-    return;
-}
-if (received == 0)
-    return; // Inget data ännu — behåll bufferten
+    if (received < 0)
+    {
+        // Verkligt fel — stäng
+        SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
+        SDLNet_TCP_Close(client->tcp_socket);
+        client->tcp_socket = NULL;
+        client->vote_update_bytes_read = 0;
+        return;
+    }
+    if (received == 0)
+        return; // Inget data ännu — behåll bufferten
 
     client->vote_update_bytes_read += received;
     if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
@@ -401,13 +401,12 @@ static void collect_event_packets(Client *client, gameState *state, AudioAssets 
     }
 }
 
-
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted)
 {
     if (state->phase == GAME_MEETING)
         collect_tcp_vote_packets(client, state, player_voted);
-    else 
-        collect_event_packets(client, state, audio, bodies,targeted_banner, player_voted);
+    else
+        collect_event_packets(client, state, audio, bodies, targeted_banner, player_voted);
 
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {

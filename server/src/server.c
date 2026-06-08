@@ -19,8 +19,6 @@
 
 // Forward declarations
 void update_server_tick(Server *s);
-void handle_tcp_vote_connections(Server *s);
-void handle_tcp_vote(Server *s, VoteRequest vote);
 void broadcast_vote_update(Server *s);
 void handle_join(Server *s, IPaddress sender);
 void handle_leave(Server *s, IPaddress sender);
@@ -153,79 +151,6 @@ int main(void)
     return 0;
 }
 
-void handle_tcp_vote_connections(Server *s)
-{
-    TCPsocket incoming = NULL;
-    while ((incoming = SDLNet_TCP_Accept(s->tcp_socket)) != NULL)
-    {
-        int stored = 0;
-        for (int i = 0; i < MAX_PLAYERS; i++)
-        {
-            if (!s->voteSockets[i])
-            {
-                s->voteSockets[i] = incoming;
-                s->voteBytesRead[i] = 0;
-                SDLNet_TCP_AddSocket(s->voteSocketSet, incoming);
-                stored = 1;
-                break;
-            }
-        }
-
-        if (!stored)
-        {
-            printf("[SERVER] Rejected TCP vote connection: no free slot\n");
-            SDLNet_TCP_Close(incoming);
-        }
-    }
-
-    int ready = SDLNet_CheckSockets(s->voteSocketSet, 0);
-    if (ready <= 0)
-        return;
-
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        TCPsocket socket = s->voteSockets[i];
-        if (!socket || !SDLNet_SocketReady(socket))
-            continue;
-
-        int remaining = (int)sizeof(VoteRequest) - s->voteBytesRead[i];
-        int received = SDLNet_TCP_Recv(socket,
-                                       ((char *)&s->voteBuffers[i]) + s->voteBytesRead[i],
-                                       remaining);
-        if (received <= 0)
-        {
-            SDLNet_TCP_DelSocket(s->voteSocketSet, socket);
-            SDLNet_TCP_Close(socket);
-            s->voteSockets[i] = NULL;
-            s->voteBytesRead[i] = 0;
-            continue;
-        }
-
-        s->voteBytesRead[i] += received;
-        if (s->voteBytesRead[i] == (int)sizeof(VoteRequest))
-        {
-            VoteRequest vote = s->voteBuffers[i];
-            s->voteBytesRead[i] = 0;
-            if (vote.type == MSG_VOTE_REQUEST)
-                handle_tcp_vote(s, vote);
-        }
-    }
-}
-
-void broadcast_vote_update(Server *s)
-{
-    VoteUpdateMsg msg = {0};
-    msg.type = MSG_VOTE_UPDATE;
-    msg.phase = s->state.phase;
-    msg.meeting_reason = s->state.meeting_reason;
-    msg.emergency_meeting_reported_id = s->state.emergency_meeting_reported_id;
-    msg.voting_result = s->state.voting_result;
-
-    for (int i = 0; i < MAX_PLAYERS + 1; i++)
-        msg.voting_results[i] = s->state.voting_results[i];
-
-    broadcast_tcp_msg(s->voteSockets, &msg, sizeof(msg));
-}
 
 // ===================== SERVER TICK =====================
 
