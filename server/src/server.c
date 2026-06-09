@@ -51,25 +51,25 @@ int main(void)
     if (!init_server_socket(&server.socket, &server.tcp_socket))
         return 1;
 
-    server.voteSocketSet = SDLNet_AllocSocketSet(MAX_PLAYERS);
-    if (!server.voteSocketSet)
+    server.tcpSocketSet = SDLNet_AllocSocketSet(MAX_PLAYERS);
+    if (!server.tcpSocketSet)
     {
         printf("SDLNet_AllocSocketSet error: %s\n", SDLNet_GetError());
-        cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, NULL, NULL);
+        cleanupServer(server.socket, server.tcp_socket, server.tcpSocketSet, server.tcpSockets, NULL, NULL);
         return 1;
     }
 
     server.receive_packet = create_packet(PACKET_SIZE);
     if (!server.receive_packet)
     {
-        cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, NULL, NULL);
+        cleanupServer(server.socket, server.tcp_socket, server.tcpSocketSet, server.tcpSockets, NULL, NULL);
         return 1;
     }
 
     server.send_packet = create_packet(PACKET_SIZE);
     if (!server.send_packet)
     {
-        cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, server.receive_packet, NULL);
+        cleanupServer(server.socket, server.tcp_socket, server.tcpSocketSet, server.tcpSockets, server.receive_packet, NULL);
         return 1;
     }
 
@@ -147,7 +147,7 @@ int main(void)
         }
     }
 
-    cleanupServer(server.socket, server.tcp_socket, server.voteSocketSet, server.voteSockets, server.receive_packet, server.send_packet);
+    cleanupServer(server.socket, server.tcp_socket, server.tcpSocketSet, server.tcpSockets, server.receive_packet, server.send_packet);
     return 0;
 }
 
@@ -165,7 +165,7 @@ void update_server_tick(Server *s)
             PhaseChangeMsg msg = {0};
             msg.phase = GAME_RUNNING;
             msg.type = MSG_PHASE_CHANGE;
-            broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
+            broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
         }
     }
     else if (s->state.phase == GAME_INFO_MEETING)
@@ -179,7 +179,7 @@ void update_server_tick(Server *s)
             PhaseChangeMsg msg = {0};
             msg.phase = s->state.phase;
             msg.type = MSG_PHASE_CHANGE;
-            broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
+            broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
         }
     }
     else if (s->state.phase == GAME_MEETING)
@@ -223,7 +223,7 @@ void update_server_tick(Server *s)
             PhaseChangeMsg msg = {0};
             msg.phase = s->state.phase;
             msg.type = MSG_MEETING_ENDED;
-            broadcast_tcp_msg(s->voteSockets, &msg, sizeof(msg));
+            broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(msg));
         }
     }
     else if (s->state.phase == GAME_RUNNING)
@@ -241,7 +241,7 @@ void update_server_tick(Server *s)
             msg.player[i].current_frame = s->state.players[i].current_frame;
         }
         if (s->kill_cooldown_start != 0)
-            update_kill_cooldown(s->voteSockets[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
+            update_kill_cooldown(s->tcpSockets[s->killer_id], &s->kill_cooldown_start, &s->state.kill_cooldown_active);
         
         broadcast_msg(s->socket, s->send_packet, s->clientAddresses, s->clientUsed, &msg, sizeof(PlayerSyncMsg));
     }
@@ -378,7 +378,7 @@ void handle_kill(Server *s, IPaddress sender)
         activate_kill_cooldown(&s->kill_cooldown_start, &s->state.kill_cooldown_active);
         check_win_condition(&s->state);
         msg.phase = s->state.phase;
-        broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
+        broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
     }
 }
 
@@ -407,7 +407,7 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
 
         printf("[SERVER] Accept: player %d started an emergency meeting.\n", sender_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
+        broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
     }
 }
 
@@ -449,7 +449,7 @@ void handle_body_found(Server *s, IPaddress sender)
 
         printf("[SERVER] Accept: player %d found a body.\n", reported_id);
         s->phase_time = SDL_GetTicks64();
-        broadcast_tcp_msg(s->voteSockets, &msg, sizeof(PhaseChangeMsg));
+        broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
     }
 }
 
@@ -485,7 +485,7 @@ void handle_task_complete(Server *s, IPaddress sender)
                 printf("Player %d finished task %d/%d (TaskType %d)\n", pid, s->state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
                 printf("Team progress: %d/%d\n", s->state.total_tasks_completed, total_expected_tasks);
                 printf("=====================\n");
-                broadcast_tcp_msg(s->voteSockets, &task_completed_msg, sizeof(PhaseChangeMsg));
+                broadcast_tcp_msg(s->tcpSockets, &task_completed_msg, sizeof(PhaseChangeMsg));
             }
             else
             {

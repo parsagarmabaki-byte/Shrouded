@@ -128,11 +128,11 @@ void handle_tcp_vote_connections(Server *s)
         int stored = 0;
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
-            if (!s->voteSockets[i])
+            if (!s->tcpSockets[i])
             {
-                s->voteSockets[i] = incoming;
+                s->tcpSockets[i] = incoming;
                 s->voteBytesRead[i] = 0;
-                SDLNet_TCP_AddSocket(s->voteSocketSet, incoming);
+                SDLNet_TCP_AddSocket(s->tcpSocketSet, incoming);
                 stored = 1;
                 break;
             }
@@ -145,13 +145,13 @@ void handle_tcp_vote_connections(Server *s)
         }
     }
 
-    int ready = SDLNet_CheckSockets(s->voteSocketSet, 0);
+    int ready = SDLNet_CheckSockets(s->tcpSocketSet, 0);
     if (ready <= 0)
         return;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        TCPsocket socket = s->voteSockets[i];
+        TCPsocket socket = s->tcpSockets[i];
         if (!socket || !SDLNet_SocketReady(socket))
             continue;
 
@@ -161,9 +161,9 @@ void handle_tcp_vote_connections(Server *s)
                                        remaining);
         if (received <= 0)
         {
-            SDLNet_TCP_DelSocket(s->voteSocketSet, socket);
+            SDLNet_TCP_DelSocket(s->tcpSocketSet, socket);
             SDLNet_TCP_Close(socket);
-            s->voteSockets[i] = NULL;
+            s->tcpSockets[i] = NULL;
             s->voteBytesRead[i] = 0;
             continue;
         }
@@ -191,5 +191,5 @@ void broadcast_vote_update(Server *s)
     for (int i = 0; i < MAX_PLAYERS + 1; i++)
         msg.voting_results[i] = s->state.voting_results[i];
 
-    broadcast_tcp_msg(s->voteSockets, &msg, sizeof(msg));
+    broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(msg));
 }
