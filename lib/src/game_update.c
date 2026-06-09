@@ -58,7 +58,7 @@ void send_player_input(Client *client, Player *player, InputMsg input, bool task
     }
 }
 
-void update_task_check_completion(Client *client, Task *task, gameState *state, int local_id, float dt, bool *was_task_active)
+void update_task_check_completion(Client *client, Task *task, GameState *state, int local_id, float dt, bool *was_task_active)
 {
     // Prefer the current task type if it's still active; if the task was ended by an event handler earlier this frame the `type` field will
     // already be cleared. In that case use `last_completed_type` saved by `end_task()` so we know which task actually finished.

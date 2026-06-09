@@ -17,7 +17,7 @@ void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_butto
     }
 }
 
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int *player_voted)
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, GameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int *player_voted)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -38,7 +38,7 @@ void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameSta
     text_draw(timer_meeting_text, LOGICAL_SCREEN_WIDTH / 2, 600);
 }
 
-int target_player_banner(SDL_Renderer *renderer, gameState state, SDL_Event *event, int player_alive, int target_banner_id)
+int target_player_banner(SDL_Renderer *renderer, GameState state, SDL_Event *event, int player_alive, int target_banner_id)
 {
     if (event->type == SDL_MOUSEBUTTONDOWN && player_alive)
     {
@@ -98,7 +98,7 @@ void render_emergency_map(SDL_Renderer *renderer, GameAssets assets, int player_
     SDL_RenderCopy(renderer, map_texture, NULL, NULL);
 }
 
-void render_banners(SDL_Renderer *renderer, GameAssets assets, gameState *state, int targeted_banner_id, int player_voted)
+void render_banners(SDL_Renderer *renderer, GameAssets assets, GameState *state, int targeted_banner_id, int player_voted)
 {
     SDL_Rect banner;
     SDL_Texture *banner_img;
@@ -187,7 +187,7 @@ void render_emergency_icon(SDL_Renderer *renderer, SDL_Texture *icon, int id_rep
     SDL_RenderCopy(renderer, icon, NULL, &icon_pos);
 }
 
-void render_voting_screen(SDL_Renderer *renderer, gameState *state, GameAssets assets, int voting_result)
+void render_voting_screen(SDL_Renderer *renderer, GameState *state, GameAssets assets, int voting_result)
 {
     render_voting_result_layer(renderer, assets, voting_result);
     render_voting_banners(renderer, state, assets);
@@ -206,7 +206,7 @@ void render_voting_result_layer(SDL_Renderer *renderer, GameAssets assets, int t
     SDL_RenderCopy(renderer, layer, NULL, NULL);
 }
 
-void render_voting_banners(SDL_Renderer *renderer, gameState *state, GameAssets assets)
+void render_voting_banners(SDL_Renderer *renderer, GameState *state, GameAssets assets)
 {
     SDL_Texture *banner;
     SDL_Rect banner_size = {220, 450, 116, 195};
@@ -229,7 +229,7 @@ void render_voting_banners(SDL_Renderer *renderer, gameState *state, GameAssets 
     // SDL_RenderCopy(renderer, assets.players_voting_result_alive[0], NULL, &banner_size);
 }
 
-void render_voting_results(SDL_Renderer *renderer, gameState *state, int voting_results[MAX_PLAYERS])
+void render_voting_results(SDL_Renderer *renderer, GameState *state, int voting_results[MAX_PLAYERS])
 {
     Text Font_texture = text_create(renderer, "assets/fonts/Cinzel_Decorative/CinzelDecorative-Bold.ttf", 32);
     int x_postion = 153;

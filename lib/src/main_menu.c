@@ -66,7 +66,7 @@ static SDL_Texture *load_texture(SDL_Renderer *renderer, const char *path)
     return texture;
 }
 
-int showMainMenu(waitForPlayers *pWait)
+int show_main_menu(waitForPlayers *pWait)
 {
     SDL_Event event;
 

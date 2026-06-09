@@ -15,7 +15,7 @@ int get_player_id_from_sender(IPaddress *clientAddresses, int *clientUsed, IPadd
     return -1;
 }
 
-int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
+int add_to_lobby(GameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
     float spawnX[MAX_PLAYERS] = {1290, 1150, 1420, 1000, 1290, 1150};
     float spawnY[MAX_PLAYERS] = {665, 665, 850, 850, 1000, 1000};
@@ -44,7 +44,7 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
     return -1;
 }
 
-int removeFromLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
+int remove_from_lobby(GameState *state, IPaddress *clientAddresses, int *clientUsed, IPaddress addr)
 {
     int player = get_player_id_from_sender(clientAddresses, clientUsed, addr);
     if (player >= 0)
@@ -57,7 +57,7 @@ int removeFromLobby(gameState *state, IPaddress *clientAddresses, int *clientUse
     return -1;
 }
 
-void spawn_players(gameState *state)
+void spawn_players(GameState *state)
 {
     float spawnX[MAX_PLAYERS] = {1290, 1150, 1420, 1000, 1290, 1150};
     float spawnY[MAX_PLAYERS] = {665, 665, 850, 850, 1000, 1000};
@@ -72,7 +72,7 @@ void spawn_players(gameState *state)
     }
 }
 
-int countActivePlayers(gameState *state)
+int count_active_players(GameState *state)
 {
     int active_players = 0;
 

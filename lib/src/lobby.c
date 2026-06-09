@@ -149,7 +149,7 @@ void cleanLobby(waitForPlayers *pWait)
     SDL_Quit();
 }
 
-int countActivePlayers(gameState *state)
+int count_active_players(GameState *state)
 {
     int count = 0;
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -322,7 +322,7 @@ int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size,
     return 1;
 }
 
-void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
+void renderWaitingScreen(waitForPlayers *pWait, GameState *state)
 {
     SDL_Color white = {255, 255, 255, 255};
     SDL_RenderCopy(pWait->renderer, pWait->background, NULL, NULL);
@@ -331,7 +331,7 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
     SDL_GetRendererOutputSize(pWait->renderer, &windowWidth, &windowHeight);
 
     // Uppdatera connected-text
-    int connectedPlayers = countActivePlayers(state);
+    int connectedPlayers = count_active_players(state);
     char text[64];
     snprintf(text, sizeof(text), "%d/%d CONNECTED", connectedPlayers, MAX_PLAYERS);
     text_set(pWait->connectedText, text, white);

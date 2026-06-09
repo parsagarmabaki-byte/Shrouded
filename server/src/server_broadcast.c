@@ -53,7 +53,7 @@ void broadcast_msg(UDPsocket socket, UDPpacket *packet, IPaddress *clients, int 
             printf("Failed to send packet to player %d\n", i);
 }
 
-void broadcast_game_state(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clients, int *used)
+void broadcast_game_state(UDPsocket socket, UDPpacket *packet, GameState *state, IPaddress *clients, int *used)
 {
     state->type = MSG_GAME_STATE;
     for (int i = 0; i < MAX_PLAYERS; i++)

@@ -13,7 +13,7 @@ typedef struct {
     SDLNet_SocketSet voteSocketSet;
     UDPpacket *send_packet;
     UDPpacket *receive_packet;
-    gameState state;
+    GameState state;
     Meeting meeting_info;
     IPaddress clientAddresses[MAX_PLAYERS];
     int clientUsed[MAX_PLAYERS];

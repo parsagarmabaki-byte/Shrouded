@@ -31,8 +31,8 @@ typedef struct
 
 int initiate(waitForPlayers *pWait);
 void cleanLobby(waitForPlayers *pWait);
-int countActivePlayers(gameState *state);
+int count_active_players(GameState *state);
 int promptServerAddress(waitForPlayers *pWait, char *buffer, size_t buffer_size, const char *error_message);
-void renderWaitingScreen(waitForPlayers *pWait, gameState *state);
+void renderWaitingScreen(waitForPlayers *pWait, GameState *state);
 
 #endif

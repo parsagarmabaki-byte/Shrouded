@@ -2,9 +2,9 @@
 #include "player_movement.h"
 #include "server_broadcast.h"
 
-void check_win_condition(gameState *state)
+void check_win_condition(GameState *state)
 {
-    int alive_impostor = 0;
+    int alive_killer = 0;
     int alive_crewmates = 0;
     int active_crewmates = 0;
     int completed_tasks = 0;
@@ -17,7 +17,7 @@ void check_win_condition(gameState *state)
         if (state->players[i].isKiller)
         {
             if (state->players[i].isAlive)
-                alive_impostor++;
+                alive_killer++;
             continue;
         }
 
@@ -27,18 +27,18 @@ void check_win_condition(gameState *state)
         if (state->players[i].isAlive)
             alive_crewmates++;
     }
-    if (alive_impostor == 0 || alive_impostor >= alive_crewmates || (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT))
+    if (alive_killer == 0 || alive_killer >= alive_crewmates || (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT))
     {
-        if (alive_impostor == 0)
+        if (alive_killer == 0)
             state->phase = GAME_CREWMATES_WIN;
-        else if (alive_impostor >= alive_crewmates)
+        else if (alive_killer >= alive_crewmates)
             state->phase = GAME_KILLER_WIN;
         else if (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
             state->phase = GAME_CREWMATES_WIN;
     }
 }
 
-void apply_player_input(gameState *state, InputMsg *input, float dt)
+void apply_player_input(GameState *state, InputMsg *input, float dt)
 {
     int id = input->player_id;
     if (id < 0 || id >= MAX_PLAYERS)

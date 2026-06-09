@@ -48,7 +48,7 @@ typedef enum
     MSG_TASK_COMPLETE,
     MSG_VOTE_REQUEST,
     MSG_DEBUG_CREWMATES_WIN,
-    MSG_DEBUG_IMPOSTOR_WIN,
+    MSG_DEBUG_KILLER_WIN,
     MSG_PLAYER_SYNC_DATA,
     MSG_KILL_READY,
     MSG_PHASE_CHANGE,
@@ -89,7 +89,7 @@ typedef struct
 
     TaskType task_order[TASK_COUNT]; // shuffled player task list
     int tasks_completed;
-} playerState;
+} PlayerState;
 
 typedef enum
 {
@@ -101,13 +101,13 @@ typedef enum
     SHOW_VOTE_RESULT,
     GAME_CREWMATES_WIN,
     GAME_KILLER_WIN
-} gamePhase;
+} GamePhase;
 
 typedef struct
 {
     MessageType type;
-    playerState players[MAX_PLAYERS];
-    gamePhase phase;
+    PlayerState players[MAX_PLAYERS];
+    GamePhase phase;
     int local_player_id;
     int host_player_id;
     MeetingReason meeting_reason;
@@ -118,12 +118,12 @@ typedef struct
     int meeting_time_remaining; // milliseconds left in meeting
     bool kill_cooldown_active;
 
-} gameState;
+} GameState;
 
 typedef struct
 {
     MessageType type;
-    gamePhase phase;
+    GamePhase phase;
     int killer_id;
     int victim_id;
     float x;
@@ -140,7 +140,7 @@ typedef struct
 typedef struct
 {
     MessageType type;
-    gamePhase phase;
+    GamePhase phase;
     MeetingReason meeting_reason;
     int emergency_meeting_reported_id;
     int voting_results[MAX_PLAYERS + 1];
@@ -156,7 +156,7 @@ typedef struct
 
     int has_voted[MAX_PLAYERS];
 
-    int votes_recieved;
+    int votes_received;
     VoteRequest votes[MAX_PLAYERS];
 
 } Meeting;
@@ -183,7 +183,7 @@ typedef struct
 typedef struct
 {
     MessageType type;
-    gamePhase phase;
+    GamePhase phase;
     MeetingReason meeting_reason;
     int emergency_meeting_reported_id;
 } EmergencyMeetingEvent;
@@ -191,7 +191,7 @@ typedef struct
 typedef struct
 {
     MessageType type;
-    gamePhase phase;
+    GamePhase phase;
     MeetingReason meeting_reason;
     int voting_results[MAX_PLAYERS + 1];
     int voting_result;
@@ -207,7 +207,7 @@ typedef struct
 typedef struct
 {
     MessageType type;
-    gamePhase phase;
+    GamePhase phase;
     MeetingReason meeting_reason;
     int player_id;
     int victim_id;

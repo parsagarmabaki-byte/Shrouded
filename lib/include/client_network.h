@@ -16,7 +16,7 @@ void send_input(Client *client, Player *player, InputMsg input_msg);
 int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_t size);
 int send_task_complete(Client *client, int player_id, TaskType task_type);
 void request_kill(Client *client, int target_id);
-void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted);
+void collect_packets(Client *client, GameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted);
 int send_leave_message(Client *client);
 void request_emergency_meeting(Client *client);
 void request_report_body(Client *client, int body_id);

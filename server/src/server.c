@@ -127,7 +127,7 @@ int main(void)
                 server.state.phase = GAME_CREWMATES_WIN;
 #endif
                 break;
-            case MSG_DEBUG_IMPOSTOR_WIN:
+            case MSG_DEBUG_KILLER_WIN:
 #ifdef DEBUG
                 server.state.phase = GAME_KILLER_WIN;
 #endif
@@ -173,7 +173,7 @@ void update_server_tick(Server *s)
         if (SDL_GetTicks64() - s->phase_time >= INFO_MEETING_DURATION)
         {
             s->state.phase = GAME_MEETING;
-            inititate_meeting_info(&s->meeting_info, &s->state);
+            initiate_meeting_info(&s->meeting_info, &s->state);
             s->phase_time = SDL_GetTicks64();
             printf("INFORMATION OF MEETING ENDED\n");
             PhaseChangeMsg msg = {0};
@@ -190,7 +190,7 @@ void update_server_tick(Server *s)
                                               ? (int)(meeting_duration - elapsed)
                                               : 0;
 
-        if (elapsed >= meeting_duration || s->meeting_info.votes_recieved == s->meeting_info.alive_players_count)
+        if (elapsed >= meeting_duration || s->meeting_info.votes_received == s->meeting_info.alive_players_count)
         {
             s->state.phase = SHOW_VOTE_RESULT;
             s->state.voting_result = resolve_voting(&s->state, s->meeting_info, s->state.voting_results);
@@ -254,7 +254,7 @@ void handle_join(Server *s, IPaddress sender)
     int existing = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
     if (existing < 0)
     {
-        int newPlayer = addToLobby(&s->state, s->clientAddresses, s->clientUsed, sender);
+        int newPlayer = add_to_lobby(&s->state, s->clientAddresses, s->clientUsed, sender);
         if (newPlayer >= 0)
         {
             if (s->state.host_player_id < 0)
@@ -267,7 +267,7 @@ void handle_join(Server *s, IPaddress sender)
 
 void handle_leave(Server *s, IPaddress sender)
 {
-    int removed = removeFromLobby(&s->state, s->clientAddresses, s->clientUsed, sender);
+    int removed = remove_from_lobby(&s->state, s->clientAddresses, s->clientUsed, sender);
     if (removed >= 0)
     {
         printf("Player %d left\n", removed);
@@ -296,7 +296,7 @@ void handle_start_game(Server *s, IPaddress sender)
         printf("[SERVER] Ignored start request from non-host player %d\n", sender_id);
         return;
     }
-    if (countActivePlayers(&s->state) < 3)
+    if (count_active_players(&s->state) < 3)
     {
         printf("[SERVER] Ignored start request: at least 2 players are required\n");
         return;
@@ -479,7 +479,7 @@ void handle_task_complete(Server *s, IPaddress sender)
                 task_completed_msg.player_id = pid;
                 task_completed_msg.phase = s->state.phase;
 
-                int active_count = countActivePlayers(&s->state);
+                int active_count = count_active_players(&s->state);
                 int total_expected_tasks = TASK_COUNT * (active_count - 1);
                 printf("\n=== TASK COMPLETE ===\n");
                 printf("Player %d finished task %d/%d (TaskType %d)\n", pid, s->state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
@@ -497,7 +497,7 @@ void handle_task_complete(Server *s, IPaddress sender)
 
 void handle_tcp_vote(Server *s, VoteRequest vote)
 {
-    gameState *state = &s->state;
+    GameState *state = &s->state;
     if (state->phase != GAME_MEETING)
         return;
 
@@ -509,7 +509,7 @@ void handle_tcp_vote(Server *s, VoteRequest vote)
     if (vote.target_id >= 0 && (!state->players[vote.target_id].active || !state->players[vote.target_id].isAlive))
         return;
 
-    if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_recieved < s->meeting_info.alive_players_count)
+    if (can_cast_vote(s->meeting_info, pid) && s->meeting_info.votes_received < s->meeting_info.alive_players_count)
     {
         cast_vote(&s->meeting_info, vote);
         state->voting_result = calculate_votes(s->meeting_info, state->voting_results);

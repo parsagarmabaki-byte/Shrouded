@@ -2,10 +2,10 @@
 #include "server_broadcast.h"
 #include <stdio.h>
 
-void inititate_meeting_info(Meeting *meeting_info, gameState *state)
+void initiate_meeting_info(Meeting *meeting_info, GameState *state)
 {
     meeting_info->alive_players_count = 0;
-    meeting_info->votes_recieved = 0;
+    meeting_info->votes_received = 0;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
@@ -50,34 +50,34 @@ int can_cast_vote(Meeting meeting_info, int voter_id)
 
 void cast_vote(Meeting *meeting_info, VoteRequest vote)
 {
-    if (meeting_info->votes_recieved < 0 || meeting_info->votes_recieved >= MAX_PLAYERS)
+    if (meeting_info->votes_received < 0 || meeting_info->votes_received >= MAX_PLAYERS)
         return;
     if (vote.voter_id < 0 || vote.voter_id >= MAX_PLAYERS)
         return;
     if (vote.target_id != VOTE_SKIP && (vote.target_id < 0 || vote.target_id >= MAX_PLAYERS))
         return;
 
-    int index = meeting_info->votes_recieved;
+    int index = meeting_info->votes_received;
     meeting_info->votes[index] = vote;
     meeting_info->has_voted[vote.voter_id] = 1;
-    meeting_info->votes_recieved++;
+    meeting_info->votes_received++;
     printf("\nVote accepted: voter=%d target=%d votes=%d/%d\n",
            vote.voter_id,
            vote.target_id,
-           meeting_info->votes_recieved,
+           meeting_info->votes_received,
            meeting_info->alive_players_count);
 }
 
 int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
 {
-    int votes_recieved = meeting_info.votes_recieved;
+    int votes_received = meeting_info.votes_received;
     int max_votes = 0;
     int player_id = -1;
 
     for (int i = 0; i < MAX_PLAYERS + 1; i++)
         voting_result[i] = 0;
 
-    for (int i = 0; i < votes_recieved; i++)
+    for (int i = 0; i < votes_received; i++)
     {
         int target_id = meeting_info.votes[i].target_id;
         if (target_id == VOTE_SKIP)
@@ -111,7 +111,7 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
     return player_id;
 }
 
-int resolve_voting(gameState *state, Meeting meeting_info, int vote_results[MAX_PLAYERS + 1])
+int resolve_voting(GameState *state, Meeting meeting_info, int vote_results[MAX_PLAYERS + 1])
 {
     int vote_result = calculate_votes(meeting_info, vote_results);
     if (vote_result != -1)

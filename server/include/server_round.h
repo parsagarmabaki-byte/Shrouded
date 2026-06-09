@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include "network_data.h"
 
-int designateImpostor(gameState *state);
-void start_new_round(gameState *state, Uint64 *state_start_time, int *killer_id);
+int designate_killer(GameState *state);
+void start_new_round(GameState *state, Uint64 *state_start_time, int *killer_id);
 
 #endif

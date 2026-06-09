@@ -7,7 +7,7 @@
 int init_server_socket(UDPsocket *socket, TCPsocket *tcp_socket);
 void cleanupServer(UDPsocket server_socket, TCPsocket tcp_socket, SDLNet_SocketSet socket_set, TCPsocket *tcp_sockets, UDPpacket *receive_packet, UDPpacket *send_packet);
 void broadcast_msg(UDPsocket socket, UDPpacket *packet, IPaddress *clients, int *used, const void *data, size_t size);
-void broadcast_game_state(UDPsocket socket, UDPpacket *packet, gameState *state, IPaddress *clients, int *used);
+void broadcast_game_state(UDPsocket socket, UDPpacket *packet, GameState *state, IPaddress *clients, int *used);
 void broadcast_tcp_msg(TCPsocket *sockets, const void *data, size_t size);
 
 #endif

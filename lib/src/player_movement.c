@@ -7,7 +7,7 @@
 #include "wall_data.h"
 #include <math.h>
 
-Player *player_create(gameState *state, int local_id)
+Player *player_create(GameState *state, int local_id)
 {
     Player *p = malloc(sizeof(Player));
     if (!p)
@@ -57,7 +57,7 @@ void apply_movement(float *x, float *y, InputMsg input, float dt)
     }
 }
 
-void compare_server_position(gameState state, Player *player,int local_id)
+void compare_server_position(GameState state, Player *player,int local_id)
 {
     float dx = state.players[local_id].x - player->Hitbox.x;
     float dy = state.players[local_id].y - player->Hitbox.y;
@@ -68,7 +68,7 @@ void compare_server_position(gameState state, Player *player,int local_id)
         player->Hitbox.y = state.players[local_id].y;
 }
 
-Player init_player(gameState state, int local_id)
+Player init_player(GameState state, int local_id)
 {
     Player player={0};
     player.Hitbox.x = state.players[local_id].x;

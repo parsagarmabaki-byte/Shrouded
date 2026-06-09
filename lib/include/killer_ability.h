@@ -8,12 +8,12 @@
 #define KILL_RADIUS 100
 
 
-void render_killer_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id);
+void render_killer_ability(SDL_Renderer *renderer, GameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id);
 bool is_hovering(SDL_Renderer *renderer,SDL_Rect rect);
-int handle_kill_request(gameState *state, int killer_id);
+int handle_kill_request(GameState *state, int killer_id);
 void activate_kill_cooldown(Uint64 *kill_cooldown_start, bool *kill_cooldown_active);
 void update_kill_cooldown(TCPsocket socket, Uint64 *kill_cooldown_start, bool *kill_cooldown);
-float find_kill_target(playerState imposter, playerState innocent);
+float find_kill_target(PlayerState killer, PlayerState innocent);
 void get_forward_vector(Direction direction, float *fx, float *fy);
 void start_kill_animation(KillAnimation *anim, int killer_id, int victim_id, float x, float y);
 void update_kill_animation(KillAnimation bodies[MAX_PLAYERS], float dt);

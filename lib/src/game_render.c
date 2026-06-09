@@ -3,7 +3,7 @@
 #include "emergency_meeting.h"
 #include "wall_data.h"
 
-static void render_task_panel(SDL_Renderer *renderer, gameState *state, int local_id, Task *task, Text text, bool emergency_window_open, bool task_map_open, bool pause_menu_open);
+static void render_task_panel(SDL_Renderer *renderer, GameState *state, int local_id, Task *task, Text text, bool emergency_window_open, bool task_map_open, bool pause_menu_open);
 static void render_win_fade(GameContext *ctx, Uint32 win_fade_start, Uint32 win_fade_duration);
 static void render_game(GameContext *ctx);
 static const char *task_type_name(TaskType t);
@@ -48,7 +48,7 @@ static void render_death_effect(SDL_Renderer *renderer, KillAnimation *local_dea
     }
 }
 
-static void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette, const playerState *local_player, KillAnimation *local_death)
+static void render_vignette(SDL_Renderer *renderer, SDL_Texture *vignette, const PlayerState *local_player, KillAnimation *local_death)
 {
     if (!vignette)
         return;
@@ -100,10 +100,10 @@ static const char *task_type_name(TaskType t)
 
 void render_game_phase(GameContext *ctx)
 {
-    static gamePhase previous_phase = GAME_LOBBY;
+    static GamePhase previous_phase = GAME_LOBBY;
     static Uint32 win_fade_start = 0;
     const Uint32 win_fade_duration = 1500;
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
 
     handle_phase_transition(ctx, &previous_phase, &win_fade_start);
 
@@ -155,9 +155,9 @@ static void render_game(GameContext *ctx)
     render_game_ui(ctx);
 }
 
-void handle_phase_transition(GameContext *ctx, gamePhase *previous_phase, Uint32 *win_fade_start)
+void handle_phase_transition(GameContext *ctx, GamePhase *previous_phase, Uint32 *win_fade_start)
 {
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
 
     if (state->phase == *previous_phase)
         return;
@@ -179,7 +179,7 @@ void handle_phase_transition(GameContext *ctx, gamePhase *previous_phase, Uint32
 
 static void render_win_fade(GameContext *ctx, Uint32 win_fade_start, Uint32 win_fade_duration)
 {
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
 
     if (state->phase != GAME_CREWMATES_WIN && state->phase != GAME_KILLER_WIN)
         return;
@@ -224,26 +224,26 @@ void render_pause_menu(SDL_Renderer *renderer, GameAssets assets, bool pause_men
         SDL_RenderCopy(renderer, assets.pause_exit, NULL, &exit_rect);
 }
 
-void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, gameState state)
+void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, GameState state)
 {
-    int impostor_id = -1;
+    int killer_id = -1;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         if (state.players[i].isKiller)
         {
-            impostor_id = i;
+            killer_id = i;
             break;
         }
     }
 
-    if (impostor_id >= 0 && impostor_id < PLAYER_SLOTS && assets.crewmates_win_screens[impostor_id])
+    if (killer_id >= 0 && killer_id < PLAYER_SLOTS && assets.crewmates_win_screens[killer_id])
     {
-        SDL_RenderCopy(renderer, assets.crewmates_win_screens[impostor_id], NULL, NULL);
+        SDL_RenderCopy(renderer, assets.crewmates_win_screens[killer_id], NULL, NULL);
     }
 }
 
-void render_killer_win(SDL_Renderer *renderer, GameAssets assets, gameState state)
+void render_killer_win(SDL_Renderer *renderer, GameAssets assets, GameState state)
 {
     int killer_id = -1;
 
@@ -271,7 +271,7 @@ void render_game_show_role(SDL_Renderer *renderer, SDL_Texture *game_role)
 
 void render_world(GameContext *ctx)
 {
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
     SDL_Renderer *renderer = ctx->renderer;
     Player *player = ctx->player;
     GameAssets assets = ctx->assets;
@@ -298,7 +298,7 @@ static TaskMarker *find_marker(TaskType type)
     return NULL;
 }
 
-void render_active_task_indicator(SDL_Renderer *renderer, gameState *state, GameAssets assets, Camera *cam, int local_id)
+void render_active_task_indicator(SDL_Renderer *renderer, GameState *state, GameAssets assets, Camera *cam, int local_id)
 {
     if (state->players[local_id].isKiller)
         return;
@@ -324,12 +324,12 @@ void render_active_task_indicator(SDL_Renderer *renderer, gameState *state, Game
 
 void render_player_overlays(GameContext *ctx)
 {
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
     SDL_Renderer *renderer = ctx->renderer;
     Player *player = ctx->player;
     GameAssets *assets = &ctx->assets;
 
-    if (!ctx->is_local_impostor)
+    if (!ctx->is_local_killer)
         render_vignette(renderer, assets->vignette_img, &state->players[ctx->local_id], &ctx->bodies[ctx->local_id]);
 
     if (!state->players[ctx->local_id].isAlive)
@@ -341,11 +341,11 @@ void render_player_overlays(GameContext *ctx)
     if (state->players[ctx->local_id].isAlive && !task_active_check(ctx->task))
         render_player_ability(renderer, *player, ctx->assets, ctx->bodies);
 
-    if (ctx->is_local_impostor)
+    if (ctx->is_local_killer)
         render_killer_ability(renderer, *state, assets->kill_button_active, assets->kill_button_deactive, ctx->state->kill_cooldown_active, ctx->local_id);
 }
 
-void render_info_text(gameState *state, int local_id, Text text)
+void render_info_text(GameState *state, int local_id, Text text)
 {
     if (local_id < 0 || !state->players[local_id].active)
         return;
@@ -358,7 +358,7 @@ void render_info_text(gameState *state, int local_id, Text text)
 void render_game_ui(GameContext *ctx)
 {
     SDL_Renderer *renderer = ctx->renderer;
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
     Player *player = ctx->player;
     GameAssets *assets = &ctx->assets;
 
@@ -381,7 +381,7 @@ void render_game_ui(GameContext *ctx)
 
 void render_game_info_meeting(GameContext *ctx)
 {
-    gameState *state = ctx->state;
+    GameState *state = ctx->state;
     GameAssets assets = ctx->assets;
     KillAnimation *bodies = ctx->bodies;
 
@@ -415,7 +415,7 @@ void render_game_info_meeting(GameContext *ctx)
     SDL_RenderCopy(ctx->renderer, meeting_info_texture, NULL, &meeting_info_rect);
 }
 
-void render_global_progress_bar(SDL_Renderer *renderer, gameState *state)
+void render_global_progress_bar(SDL_Renderer *renderer, GameState *state)
 {
     int active_players = 0;
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -460,7 +460,7 @@ void render_global_progress_bar(SDL_Renderer *renderer, gameState *state)
     draw_thick_rect(renderer, bg, 3);
 }
 
-static void render_task_panel(SDL_Renderer *renderer, gameState *state, int local_id, Task *task, Text text, bool emergency_window_open, bool task_map_open, bool pause_menu_open)
+static void render_task_panel(SDL_Renderer *renderer, GameState *state, int local_id, Task *task, Text text, bool emergency_window_open, bool task_map_open, bool pause_menu_open)
 {
     if (local_id < 0 || !state->players[local_id].active)
         return;
@@ -509,8 +509,8 @@ static void render_task_panel(SDL_Renderer *renderer, gameState *state, int loca
         }
 
         // current task outline
-        bool is_impostor = state->players[state->local_player_id].isKiller;
-        if (!completed && !is_impostor)
+        bool is_killer = state->players[state->local_player_id].isKiller;
+        if (!completed && !is_killer)
         {
             SDL_SetRenderDrawColor(renderer, 180, 180, 180, 200);
             SDL_Rect outline = {panel_x + 6, y - 4, panel_w - 16, item_h};
@@ -534,7 +534,7 @@ void draw_thick_rect(SDL_Renderer *renderer, SDL_Rect rect, int thickness)
     }
 }
 
-void render_task_map(SDL_Renderer *renderer, GameAssets assets, Player *player, gameState *state)
+void render_task_map(SDL_Renderer *renderer, GameAssets assets, Player *player, GameState *state)
 {
     SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
     SDL_Rect map_rect = {252, 56, 776, 620};
@@ -556,8 +556,8 @@ void render_task_map(SDL_Renderer *renderer, GameAssets assets, Player *player, 
 
     int marker_count = sizeof(markers) / sizeof(markers[0]);
 
-    bool is_impostor = state->players[state->local_player_id].isKiller;
-    if (is_impostor)
+    bool is_killer = state->players[state->local_player_id].isKiller;
+    if (is_killer)
     {
         for (int i = 0; i < marker_count; i++)
         {
@@ -604,7 +604,7 @@ void render_task_map(SDL_Renderer *renderer, GameAssets assets, Player *player, 
     SDL_RenderDrawRect(renderer, &player_marker);
 }
 
-void render_controls_screen(SDL_Renderer *renderer, gameState *state, int local_id, Text text)
+void render_controls_screen(SDL_Renderer *renderer, GameState *state, int local_id, Text text)
 {
     if (local_id < 0 || !state->players[local_id].active)
         return;
@@ -614,15 +614,15 @@ void render_controls_screen(SDL_Renderer *renderer, gameState *state, int local_
         "WASD - Move",
         "E - Interact",
         "Q - Cancel Task",
-        "K - Kill (Impostor only)",
+        "K - Kill (Killer only)",
         "R - Report Body",
         "I - Toggle Controls/Info Screen",
         "M - Toggle Task Map",
         "TAB - Toggle Task Panel",
         " ",
         "Info:",
-        "Complete all tasks or discover and vote out the Impostor to win as Innocent.",
-        "Kill all Innocent to win as Impostor.",
+        "Complete all tasks or discover and vote out the Killer to win as Innocent.",
+        "Kill all Innocent to win as Killer.",
         "Trust nobody."};
 
     int line_count = sizeof(lines) / sizeof(lines[0]);
@@ -673,7 +673,7 @@ void run_animations(float *animation_timer, int *current_frame, InputMsg input, 
     }
 }
 
-void render_all_players(gameState *state, Player *player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id)
+void render_all_players(GameState *state, Player *player, GameAssets assets, Camera *cam, SDL_Renderer *renderer, int local_id)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {

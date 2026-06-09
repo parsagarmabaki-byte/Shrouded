@@ -7,12 +7,12 @@
 #include "time.h"
 
 static void game_context_cleanup(GameContext *ctx);
-static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby, AudioAssets *audio);
+static GameContext game_context_init(Client *client, GameState *state, waitForPlayers *lobby, AudioAssets *audio);
 
-static SDL_Texture *load_role_texture(SDL_Renderer *renderer, int local_id, bool is_impostor)
+static SDL_Texture *load_role_texture(SDL_Renderer *renderer, int local_id, bool is_killer)
 {
     char path[128];
-    if (is_impostor)
+    if (is_killer)
         snprintf(path, sizeof(path), "assets/images/show_role_assets/player%d_killer.png", local_id);
     else
         snprintf(path, sizeof(path), "assets/images/show_role_assets/player%d_innocent.png", local_id);
@@ -25,10 +25,10 @@ static void refresh_role_texture_on_transition(GameContext *ctx)
         return;
     if (ctx->player_role)
         SDL_DestroyTexture(ctx->player_role);
-    ctx->player_role = load_role_texture(ctx->renderer, ctx->local_id, ctx->is_local_impostor);
+    ctx->player_role = load_role_texture(ctx->renderer, ctx->local_id, ctx->is_local_killer);
 }
 
-int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets *audio)
+int run_game(Client *client, waitForPlayers *lobby, GameState *state, AudioAssets *audio)
 {
     srand(time(NULL));
     GameContext ctx = game_context_init(client, state, lobby, audio);
@@ -41,7 +41,7 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets
         ctx.dt = calculate_delta_time(&ctx.last_tick);
         process_events(&ctx);
         collect_packets(ctx.client, ctx.state, ctx.bodies, ctx.audio, &ctx.targeted_banner_id, &ctx.player_voted);
-        ctx.is_local_impostor = ctx.state->players[ctx.local_id].isKiller != 0;
+        ctx.is_local_killer = ctx.state->players[ctx.local_id].isKiller != 0;
         refresh_role_texture_on_transition(&ctx);
         ctx.prev_phase = ctx.state->phase;
         ctx.ui_open = ctx.emergency_window_open || ctx.task_map_open || ctx.pause_menu_open;
@@ -54,7 +54,7 @@ int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets
     return ctx.return_to_menu;
 }
 
-static GameContext game_context_init(Client *client, gameState *state, waitForPlayers *lobby, AudioAssets *audio)
+static GameContext game_context_init(Client *client, GameState *state, waitForPlayers *lobby, AudioAssets *audio)
 {
     GameContext ctx = {0};
 
@@ -67,7 +67,7 @@ static GameContext game_context_init(Client *client, gameState *state, waitForPl
     SDL_SetRenderDrawColor(ctx.renderer, 0, 0, 0, 255);
 
     ctx.local_id = state->local_player_id;
-    ctx.is_local_impostor = state->players[ctx.local_id].isKiller != 0;
+    ctx.is_local_killer = state->players[ctx.local_id].isKiller != 0;
     ctx.running = true;
     ctx.return_to_menu = false;
     ctx.emergency_window_open = false;
@@ -85,7 +85,7 @@ static GameContext game_context_init(Client *client, gameState *state, waitForPl
     ctx.player = player_create(state, ctx.local_id);
     ctx.task = create_task(ctx.renderer);
     ctx.cam = (Camera){0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
-    ctx.player_role = load_role_texture(ctx.renderer, ctx.local_id, ctx.is_local_impostor);
+    ctx.player_role = load_role_texture(ctx.renderer, ctx.local_id, ctx.is_local_killer);
     ctx.prev_phase = state->phase;
 
     ctx.small_text = text_create(ctx.renderer, "assets/fonts/BebasNeue-Regular.ttf", 18);

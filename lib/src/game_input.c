@@ -113,7 +113,7 @@ static void kill_events(GameContext *ctx)
     int target_id = -1;
     if (ctx->event.type == SDL_KEYDOWN)
     {
-        if (!ctx->state->kill_cooldown_active && ctx->is_local_impostor)
+        if (!ctx->state->kill_cooldown_active && ctx->is_local_killer)
         {
             if (ctx->event.key.keysym.scancode == SDL_SCANCODE_K)
             {
@@ -123,7 +123,7 @@ static void kill_events(GameContext *ctx)
             }
         }
     }
-    if (!ctx->state->kill_cooldown_active && ctx->is_local_impostor && ctx->event.type == SDL_MOUSEBUTTONDOWN)
+    if (!ctx->state->kill_cooldown_active && ctx->is_local_killer && ctx->event.type == SDL_MOUSEBUTTONDOWN)
     {
         if (is_hovering(ctx->renderer, kill_button))
         {
@@ -202,7 +202,7 @@ static void game_running_events(GameContext *ctx)
         else if (ctx->event.key.keysym.scancode == SDL_SCANCODE_F2)
         {
 #ifdef DEBUG
-            send_debug_win(ctx->client, MSG_DEBUG_IMPOSTOR_WIN);
+            send_debug_win(ctx->client, MSG_DEBUG_KILLER_WIN);
 #endif
         }
         if (ctx->event.key.keysym.scancode == SDL_SCANCODE_TAB && !task_active_check(ctx->task))
@@ -227,7 +227,7 @@ static void game_meeting_events(GameContext *ctx)
 
 static void task_events(GameContext *ctx)
 {
-    if (!ctx->task || ctx->is_local_impostor)
+    if (!ctx->task || ctx->is_local_killer)
         return;
 
     if (ctx->event.type == SDL_KEYDOWN)

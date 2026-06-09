@@ -19,15 +19,15 @@ typedef struct{
     Uint32 kill_cooldown_end;
 } Player;
 
-Player *player_create(gameState *state, int local_id);
+Player *player_create(GameState *state, int local_id);
 void player_destroy(Player *p);
 
 //-----
-Player init_player(gameState state, int local_id);
+Player init_player(GameState state, int local_id);
 void renderPlayer(SDL_Renderer *renderer, Player *player, SDL_Texture *texture, Camera *cam);
 void update_map(SDL_Renderer *renderer, SDL_Texture *Game_map, Player *player, SDL_Texture *player_sprite, Camera *cam);
 void apply_movement(float *x, float *y, InputMsg input, float dt);
-void compare_server_position(gameState state, Player *player,int local_id);
+void compare_server_position(GameState state, Player *player,int local_id);
 
 
 #endif

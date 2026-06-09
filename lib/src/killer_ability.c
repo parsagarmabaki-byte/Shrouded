@@ -6,7 +6,7 @@
 #include "player_movement.h"
 #include "client_network.h"
 
-void render_killer_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
+void render_killer_ability(SDL_Renderer *renderer, GameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
 {
     SDL_Rect kill_button = {1050, 520, 200, 200};
     // SDL_Rect button = {1077, 550, 150, 145};
@@ -50,9 +50,9 @@ void update_kill_cooldown(TCPsocket socket, Uint64 *kill_cooldown_start, bool *k
     }
 }
 
-int handle_kill_request(gameState *state, int killer_id)
+int handle_kill_request(GameState *state, int killer_id)
 {
-    playerState killer = state->players[killer_id];
+    PlayerState killer = state->players[killer_id];
     float best_distance = KILL_RADIUS * KILL_RADIUS;
     int target_id = -1;
 
@@ -83,12 +83,12 @@ int handle_kill_request(gameState *state, int killer_id)
     return -1;
 }
 
-float find_kill_target(playerState imposter, playerState innocent)
+float find_kill_target(PlayerState killer, PlayerState innocent)
 {
     float fy, fx = 0;
-    get_forward_vector(imposter.direction, &fx, &fy);
-    float dx = innocent.x - imposter.x;
-    float dy = innocent.y - imposter.y;
+    get_forward_vector(killer.direction, &fx, &fy);
+    float dx = innocent.x - killer.x;
+    float dy = innocent.y - killer.y;
     float dist_sq = dx * dx + dy * dy;
     // printf("\n[TARGET %d] dx=%.2f dy=%.2f dist_sq=%.2f\n", innocent.player_id ,dx, dy, dist_sq);
     if (dist_sq == 0.0f)

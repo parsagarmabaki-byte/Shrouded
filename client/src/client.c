@@ -20,7 +20,7 @@ int main()
     {
         Client client = {0};
         SDL_Event event;
-        gameState state = {0};
+        GameState state = {0};
         AudioAssets audio = {0};
         bool running = true;
         bool return_to_menu = false;
@@ -30,7 +30,7 @@ int main()
 
         // Visa huvudmenyn först. Om användaren valde Exit (eller stängde fönstret)
         // städar vi upp och avslutar utan att gå vidare till IP-prompten.
-        if (!showMainMenu(&lobby))
+        if (!show_main_menu(&lobby))
         {
             break;
         }
@@ -99,7 +99,7 @@ int main()
                     }
                     else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
                     {
-                        if (state.local_player_id == state.host_player_id && countActivePlayers(&state) >= 2 && state.phase == GAME_LOBBY)
+                        if (state.local_player_id == state.host_player_id && count_active_players(&state) >= 2 && state.phase == GAME_LOBBY)
                             send_start_game(&client);
                     }
                 }
@@ -117,7 +117,7 @@ int main()
         if (state.phase != GAME_LOBBY)
         {
             stop_music();
-            return_to_menu = runGame(&client, &lobby, &state, &audio);
+            return_to_menu = run_game(&client, &lobby, &state, &audio);
         }
 
         cleanup_audio(&audio);

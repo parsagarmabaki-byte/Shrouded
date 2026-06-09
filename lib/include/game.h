@@ -34,7 +34,7 @@ typedef struct Client
     int tcp_bytes_read;
 
     IPaddress serverAddr;
-    UDPpacket *recievepacket;
+    UDPpacket *receivepacket;
 } Client;
 
 typedef struct
@@ -49,7 +49,7 @@ typedef struct GameContext
 {
     Client *client;
     SDL_Renderer *renderer;
-    gameState *state;
+    GameState *state;
     AudioAssets *audio;
 
     Player *player;
@@ -74,7 +74,7 @@ typedef struct GameContext
     bool running;
     bool return_to_menu;
     bool emergency_window_open;
-    bool is_local_impostor;
+    bool is_local_killer;
     bool task_map_open;
     bool pause_menu_open;
     bool task_panel_visible;
@@ -86,9 +86,9 @@ typedef struct GameContext
     float dt;
     Uint64 last_tick;
 
-    gamePhase prev_phase;
+    GamePhase prev_phase;
 } GameContext;
 
-int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets *audio);
+int run_game(Client *client, waitForPlayers *lobby, GameState *state, AudioAssets *audio);
 
 #endif
