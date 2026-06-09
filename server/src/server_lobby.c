@@ -34,7 +34,7 @@ int addToLobby(gameState *state, IPaddress *clientAddresses, int *clientUsed, IP
             state->players[i].y = spawnY[i];
             state->players[i].current_frame = 2;
             state->players[i].direction = DIR_DOWN;
-            state->players[i].isImpostor = 0;
+            state->players[i].isKiller = 0;
             state->kill_cooldown_active = false;
             state->players[i].emergency_meeting = 1;
             state->emergency_meeting_reported_id = -1;

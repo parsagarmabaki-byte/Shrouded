@@ -79,7 +79,7 @@ typedef struct
     float y;
 
     int isAlive;
-    int isImpostor;
+    int isKiller;
     int isDoingTask;
     
     int emergency_meeting;

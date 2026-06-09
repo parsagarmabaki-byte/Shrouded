@@ -230,7 +230,7 @@ void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, gameS
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (state.players[i].isImpostor)
+        if (state.players[i].isKiller)
         {
             impostor_id = i;
             break;
@@ -249,7 +249,7 @@ void render_killer_win(SDL_Renderer *renderer, GameAssets assets, gameState stat
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        if (state.players[i].isImpostor)
+        if (state.players[i].isKiller)
         {
             killer_id = i;
             break;
@@ -300,7 +300,7 @@ static TaskMarker *find_marker(TaskType type)
 
 void render_active_task_indicator(SDL_Renderer *renderer, gameState *state, GameAssets assets, Camera *cam, int local_id)
 {
-    if (state->players[local_id].isImpostor)
+    if (state->players[local_id].isKiller)
         return;
 
     int current_index =
@@ -509,7 +509,7 @@ static void render_task_panel(SDL_Renderer *renderer, gameState *state, int loca
         }
 
         // current task outline
-        bool is_impostor = state->players[state->local_player_id].isImpostor;
+        bool is_impostor = state->players[state->local_player_id].isKiller;
         if (!completed && !is_impostor)
         {
             SDL_SetRenderDrawColor(renderer, 180, 180, 180, 200);
@@ -556,7 +556,7 @@ void render_task_map(SDL_Renderer *renderer, GameAssets assets, Player *player, 
 
     int marker_count = sizeof(markers) / sizeof(markers[0]);
 
-    bool is_impostor = state->players[state->local_player_id].isImpostor;
+    bool is_impostor = state->players[state->local_player_id].isKiller;
     if (is_impostor)
     {
         for (int i = 0; i < marker_count; i++)

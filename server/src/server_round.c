@@ -34,7 +34,7 @@ int designateImpostor(gameState *state)
 
         if (active_player_index == chosen_active_player)
         {
-            state->players[i].isImpostor = 1;
+            state->players[i].isKiller = 1;
             return i;
         }
 
@@ -57,7 +57,7 @@ void start_new_round(gameState *state, Uint64 *state_start_time, int *killer_id)
 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        state->players[i].isImpostor = 0;
+        state->players[i].isKiller = 0;
         if (!state->players[i].active)
             continue;
 

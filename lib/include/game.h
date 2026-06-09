@@ -27,14 +27,11 @@ typedef struct Client
     TCPsocket tcp_socket;
     SDLNet_SocketSet tcp_socket_set;
     
-    VoteUpdateMsg vote_update_buffer;
-    int vote_update_bytes_read;
-
-    PhaseChangeMsg phase_change_buffer;
-    int phase_change_bytes_read;
-
-    KillEventMsg kill_event_buffer;
-    int kill_event_bytes_read;
+    union {
+        VoteUpdateMsg vote_update;
+        PhaseChangeMsg phase_change;
+    } tcp_buffer;
+    int tcp_bytes_read;
 
     IPaddress serverAddr;
     UDPpacket *recievepacket;
@@ -88,6 +85,8 @@ typedef struct GameContext
     float accumulator;
     float dt;
     Uint64 last_tick;
+
+    gamePhase prev_phase;
 } GameContext;
 
 int runGame(Client *client, waitForPlayers *lobby, gameState *state, AudioAssets *audio);

@@ -14,7 +14,7 @@ void check_win_condition(gameState *state)
         if (!state->players[i].active)
             continue;
 
-        if (state->players[i].isImpostor)
+        if (state->players[i].isKiller)
         {
             if (state->players[i].isAlive)
                 alive_impostor++;

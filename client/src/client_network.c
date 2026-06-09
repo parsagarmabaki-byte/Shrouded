@@ -270,39 +270,6 @@ static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg)
         state->voting_results[i] = msg->voting_results[i];
 }
 
-static void collect_tcp_vote_packets(Client *client, gameState *state)
-{
-    if (!client->tcp_socket || !client->tcp_socket_set)
-        return;
-
-    int ready = SDLNet_CheckSockets(client->tcp_socket_set, 0);
-    if (ready <= 0 || !SDLNet_SocketReady(client->tcp_socket))
-        return;
-
-    int remaining = (int)sizeof(VoteUpdateMsg) - client->vote_update_bytes_read;
-    int received = SDLNet_TCP_Recv(client->tcp_socket,
-                                   ((char *)&client->vote_update_buffer) + client->vote_update_bytes_read,
-                                   remaining);
-    if (received < 0)
-    {
-        SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
-        SDLNet_TCP_Close(client->tcp_socket);
-        client->tcp_socket = NULL;
-        client->vote_update_bytes_read = 0;
-        return;
-    }
-    if (received == 0)
-        return; 
-
-    client->vote_update_bytes_read += received;
-    if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
-    {
-        if (client->vote_update_buffer.type == MSG_VOTE_UPDATE)
-            apply_vote_update(state, &client->vote_update_buffer);
-        client->vote_update_bytes_read = 0;
-    }
-}
-
 static void apply_phase_change_msg(PhaseChangeMsg *msg, gameState *state,
                                    AudioAssets *audio,
                                    KillAnimation bodies[MAX_PLAYERS],
@@ -369,44 +336,71 @@ static void apply_phase_change_msg(PhaseChangeMsg *msg, gameState *state,
         state->kill_cooldown_active = false;
 }
 
-static void collect_event_packets(Client *client, gameState *state, AudioAssets *audio, KillAnimation bodies[MAX_PLAYERS], int *targeted_banner, int *player_voted)
+static void collect_tcp_packets(Client *client, gameState *state, AudioAssets *audio,
+                                KillAnimation bodies[MAX_PLAYERS],
+                                int *targeted_banner, int *player_voted)
 {
     if (!client->tcp_socket || !client->tcp_socket_set)
         return;
 
-    if (SDLNet_CheckSockets(client->tcp_socket_set, 0) <= 0 ||
-        !SDLNet_SocketReady(client->tcp_socket))
-        return;
-
-    int remaining = sizeof(PhaseChangeMsg) - client->phase_change_bytes_read;
-
-    int received = SDLNet_TCP_Recv(client->tcp_socket,
-                                   (char *)&client->phase_change_buffer + client->phase_change_bytes_read,
-                                   remaining);
-
-    if (received < 0)
+    while (client->tcp_socket &&
+           SDLNet_CheckSockets(client->tcp_socket_set, 0) > 0 &&
+           SDLNet_SocketReady(client->tcp_socket))
     {
-        client->phase_change_bytes_read = 0;
-        return;
-    }
-    if (received == 0)
-        return;
+        if (client->tcp_bytes_read < (int)sizeof(MessageType))
+        {
+            int remaining = (int)sizeof(MessageType) - client->tcp_bytes_read;
+            int received = SDLNet_TCP_Recv(client->tcp_socket,
+                                           (char *)&client->tcp_buffer + client->tcp_bytes_read,
+                                           remaining);
+            if (received <= 0)
+            {
+                SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
+                SDLNet_TCP_Close(client->tcp_socket);
+                client->tcp_socket = NULL;
+                client->tcp_bytes_read = 0;
+                return;
+            }
+            client->tcp_bytes_read += received;
+            if (client->tcp_bytes_read < (int)sizeof(MessageType))
+                break;
+        }
 
-    client->phase_change_bytes_read += received;
+        MessageType type = client->tcp_buffer.vote_update.type;
+        int target_size = (type == MSG_VOTE_UPDATE) ? (int)sizeof(VoteUpdateMsg)
+                                                    : (int)sizeof(PhaseChangeMsg);
 
-    if (client->phase_change_bytes_read == sizeof(PhaseChangeMsg))
-    {
-        apply_phase_change_msg(&client->phase_change_buffer, state, audio, bodies, targeted_banner, player_voted);
-        client->phase_change_bytes_read = 0;
+        if (client->tcp_bytes_read < target_size)
+        {
+            int remaining = target_size - client->tcp_bytes_read;
+            int received = SDLNet_TCP_Recv(client->tcp_socket,
+                                           (char *)&client->tcp_buffer + client->tcp_bytes_read,
+                                           remaining);
+            if (received <= 0)
+            {
+                SDLNet_TCP_DelSocket(client->tcp_socket_set, client->tcp_socket);
+                SDLNet_TCP_Close(client->tcp_socket);
+                client->tcp_socket = NULL;
+                client->tcp_bytes_read = 0;
+                return;
+            }
+            client->tcp_bytes_read += received;
+            if (client->tcp_bytes_read < target_size)
+                break;
+        }
+
+        if (type == MSG_VOTE_UPDATE)
+            apply_vote_update(state, &client->tcp_buffer.vote_update);
+        else
+            apply_phase_change_msg(&client->tcp_buffer.phase_change, state, audio, bodies,
+                                   targeted_banner, player_voted);
+        client->tcp_bytes_read = 0;
     }
 }
 
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted)
 {
-    if (state->phase == GAME_MEETING)
-        collect_tcp_vote_packets(client, state);
-    else
-        collect_event_packets(client, state, audio, bodies, targeted_banner, player_voted);
+    collect_tcp_packets(client, state, audio, bodies, targeted_banner, player_voted);
 
     while (SDLNet_UDP_Recv(client->socket, client->recievepacket))
     {

@@ -355,7 +355,7 @@ void handle_kill(Server *s, IPaddress sender)
     if (killer_id < 0 || killer_id >= MAX_PLAYERS)
         return;
 
-    if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isImpostor)
+    if (!s->state.players[killer_id].active || !s->state.players[killer_id].isAlive || !s->state.players[killer_id].isKiller)
         return;
 
     KillRequestMsg request;
@@ -462,7 +462,7 @@ void handle_task_complete(Server *s, IPaddress sender)
     memcpy(&msg, s->receive_packet->data, sizeof(msg));
 
     int pid = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
-    if (pid >= 0 && s->state.phase == GAME_RUNNING && s->state.players[pid].active && !s->state.players[pid].isImpostor)
+    if (pid >= 0 && s->state.phase == GAME_RUNNING && s->state.players[pid].active && !s->state.players[pid].isKiller)
     {
         int completed = s->state.players[pid].tasks_completed;
         if (completed < TASK_COUNT)
