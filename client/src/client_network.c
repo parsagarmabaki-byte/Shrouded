@@ -158,23 +158,12 @@ int send_packet(UDPsocket socket, IPaddress server_addr, const void *data, size_
 
 int send_leave_message(Client *client)
 {
+    if (!client->tcp_socket)
+        return 0;
     leaveMessage leave = {0};
     leave.type = MSG_LEAVE;
-
-    UDPpacket *packet = create_packet(512);
-    if (!packet)
-    {
-        return 0;
-    }
-
-    if (!send_packet_data(client->socket, packet, client->serverAddr, &leave, sizeof(leave)))
-    {
-        SDLNet_FreePacket(packet);
-        return 0;
-    }
-
-    SDLNet_FreePacket(packet);
-    return 1;
+    leave.player_id = client->player_id;
+    return send_tcp_data(client->tcp_socket, &leave, sizeof(leaveMessage));
 }
 void send_input(Client *client, Player *player, InputMsg input_msg)
 {

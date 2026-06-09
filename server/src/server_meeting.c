@@ -2,6 +2,8 @@
 #include "server_broadcast.h"
 #include <stdio.h>
 
+void handle_leave_by_id(Server *s, int player_id);
+
 void initiate_meeting_info(Meeting *meeting_info, GameState *state)
 {
     meeting_info->alive_players_count = 0;
@@ -164,6 +166,7 @@ void handle_tcp_vote_connections(Server *s)
                                            remaining);
             if (received <= 0)
             {
+                handle_leave_by_id(s, i);
                 SDLNet_TCP_DelSocket(s->tcpSocketSet, socket);
                 SDLNet_TCP_Close(socket);
                 s->tcpSockets[i] = NULL;
@@ -182,6 +185,8 @@ void handle_tcp_vote_connections(Server *s)
             target_size = (int)sizeof(tcpHelloMessage);
         else if (type == MSG_VOTE_REQUEST)
             target_size = (int)sizeof(VoteRequest);
+        else if (type == MSG_LEAVE)
+            target_size = (int)sizeof(leaveMessage);
         else
         {
             s->voteBytesRead[i] = 0;
@@ -197,6 +202,7 @@ void handle_tcp_vote_connections(Server *s)
                                            remaining);
             if (received <= 0)
             {
+                handle_leave_by_id(s, i);
                 SDLNet_TCP_DelSocket(s->tcpSocketSet, socket);
                 SDLNet_TCP_Close(socket);
                 s->tcpSockets[i] = NULL;
@@ -224,6 +230,11 @@ void handle_tcp_vote_connections(Server *s)
         {
             VoteRequest vote = s->voteBuffers[i];
             handle_tcp_vote(s, vote);
+        }
+        else if (type == MSG_LEAVE)
+        {
+            leaveMessage *leave = (leaveMessage *)&s->voteBuffers[i];
+            handle_leave_by_id(s, leave->player_id);
         }
         s->voteBytesRead[i] = 0;
     }

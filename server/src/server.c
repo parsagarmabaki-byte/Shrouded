@@ -22,6 +22,7 @@ void update_server_tick(Server *s);
 void broadcast_vote_update(Server *s);
 void handle_join(Server *s, IPaddress sender);
 void handle_leave(Server *s, IPaddress sender);
+void handle_leave_by_id(Server *s, int player_id);
 void handle_start_game(Server *s, IPaddress sender);
 void handle_play_again(Server *s);
 void handle_client_input(Server *s, IPaddress sender);
@@ -94,9 +95,6 @@ int main(void)
             {
             case MSG_JOIN:
                 handle_join(&server, sender);
-                break;
-            case MSG_LEAVE:
-                handle_leave(&server, sender);
                 break;
             case MSG_START_GAME:
                 handle_start_game(&server, sender);
@@ -286,6 +284,30 @@ void handle_leave(Server *s, IPaddress sender)
         check_win_condition(&s->state);
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
+}
+
+void handle_leave_by_id(Server *s, int player_id)
+{
+    if (player_id < 0 || player_id >= MAX_PLAYERS || !s->clientUsed[player_id])
+        return;
+    printf("Player %d left\n", player_id);
+    s->clientUsed[player_id] = 0;
+    s->state.players[player_id].active = 0;
+    s->state.players[player_id].player_id = -1;
+    if (s->state.host_player_id == player_id)
+    {
+        s->state.host_player_id = -1;
+        for (int i = 0; i < MAX_PLAYERS; i++)
+        {
+            if (s->clientUsed[i])
+            {
+                s->state.host_player_id = i;
+                break;
+            }
+        }
+    }
+    check_win_condition(&s->state);
+    broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
 }
 
 void handle_start_game(Server *s, IPaddress sender)
