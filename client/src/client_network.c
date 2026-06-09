@@ -215,7 +215,6 @@ int send_debug_win(Client *client, MessageType type)
 
 void request_kill(Client *client, int target_id)
 {
-    printf("SENDING TARGET_ID %d", target_id);
     KillRequestMsg req = {0};
     req.type = MSG_KILL_REQUEST;
     req.target_id = target_id;
@@ -302,11 +301,13 @@ static void apply_phase_change_msg(PhaseChangeMsg *msg, GameState *state,
                                  state->players[msg->victim_id].x,
                                  state->players[msg->victim_id].y);
 
-            printf("\nCLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
+#ifdef DEBUG
+            printf("CLIENT %d START BODY victim=%d active=%d x=%.1f y=%.1f\n",
                    state->local_player_id, msg->victim_id,
                    bodies[msg->victim_id].active,
                    bodies[msg->victim_id].x,
                    bodies[msg->victim_id].y);
+#endif
         }
 
         if (state->local_player_id == msg->player_id ||

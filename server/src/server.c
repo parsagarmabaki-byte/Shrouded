@@ -142,6 +142,8 @@ int main(void)
             update_server_tick(&server);
             lastBroadcast = now;
         }
+
+        SDL_Delay(1);
     }
 
     cleanupServer(server.socket, server.tcp_socket, server.tcpSocketSet, server.tcpSockets, server.receive_packet, server.send_packet);
@@ -355,7 +357,6 @@ void handle_client_input(Server *s, IPaddress sender)
 void handle_kill(Server *s, IPaddress sender)
 {
     int killer_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
-    printf("\nRECIEVED KILL REQUEST FROM KILL ID %d\n", killer_id);
 
     if (s->state.phase != GAME_RUNNING)
         return;
@@ -372,7 +373,6 @@ void handle_kill(Server *s, IPaddress sender)
     KillRequestMsg request;
     memcpy(&request, s->receive_packet->data, sizeof(request));
     int target_id = handle_kill_request(&s->state, killer_id);
-    printf("\nCLOSEST PLAYER TO THE PLAYER IS %d and PLAYER WANT TO KILL ID %d", target_id, request.target_id);
 
     if (request.target_id == target_id && target_id != -1)
     {
@@ -490,13 +490,14 @@ void handle_task_complete(Server *s, IPaddress sender)
                 task_completed_msg.player_id = pid;
                 task_completed_msg.phase = s->state.phase;
 
+                broadcast_tcp_msg(s->tcpSockets, &task_completed_msg, sizeof(PhaseChangeMsg));
+#ifdef DEBUG
                 int active_count = count_active_players(&s->state);
                 int total_expected_tasks = TASK_COUNT * (active_count - 1);
-                printf("\n=== TASK COMPLETE ===\n");
-                printf("Player %d finished task %d/%d (TaskType %d)\n", pid, s->state.players[pid].tasks_completed, TASK_COUNT, msg.task_type);
-                printf("Team progress: %d/%d\n", s->state.total_tasks_completed, total_expected_tasks);
-                printf("=====================\n");
-                broadcast_tcp_msg(s->tcpSockets, &task_completed_msg, sizeof(PhaseChangeMsg));
+                printf("Player %d finished task %d/%d (TaskType %d), team %d/%d\n",
+                       pid, s->state.players[pid].tasks_completed, TASK_COUNT,
+                       msg.task_type, s->state.total_tasks_completed, total_expected_tasks);
+#endif
             }
             else
             {

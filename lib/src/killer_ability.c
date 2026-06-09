@@ -9,8 +9,6 @@
 void render_killer_ability(SDL_Renderer *renderer, GameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
 {
     SDL_Rect kill_button = {1050, 520, 200, 200};
-    // SDL_Rect button = {1077, 550, 150, 145};
-    // SDL_RenderFillRect(renderer,&button);
     if (handle_kill_request(&state, killer_id) != -1 && !kill_cooldown)
 
         SDL_RenderCopy(renderer, kill_button_active, NULL, &kill_button);
@@ -65,11 +63,9 @@ int handle_kill_request(GameState *state, int killer_id)
 
         if (state->players[i].isAlive && state->players[i].active)
         {
-            // printf("\nPlayer %d is ALIVE and ACTIVE\n");
             float distance = find_kill_target(killer, state->players[i]);
             if (distance > 0 && distance < best_distance)
             {
-                // printf("\nTARGET ID %d found\n", i);
                 target_id = i;
                 best_distance = distance;
             }
@@ -77,7 +73,6 @@ int handle_kill_request(GameState *state, int killer_id)
     }
     if (target_id != -1 && !state->kill_cooldown_active)
     {
-        // printf("returnng id %d", target_id);
         return target_id;
     }
     return -1;
@@ -90,27 +85,17 @@ float find_kill_target(PlayerState killer, PlayerState innocent)
     float dx = innocent.x - killer.x;
     float dy = innocent.y - killer.y;
     float dist_sq = dx * dx + dy * dy;
-    // printf("\n[TARGET %d] dx=%.2f dy=%.2f dist_sq=%.2f\n", innocent.player_id ,dx, dy, dist_sq);
     if (dist_sq == 0.0f)
         return dist_sq;
     if (dist_sq > KILL_RADIUS * KILL_RADIUS)
-    {
-        // printf(" -> too far\n");
         return -1;
-    }
     float len = sqrtf(dist_sq);
     float vx = dx / len;
     float vy = dy / len;
 
     float dot = fx * vx + fy * vy;
-    // printf(" -> dot=%.2f (fx=%.2f fy=%.2f)\n", dot, fx, fy);
-
     if (dot < 0.2f)
-    {
-        // printf(" -> not in front\n");
         return -1;
-    }
-    // printf(" -> VALID target\n");
 
     return dist_sq;
 }
@@ -224,7 +209,6 @@ void render_kill_animation(SDL_Renderer *renderer, KillAnimation bodies[MAX_PLAY
     {
         if (!bodies[i].active)
             continue;
-        ;
 
         SDL_Rect src = {
             (bodies[i].current_frame % 5) * FRAME_SIZE,
@@ -238,14 +222,6 @@ void render_kill_animation(SDL_Renderer *renderer, KillAnimation bodies[MAX_PLAY
             PLAYER_SIZE,
             PLAYER_SIZE};
 
-        // printf("\nRENDER BODY client=%d i=%d active=%d x=%.1f y=%.1f cam=(%.1f, %.1f)\n",
-        //     //    /* skicka in local_id hit till funktionen om du måste */,
-        //        i,i,
-        //        bodies[i].active,
-        //        bodies[i].x,
-        //        bodies[i].y,
-        //        cam->x,
-        //        cam->y);
         SDL_RenderCopy(renderer, assets.dead_skins[bodies[i].victim_id], &src, &dst);
     }
 }

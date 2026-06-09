@@ -226,7 +226,6 @@ void render_voting_banners(SDL_Renderer *renderer, GameState *state, GameAssets 
 
     banner_size.x += 125;
     SDL_RenderCopy(renderer, assets.skip_vote_banner, NULL, &banner_size);
-    // SDL_RenderCopy(renderer, assets.players_voting_result_alive[0], NULL, &banner_size);
 }
 
 void render_voting_results(SDL_Renderer *renderer, GameState *state, int voting_results[MAX_PLAYERS])
@@ -236,7 +235,6 @@ void render_voting_results(SDL_Renderer *renderer, GameState *state, int voting_
     SDL_Color color = {0, 0, 0, 255};
     char buffer[4];
 
-    // SDL_RenderFillRect(renderer, &font_size);
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         x_postion += 125;
