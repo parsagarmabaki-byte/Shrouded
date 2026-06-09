@@ -68,6 +68,19 @@ void broadcast_game_state(UDPsocket socket, UDPpacket *packet, GameState *state,
     }
 }
 
+void broadcast_game_state_tcp(TCPsocket *sockets, GameState *state, int *used)
+{
+    state->type = MSG_GAME_STATE;
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (!sockets[i] || !used[i])
+            continue;
+        state->local_player_id = i;
+        if (!send_tcp_data(sockets[i], state, sizeof(*state)))
+            printf("Failed to send TCP game state to player %d\n", i);
+    }
+}
+
 void broadcast_tcp_msg(TCPsocket *sockets, const void *data, size_t size)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)

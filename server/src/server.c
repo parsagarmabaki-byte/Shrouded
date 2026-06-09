@@ -258,7 +258,13 @@ void handle_join(Server *s, IPaddress sender)
             if (s->state.host_player_id < 0)
                 s->state.host_player_id = newPlayer;
             printf("Player %d joined\n", newPlayer);
-            broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+            // New player has no TCP socket yet — send their state via UDP so they
+            // learn local_player_id and can complete the TCP hello handshake.
+            s->state.type = MSG_GAME_STATE;
+            s->state.local_player_id = newPlayer;
+            send_packet_data(s->socket, s->send_packet, sender, &s->state, sizeof(GameState));
+            // Notify all already-connected players via TCP (new player skipped: no socket yet).
+            broadcast_game_state_tcp(s->tcpSockets, &s->state, s->clientUsed);
         }
     }
 }
@@ -307,7 +313,7 @@ void handle_leave_by_id(Server *s, int player_id)
         }
     }
     check_win_condition(&s->state);
-    broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
+    broadcast_game_state_tcp(s->tcpSockets, &s->state, s->clientUsed);
 }
 
 void handle_start_game(Server *s, IPaddress sender)

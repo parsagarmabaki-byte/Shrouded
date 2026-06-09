@@ -30,6 +30,7 @@ typedef struct Client
     union {
         VoteUpdateMsg vote_update;
         PhaseChangeMsg phase_change;
+        GameState game_state;
     } tcp_buffer;
     int tcp_bytes_read;
 

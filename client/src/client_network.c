@@ -365,8 +365,13 @@ static void collect_tcp_packets(Client *client, GameState *state, AudioAssets *a
         }
 
         MessageType type = client->tcp_buffer.vote_update.type;
-        int target_size = (type == MSG_VOTE_UPDATE) ? (int)sizeof(VoteUpdateMsg)
-                                                    : (int)sizeof(PhaseChangeMsg);
+        int target_size;
+        if (type == MSG_VOTE_UPDATE)
+            target_size = (int)sizeof(VoteUpdateMsg);
+        else if (type == MSG_GAME_STATE)
+            target_size = (int)sizeof(GameState);
+        else
+            target_size = (int)sizeof(PhaseChangeMsg);
 
         if (client->tcp_bytes_read < target_size)
         {
@@ -389,6 +394,8 @@ static void collect_tcp_packets(Client *client, GameState *state, AudioAssets *a
 
         if (type == MSG_VOTE_UPDATE)
             apply_vote_update(state, &client->tcp_buffer.vote_update);
+        else if (type == MSG_GAME_STATE)
+            memcpy(state, &client->tcp_buffer.game_state, sizeof(GameState));
         else
             apply_phase_change_msg(&client->tcp_buffer.phase_change, state, audio, bodies,
                                    targeted_banner, player_voted);
