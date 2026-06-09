@@ -21,7 +21,6 @@
 void update_server_tick(Server *s);
 void broadcast_vote_update(Server *s);
 void handle_join(Server *s, IPaddress sender);
-void handle_leave(Server *s, IPaddress sender);
 void handle_leave_by_id(Server *s, int player_id);
 void handle_start_game(Server *s, IPaddress sender);
 void handle_play_again(Server *s, IPaddress sender);
@@ -269,28 +268,6 @@ void handle_join(Server *s, IPaddress sender)
     }
 }
 
-void handle_leave(Server *s, IPaddress sender)
-{
-    int removed = remove_from_lobby(&s->state, s->clientAddresses, s->clientUsed, sender);
-    if (removed >= 0)
-    {
-        printf("Player %d left\n", removed);
-        if (s->state.host_player_id == removed)
-        {
-            s->state.host_player_id = -1;
-            for (int i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (s->clientUsed[i])
-                {
-                    s->state.host_player_id = i;
-                    break;
-                }
-            }
-        }
-        check_win_condition(&s->state);
-        broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
-    }
-}
 
 void handle_leave_by_id(Server *s, int player_id)
 {
