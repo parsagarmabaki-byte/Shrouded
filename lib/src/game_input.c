@@ -101,7 +101,7 @@ static void emergency_meeting_events(GameContext *ctx)
             printf("\n[CLIENT] Player %d tried to open emergency meeting screen. isAlive=%d\n",
                    ctx->state->local_player_id,
                    ctx->state->players[ctx->state->local_player_id].isAlive);
-            request_emergency_meeting(ctx->client, ctx->state, ctx->local_id);
+            request_emergency_meeting(ctx->client);
             ctx->player_voted = 0;
         }
     }

@@ -14,7 +14,7 @@
 #include <time.h>
 #include "task.h"
 #include "kill_animation.h"
-#include "imposter_ability.h"
+#include "killer_ability.h"
 #include "text.h"
 #include "task_render.h"
 #include "task_init.h"

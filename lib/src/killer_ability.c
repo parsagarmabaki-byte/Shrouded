@@ -1,12 +1,12 @@
 #define SDL_MAIN_HANDLED
-#include "imposter_ability.h"
+#include "killer_ability.h"
 #include "game_map.h"
 #include "network_data.h"
 #include "game.h"
 #include "player_movement.h"
 #include "client_network.h"
 
-void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
+void render_killer_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive, bool kill_cooldown, int killer_id)
 {
     SDL_Rect kill_button = {1050, 520, 200, 200};
     // SDL_Rect button = {1077, 550, 150, 145};

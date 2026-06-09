@@ -4,7 +4,7 @@
 #include "network.h"
 #include "network_data.h"
 #include "game.h"
-#include "imposter_ability.h"
+#include "killer_ability.h"
 
 int init_client(Client *client, const char *server_ip, char *error_message, size_t error_size)
 {
@@ -240,7 +240,7 @@ void request_report_body(Client *client, int body_id)
     send_packet(client->socket, client->serverAddr, &input, sizeof(ReportBodyMsg));
 }
 
-void request_emergency_meeting(Client *client, gameState *state, int local_id)
+void request_emergency_meeting(Client *client)
 {
     EmergencyMeetingMsg request = {0};
     request.type = MSG_EMERGENCY_MEETING;
@@ -259,7 +259,7 @@ void send_vote(Client *client, int targeted_banner, int voter_id)
     send_tcp_data(client->tcp_socket, &vote, sizeof(VoteRequest));
 }
 
-static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg, int *player_voted)
+static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg)
 {
     state->phase = msg->phase;
     state->meeting_reason = msg->meeting_reason;
@@ -270,7 +270,7 @@ static void apply_vote_update(gameState *state, const VoteUpdateMsg *msg, int *p
         state->voting_results[i] = msg->voting_results[i];
 }
 
-static void collect_tcp_vote_packets(Client *client, gameState *state, int *player_voted)
+static void collect_tcp_vote_packets(Client *client, gameState *state)
 {
     if (!client->tcp_socket || !client->tcp_socket_set)
         return;
@@ -298,7 +298,7 @@ static void collect_tcp_vote_packets(Client *client, gameState *state, int *play
     if (client->vote_update_bytes_read == (int)sizeof(VoteUpdateMsg))
     {
         if (client->vote_update_buffer.type == MSG_VOTE_UPDATE)
-            apply_vote_update(state, &client->vote_update_buffer, player_voted);
+            apply_vote_update(state, &client->vote_update_buffer);
         client->vote_update_bytes_read = 0;
     }
 }
@@ -404,7 +404,7 @@ static void collect_event_packets(Client *client, gameState *state, AudioAssets 
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted)
 {
     if (state->phase == GAME_MEETING)
-        collect_tcp_vote_packets(client, state, player_voted);
+        collect_tcp_vote_packets(client, state);
     else
         collect_event_packets(client, state, audio, bodies, targeted_banner, player_voted);
 

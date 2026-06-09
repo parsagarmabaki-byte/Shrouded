@@ -56,13 +56,13 @@ void task_handle_keyup(Task *task, SDL_Keycode key);
 void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 // specific key handlers for tasks that need it
-void handle_reflex_key(Task *task, SDL_Keycode key);
+void handle_reflex_key(Task *task);
 void handle_letter_key(Task *task, SDL_Keycode key);
 void handle_memory_key(Task *task, SDL_Keycode key);
 void handle_hold_key(Task *task, SDL_Keycode key);
 void handle_hold_keyup(Task *task, SDL_Keycode key);
 void handle_alternate_key(Task *task, SDL_Keycode key);
-void handle_clicktask_click(Task *task, int mx, int my);
+void handle_clicktask_click(Task *task);
 void handle_logical_order_click(Task *task, int mx, int my, SDL_Renderer *renderer);
 
 #endif

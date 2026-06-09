@@ -46,7 +46,7 @@ Task *create_task(SDL_Renderer *renderer)
 
     if (task->global_text)
         text_set(task->global_text, "PRESS Q TO ABANDON ASSIGNMENT", WHITE);
-        
+
     return task;
 }
 
@@ -240,24 +240,24 @@ void update_memory_task(Task *task, float dt)
 
 void update_hold_task(Task *task, float dt)
 {
-    if (!task->active || task->type != TASK_HOLD)
+    if (!task->active || (task->type != TASK_HOLD))
         return;
 
-        if (task->hold_key_down)
-                {
-                    task->hold_timer += dt;
-                    if (task->hold_timer >= task->hold_duration)
-                    {
-                        end_task(task, TASK_STATUS_COMPLETED);
-                    }
-                }
-                else
-                {
-                    // Sjunker tillbaka om man inte håller
-                    task->hold_timer -= dt * 0.5f;
-                    if (task->hold_timer < 0.0f)
-                        task->hold_timer = 0.0f;
-                }
+    if (task->hold_key_down)
+    {
+        task->hold_timer += dt;
+        if (task->hold_timer >= task->hold_duration)
+        {
+            end_task(task, TASK_STATUS_COMPLETED);
+        }
+    }
+    else
+    {
+        // Sjunker tillbaka om man inte håller
+        task->hold_timer -= dt * 0.5f;
+        if (task->hold_timer < 0.0f)
+            task->hold_timer = 0.0f;
+    }
 }
 
 void update_alternate_task(Task *task)
@@ -279,7 +279,7 @@ void task_handle_key(Task *task, SDL_Keycode key)
 
     if (task->type == TASK_REFLEX && key == SDLK_SPACE)
     {
-        handle_reflex_key(task, key);
+        handle_reflex_key(task);
         return;
     }
 
@@ -326,7 +326,7 @@ void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
 
     if (task->type == TASK_CLICK)
     {
-        handle_clicktask_click(task, mx, my);
+        handle_clicktask_click(task);
         return;
     }
 
@@ -337,7 +337,7 @@ void task_handle_click(Task *task, int mx, int my, SDL_Renderer *renderer)
     }
 }
 
-void handle_reflex_key(Task *task, SDL_Keycode key)
+void handle_reflex_key(Task *task)
 {
     if (task->cursor_pos >= task->success_min &&
         task->cursor_pos <= task->success_max)
@@ -481,7 +481,7 @@ void handle_hold_keyup(Task *task, SDL_Keycode key)
     }
 }
 
-void handle_clicktask_click(Task *task, int mx, int my)
+void handle_clicktask_click(Task *task)
 {
     task->click_count++;
 }

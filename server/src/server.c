@@ -7,7 +7,7 @@
 #include <string.h>
 #include "network.h"
 #include "network_data.h"
-#include "imposter_ability.h"
+#include "killer_ability.h"
 #include "server_context.h"
 #include "server_broadcast.h"
 #include "server_lobby.h"

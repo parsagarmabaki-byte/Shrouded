@@ -17,7 +17,7 @@ void emergency_meeting_view(SDL_Renderer *renderer, SDL_Texture *emergency_butto
     }
 }
 
-void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int local_id, int *player_voted)
+void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameState *state, int id_reported, int targeted_banner_id, Text timer_meeting_text, int *player_voted)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -30,7 +30,7 @@ void render_emergency_meeting(SDL_Renderer *renderer, GameAssets assets, gameSta
 
     // --- Timer ---
     int seconds_left = (state->meeting_time_remaining + 999) / 1000;
-    char timer_buf[8];
+    char timer_buf[16];
     snprintf(timer_buf, sizeof(timer_buf), "%d", seconds_left);
 
     SDL_Color white = {255, 255, 255, 255};

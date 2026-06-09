@@ -71,25 +71,25 @@ void render_task(SDL_Renderer *renderer, Task *task, int screen_width, int scree
         render_timer_task(renderer, task, box_x, box_y, box_width, box_height);
         break;
     case TASK_CLICK:
-        render_click_task(renderer, task, box_x, box_y, box_width, box_height);
+        render_click_task(task, box_x, box_y, box_width, box_height);
         break;
     case TASK_LETTER:
-        render_letter_task(renderer, task, box_x, box_y, box_width, box_height);
+        render_letter_task(task, box_x, box_y, box_width, box_height);
         break;
     case TASK_REFLEX:
         render_reflex_task(renderer, task, box_x, box_y, box_width, box_height);
         break;
     case TASK_LOGICAL_ORDER:
-        render_logical_order_task(renderer, task, box_x, box_y, box_width, box_height);
+        render_logical_order_task(task, box_x, box_y, box_width, box_height);
         break;
     case TASK_MEMORY:
-        render_memory_task(renderer, task, box_x, box_y, box_width, box_height);
+        render_memory_task(task, box_x, box_y, box_width, box_height);
         break;
     case TASK_HOLD:
         render_hold_task(renderer, task, box_x, box_y, box_width, box_height);
         break;
     case TASK_ALTERNATE:
-        render_alternate_task(renderer, task, box_x, box_y, box_width, box_height);
+        render_alternate_task(task, box_x, box_y, box_width, box_height);
         break;
     default:
         break;
@@ -132,7 +132,7 @@ void render_timer_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y,
     }
 }
 
-void render_click_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, int box_width, int box_height)
+void render_click_task(Task *task, int box_x, int box_y, int box_width, int box_height)
 {
     char buffer[32];
     snprintf(buffer, sizeof(buffer), "%d / %d", task->click_count, task->click_target);
@@ -152,7 +152,7 @@ void render_click_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y,
     }
 }
 
-void render_letter_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, int box_width, int box_height)
+void render_letter_task(Task *task, int box_x, int box_y, int box_width, int box_height)
 {
     char buffer[32];
 
@@ -254,7 +254,7 @@ void render_reflex_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y
     }
 }
 
-void render_logical_order_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, int box_width, int box_height)
+void render_logical_order_task(Task *task, int box_x, int box_y, int box_width, int box_height)
 {
     // Calculate number positions relative to box
     int num_start_x = box_x + (int)(box_width * 0.20f);  // 20% from left edge
@@ -290,7 +290,7 @@ void render_logical_order_task(SDL_Renderer *renderer, Task *task, int box_x, in
     }
 }
 
-void render_memory_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, int box_width, int box_height)
+void render_memory_task(Task *task, int box_x, int box_y, int box_width, int box_height)
 {
     const char *arrows[] = {"UP", "DOWN", "LEFT", "RIGHT"};
 
@@ -390,7 +390,7 @@ void render_hold_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, 
     }
 }
 
-void render_alternate_task(SDL_Renderer *renderer, Task *task, int box_x, int box_y, int box_width, int box_height)
+void render_alternate_task(Task *task, int box_x, int box_y, int box_width, int box_height)
 {
     char buffer[32];
     snprintf(buffer, sizeof(buffer), "%d / %d", task->alternate_count, task->alternate_target);

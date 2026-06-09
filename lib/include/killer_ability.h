@@ -1,5 +1,5 @@
-#ifndef IMPOSTER_ABILITY
-#define IMPOSTER_ABILITY
+#ifndef killer_ability
+#define killer_ability
 #include "game_map.h"
 #include "game.h"
 #include "player_movement.h"
@@ -8,7 +8,7 @@
 #define KILL_RADIUS 100
 
 
-void render_imposter_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id);
+void render_killer_ability(SDL_Renderer *renderer, gameState state, SDL_Texture *kill_button_active, SDL_Texture *kill_button_deactive,bool kill_cooldown, int killer_id);
 bool is_hovering(SDL_Renderer *renderer,SDL_Rect rect);
 int handle_kill_request(gameState *state, int killer_id);
 void activate_kill_cooldown(Uint64 *kill_cooldown_start, bool *kill_cooldown_active);

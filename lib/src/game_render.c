@@ -3,6 +3,13 @@
 #include "emergency_meeting.h"
 #include "wall_data.h"
 
+static void render_task_panel(SDL_Renderer *renderer, gameState *state, int local_id, Task *task, Text text, bool emergency_window_open, bool task_map_open, bool pause_menu_open);
+static void render_win_fade(GameContext *ctx, Uint32 win_fade_start, Uint32 win_fade_duration);
+static void render_game(GameContext *ctx);
+static const char *task_type_name(TaskType t);
+
+
+
 static TaskMarker markers[] =
     {
         {TASK_HOLD, {320, 140, 24, 24}, 208, 304},
@@ -115,7 +122,7 @@ void render_game_phase(GameContext *ctx)
         break;
 
     case GAME_MEETING:
-        render_emergency_meeting(ctx->renderer, ctx->assets, state, state->emergency_meeting_reported_id, ctx->targeted_banner_id, ctx->timer_meeting_text, ctx->local_id, &ctx->player_voted);
+        render_emergency_meeting(ctx->renderer, ctx->assets, state, state->emergency_meeting_reported_id, ctx->targeted_banner_id, ctx->timer_meeting_text, &ctx->player_voted);
         ctx->emergency_window_open = false;
         break;
 
@@ -329,16 +336,16 @@ void render_player_overlays(GameContext *ctx)
         render_death_effect(renderer, &ctx->bodies[ctx->local_id]);
 
     render_active_task_indicator(renderer, state, ctx->assets, &ctx->cam, ctx->local_id);
-    render_info_text(renderer, state, ctx->local_id, ctx->small_text);
+    render_info_text(state, ctx->local_id, ctx->small_text);
 
     if (state->players[ctx->local_id].isAlive && !task_active_check(ctx->task))
         render_player_ability(renderer, *player, ctx->assets, ctx->bodies);
 
     if (ctx->is_local_impostor)
-        render_imposter_ability(renderer, *state, assets->kill_button_active, assets->kill_button_deactive, ctx->state->kill_cooldown_active, ctx->local_id);
+        render_killer_ability(renderer, *state, assets->kill_button_active, assets->kill_button_deactive, ctx->state->kill_cooldown_active, ctx->local_id);
 }
 
-void render_info_text(SDL_Renderer *renderer, gameState *state, int local_id, Text text)
+void render_info_text(gameState *state, int local_id, Text text)
 {
     if (local_id < 0 || !state->players[local_id].active)
         return;
@@ -361,7 +368,7 @@ void render_game_ui(GameContext *ctx)
         emergency_meeting_view(renderer, assets->emergency_button_view, assets->emergency_button_hover);
 
     if (ctx->task_map_open)
-        render_task_map(renderer, ctx->task, ctx->assets, player, state);
+        render_task_map(renderer, ctx->assets, player, state);
 
     render_global_progress_bar(renderer, state);
 
@@ -527,7 +534,7 @@ void draw_thick_rect(SDL_Renderer *renderer, SDL_Rect rect, int thickness)
     }
 }
 
-void render_task_map(SDL_Renderer *renderer, Task *task, GameAssets assets, Player *player, gameState *state)
+void render_task_map(SDL_Renderer *renderer, GameAssets assets, Player *player, gameState *state)
 {
     SDL_Rect backdrop = {0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
     SDL_Rect map_rect = {252, 56, 776, 620};

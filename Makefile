@@ -38,7 +38,7 @@ GAME_SRC = lib/src/game.c
 GAME_INPUT_SRC = lib/src/game_input.c
 GAME_UPDATE_SRC = lib/src/game_update.c
 WALL_DATA_SRC = lib/src/wall_data.c
-IMPOSTER_ABILITY_SRC = lib/src/imposter_ability.c
+killer_ability_SRC = lib/src/killer_ability.c
 SFX_SRC = lib/src/SFX.c
 EMERGENCY_MEETING_SRC = lib/src/emergency_meeting.c
 TEXT_SRC = lib/src/text.c
@@ -66,7 +66,7 @@ GAME_OBJ = $(OBJDIR)/game.o
 GAME_INPUT_OBJ = $(OBJDIR)/game_input.o
 GAME_UPDATE_OBJ = $(OBJDIR)/game_update.o
 WALL_DATA_OBJ = $(OBJDIR)/wall_data.o
-IMPOSTER_ABILITY_OBJ = $(OBJDIR)/imposter_ability.o
+killer_ability_OBJ = $(OBJDIR)/killer_ability.o
 SFX_OBJ = $(OBJDIR)/sfx.o
 EMERGENCY_MEETING_OBJ = $(OBJDIR)/emergency_meeting.o
 TEXT_OBJ = $(OBJDIR)/text.o
@@ -164,7 +164,7 @@ $(TASK_INIT_OBJ): $(TASK_INIT_SRC) | $(OBJDIR)
 $(WALL_DATA_OBJ): $(WALL_DATA_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(IMPOSTER_ABILITY_OBJ): $(IMPOSTER_ABILITY_SRC) | $(OBJDIR)
+$(killer_ability_OBJ): $(killer_ability_SRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(SFX_OBJ): $(SFX_SRC) | $(OBJDIR)
@@ -199,10 +199,10 @@ $(SERVER_GAME_LOGIC_OBJ): $(SERVER_GAME_LOGIC_SRC) | $(OBJDIR)
 
 
 # ─── Link rules ─────────────────────────────────────────
-$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(IP_CONFIG_OBJ) $(GAME_OBJ) $(GAME_INPUT_OBJ) $(GAME_UPDATE_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ) $(MAIN_MENU_OBJ) $(GAME_RENDER_OBJ) $(TASK_RENDER_OBJ) $(TASK_INIT_OBJ)
+$(CLIENT_OUT): $(CLIENT_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(NETWORK_OBJ) $(CLIENT_NETWORK_OBJ) $(LOBBY_OBJ) $(IP_CONFIG_OBJ) $(GAME_OBJ) $(GAME_INPUT_OBJ) $(GAME_UPDATE_OBJ) $(TASK_OBJ) $(SFX_OBJ) $(killer_ability_OBJ) $(WALL_DATA_OBJ) $(EMERGENCY_MEETING_OBJ) $(TEXT_OBJ) $(MAIN_MENU_OBJ) $(GAME_RENDER_OBJ) $(TASK_RENDER_OBJ) $(TASK_INIT_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(IMPOSTER_ABILITY_OBJ) $(WALL_DATA_OBJ) $(SERVER_BROADCAST_OBJ) $(SERVER_LOBBY_OBJ) $(SERVER_ROUND_OBJ) $(SERVER_MEETING_OBJ) $(SERVER_GAME_LOGIC_OBJ)
+$(SERVER_OUT): $(SERVER_OBJ) $(NETWORK_OBJ) $(PLAYER_MOVEMENT_OBJ) $(GAME_MAP_OBJ) $(killer_ability_OBJ) $(WALL_DATA_OBJ) $(SERVER_BROADCAST_OBJ) $(SERVER_LOBBY_OBJ) $(SERVER_ROUND_OBJ) $(SERVER_MEETING_OBJ) $(SERVER_GAME_LOGIC_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 # ─── Run targets ────────────────────────────────────────

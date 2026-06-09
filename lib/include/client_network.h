@@ -18,7 +18,7 @@ int send_task_complete(Client *client, int player_id, TaskType task_type);
 void request_kill(Client *client, int target_id);
 void collect_packets(Client *client, gameState *state, KillAnimation *bodies, AudioAssets *audio, int *targeted_banner, int *player_voted);
 int send_leave_message(Client *client);
-void request_emergency_meeting(Client *client, gameState *state, int local_id);
+void request_emergency_meeting(Client *client);
 void request_report_body(Client *client, int body_id);
 void send_vote(Client *client, int targeted_banner, int voter_id);
 int send_debug_win(Client *client, MessageType type);
