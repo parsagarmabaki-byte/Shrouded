@@ -24,7 +24,7 @@ void handle_join(Server *s, IPaddress sender);
 void handle_leave(Server *s, IPaddress sender);
 void handle_leave_by_id(Server *s, int player_id);
 void handle_start_game(Server *s, IPaddress sender);
-void handle_play_again(Server *s);
+void handle_play_again(Server *s, IPaddress sender);
 void handle_client_input(Server *s, IPaddress sender);
 void handle_kill(Server *s, IPaddress sender);
 void handle_emergency_meeting(Server *s, IPaddress sender);
@@ -100,7 +100,7 @@ int main(void)
                 handle_start_game(&server, sender);
                 break;
             case MSG_PLAY_AGAIN:
-                handle_play_again(&server);
+                handle_play_again(&server, sender);
                 break;
             case MSG_CLIENT_INPUT:
                 handle_client_input(&server, sender);
@@ -333,8 +333,14 @@ void handle_start_game(Server *s, IPaddress sender)
     }
 }
 
-void handle_play_again(Server *s)
+void handle_play_again(Server *s, IPaddress sender)
 {
+    int sender_id = get_player_id_from_sender(s->clientAddresses, s->clientUsed, sender);
+    if (sender_id != s->state.host_player_id)
+    {
+        printf("[SERVER] Ignored play again from non-host player %d\n", sender_id);
+        return;
+    }
     if (s->state.phase == GAME_INNOCENTS_WIN || s->state.phase == GAME_KILLER_WIN)
     {
         for (int i = 0; i < MAX_PLAYERS; i++)
