@@ -26,7 +26,7 @@ typedef struct Client
     UDPsocket socket;
     TCPsocket tcp_socket;
     SDLNet_SocketSet tcp_socket_set;
-    
+
     union {
         VoteUpdateMsg vote_update;
         PhaseChangeMsg phase_change;
@@ -35,6 +35,7 @@ typedef struct Client
 
     IPaddress serverAddr;
     UDPpacket *receivepacket;
+    int player_id;
 } Client;
 
 typedef struct

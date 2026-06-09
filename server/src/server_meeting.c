@@ -155,27 +155,77 @@ void handle_tcp_vote_connections(Server *s)
         if (!socket || !SDLNet_SocketReady(socket))
             continue;
 
-        int remaining = (int)sizeof(VoteRequest) - s->voteBytesRead[i];
-        int received = SDLNet_TCP_Recv(socket,
-                                       ((char *)&s->voteBuffers[i]) + s->voteBytesRead[i],
-                                       remaining);
-        if (received <= 0)
+        /* Phase 1: read MessageType header */
+        if (s->voteBytesRead[i] < (int)sizeof(MessageType))
         {
-            SDLNet_TCP_DelSocket(s->tcpSocketSet, socket);
-            SDLNet_TCP_Close(socket);
-            s->tcpSockets[i] = NULL;
+            int remaining = (int)sizeof(MessageType) - s->voteBytesRead[i];
+            int received = SDLNet_TCP_Recv(socket,
+                                           ((char *)&s->voteBuffers[i]) + s->voteBytesRead[i],
+                                           remaining);
+            if (received <= 0)
+            {
+                SDLNet_TCP_DelSocket(s->tcpSocketSet, socket);
+                SDLNet_TCP_Close(socket);
+                s->tcpSockets[i] = NULL;
+                s->voteBytesRead[i] = 0;
+                continue;
+            }
+            s->voteBytesRead[i] += received;
+            if (s->voteBytesRead[i] < (int)sizeof(MessageType))
+                continue;
+        }
+
+        /* Phase 2: determine full message size from type */
+        MessageType type = s->voteBuffers[i].type;
+        int target_size;
+        if (type == MSG_TCP_HELLO)
+            target_size = (int)sizeof(tcpHelloMessage);
+        else if (type == MSG_VOTE_REQUEST)
+            target_size = (int)sizeof(VoteRequest);
+        else
+        {
             s->voteBytesRead[i] = 0;
             continue;
         }
 
-        s->voteBytesRead[i] += received;
-        if (s->voteBytesRead[i] == (int)sizeof(VoteRequest))
+        /* Phase 3: read message body */
+        if (s->voteBytesRead[i] < target_size)
+        {
+            int remaining = target_size - s->voteBytesRead[i];
+            int received = SDLNet_TCP_Recv(socket,
+                                           ((char *)&s->voteBuffers[i]) + s->voteBytesRead[i],
+                                           remaining);
+            if (received <= 0)
+            {
+                SDLNet_TCP_DelSocket(s->tcpSocketSet, socket);
+                SDLNet_TCP_Close(socket);
+                s->tcpSockets[i] = NULL;
+                s->voteBytesRead[i] = 0;
+                continue;
+            }
+            s->voteBytesRead[i] += received;
+            if (s->voteBytesRead[i] < target_size)
+                continue;
+        }
+
+        /* Dispatch complete message */
+        if (type == MSG_TCP_HELLO)
+        {
+            tcpHelloMessage *hello = (tcpHelloMessage *)&s->voteBuffers[i];
+            int pid = hello->player_id;
+            if (pid != i && pid >= 0 && pid < MAX_PLAYERS && !s->tcpSockets[pid])
+            {
+                s->tcpSockets[pid] = socket;
+                s->tcpSockets[i] = NULL;
+                s->voteBytesRead[pid] = 0;
+            }
+        }
+        else if (type == MSG_VOTE_REQUEST)
         {
             VoteRequest vote = s->voteBuffers[i];
-            s->voteBytesRead[i] = 0;
-            if (vote.type == MSG_VOTE_REQUEST)
-                handle_tcp_vote(s, vote);
+            handle_tcp_vote(s, vote);
         }
+        s->voteBytesRead[i] = 0;
     }
 }
 

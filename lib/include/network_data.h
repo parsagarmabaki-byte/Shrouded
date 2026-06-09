@@ -54,7 +54,8 @@ typedef enum
     MSG_PHASE_CHANGE,
     MSG_VOTE_UPDATE,
     MSG_MEETING_ENDED,
-    MSG_MEETING_TIMER
+    MSG_MEETING_TIMER,
+    MSG_TCP_HELLO
 } MessageType;
 
 typedef enum
@@ -261,6 +262,8 @@ typedef struct
     int target_id;
 } KillRequestMsg;
 
+typedef struct { MessageType type; int player_id; } tcpHelloMessage;
+
 typedef struct
 {
     MessageType type;
@@ -268,6 +271,7 @@ typedef struct
 typedef struct
 {
     MessageType type;
+    int player_id;
 } leaveMessage;
 typedef struct
 {

@@ -73,6 +73,7 @@ int init_client(Client *client, const char *server_ip, char *error_message, size
         return 0;
     }
 
+    client->player_id = -1;
     error_message[0] = '\0';
     return 1;
 }
@@ -336,6 +337,14 @@ static void apply_phase_change_msg(PhaseChangeMsg *msg, GameState *state,
         state->kill_cooldown_active = false;
 }
 
+static void send_tcp_hello(Client *client, int player_id)
+{
+    tcpHelloMessage hello = {0};
+    hello.type = MSG_TCP_HELLO;
+    hello.player_id = player_id;
+    send_tcp_data(client->tcp_socket, &hello, sizeof(tcpHelloMessage));
+}
+
 static void collect_tcp_packets(Client *client, GameState *state, AudioAssets *audio,
                                 KillAnimation bodies[MAX_PLAYERS],
                                 int *targeted_banner, int *player_voted)
@@ -417,6 +426,11 @@ void collect_packets(Client *client, GameState *state, KillAnimation *bodies, Au
             if (packet_has_size(client->receivepacket, sizeof(GameState), "MSG_GAME_STATE"))
             {
                 memcpy(state, client->receivepacket->data, sizeof(GameState));
+                if (client->player_id < 0 && state->local_player_id >= 0 && client->tcp_socket)
+                {
+                    client->player_id = state->local_player_id;
+                    send_tcp_hello(client, client->player_id);
+                }
             }
         }
         else if (type == MSG_PLAYER_SYNC_DATA)
