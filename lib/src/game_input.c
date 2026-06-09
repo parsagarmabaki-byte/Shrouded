@@ -30,7 +30,7 @@ void process_events(GameContext *ctx)
             continue;
         }
 
-        if (ctx->state->phase == GAME_CREWMATES_WIN || ctx->state->phase == GAME_KILLER_WIN)
+        if (ctx->state->phase == GAME_INNOCENTS_WIN || ctx->state->phase == GAME_KILLER_WIN)
         {
             win_screen_events(ctx);
             continue;
@@ -196,7 +196,7 @@ static void game_running_events(GameContext *ctx)
         else if (ctx->event.key.keysym.scancode == SDL_SCANCODE_F1)
         {
 #ifdef DEBUG
-            send_debug_win(ctx->client, MSG_DEBUG_CREWMATES_WIN);
+            send_debug_win(ctx->client, MSG_DEBUG_INNOCENTS_WIN);
 #endif
         }
         else if (ctx->event.key.keysym.scancode == SDL_SCANCODE_F2)

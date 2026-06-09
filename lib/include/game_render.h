@@ -11,7 +11,7 @@
 void render_game_phase(GameContext *ctx);
 void render_game_show_role(SDL_Renderer *renderer, SDL_Texture *game_role);
 void render_game_info_meeting(GameContext *ctx);
-void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, GameState state);
+void render_innocent_win_screen(SDL_Renderer *renderer, GameAssets assets, GameState state);
 void render_killer_win(SDL_Renderer *renderer, GameAssets assets, GameState state);
 void render_world(GameContext *ctx);
 void render_player_overlays(GameContext *ctx);

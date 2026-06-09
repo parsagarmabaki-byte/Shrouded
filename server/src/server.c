@@ -122,9 +122,9 @@ int main(void)
             case MSG_VOTE_REQUEST:
                 printf("[SERVER] Ignored UDP vote request; votes must use TCP\n");
                 break;
-            case MSG_DEBUG_CREWMATES_WIN:
+            case MSG_DEBUG_INNOCENTS_WIN:
 #ifdef DEBUG
-                server.state.phase = GAME_CREWMATES_WIN;
+                server.state.phase = GAME_INNOCENTS_WIN;
 #endif
                 break;
             case MSG_DEBUG_KILLER_WIN:
@@ -313,7 +313,7 @@ void handle_start_game(Server *s, IPaddress sender)
 
 void handle_play_again(Server *s)
 {
-    if (s->state.phase == GAME_CREWMATES_WIN || s->state.phase == GAME_KILLER_WIN)
+    if (s->state.phase == GAME_INNOCENTS_WIN || s->state.phase == GAME_KILLER_WIN)
     {
         for (int i = 0; i < MAX_PLAYERS; i++)
             s->deadBodyActive[i] = 0;

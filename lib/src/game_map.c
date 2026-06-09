@@ -78,7 +78,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
         "assets/images/win_screens/BLACK_KILLER_WINS.png"
     };
 
-    const char *crewmates_win_screen_paths[PLAYER_SLOTS] = {
+    const char *innocents_win_screen_paths[PLAYER_SLOTS] = {
         "assets/images/win_screens/W_OUTGREEN.png",
         "assets/images/win_screens/W_OUTRED.png",
         "assets/images/win_screens/W_OUTBLUE.png",
@@ -114,7 +114,7 @@ GameAssets load_assets(SDL_Renderer *renderer)
         asset.players_kicked_out[i] = loading_img(renderer, path);
 
         asset.killer_win_screens[i] = loading_img(renderer, killer_win_screen_paths[i]);
-        asset.crewmates_win_screens[i] = loading_img(renderer, crewmates_win_screen_paths[i]);
+        asset.innocents_win_screens[i] = loading_img(renderer, innocents_win_screen_paths[i]);
     }
 
     return asset;
@@ -180,7 +180,7 @@ void destroy_assets(GameAssets *asset, SDL_Texture *player_role)
         destroy_texture(&asset->players_kicked_out[i]);
 
         destroy_texture(&asset->killer_win_screens[i]);
-        destroy_texture(&asset->crewmates_win_screens[i]);
+        destroy_texture(&asset->innocents_win_screens[i]);
     }
 
     destroy_texture(&player_role);

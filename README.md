@@ -1,334 +1,252 @@
 ﻿# Shrouded
 
-Shrouded is a LAN-based multiplayer social deduction game inspired by the gameplay structure of *Among Us*. The project was developed in C using SDL2 as part of the CM1008 project course at KTH.
+Shrouded is a LAN-based multiplayer social deduction game inspired by *Among
+Us*. It is written in C with SDL2 and was developed for the CM1008 project
+course at KTH.
 
-The game uses a client-server architecture over UDP where one player becomes the **Killer** while the remaining players act as **Crewmates**. Crewmates must complete tasks, report bodies, participate in emergency meetings, and identify the Killer before the crew is eliminated.
+One player is secretly the **Killer**; the rest are **Innocents**. Innocents win
+by completing all of their tasks or voting the Killer out at a meeting; the
+Killer wins by eliminating Innocents until they are equal to or outnumber the
+remaining Innocents.
 
----
-
-# Features
-
-## Multiplayer Networking
-
-* UDP-based client-server architecture using SDL_net
-* Server-authoritative game state synchronization
-* LAN multiplayer support
-* Player join and disconnect handling
-* Real-time player movement synchronization
-* Voting and meeting synchronization
-* Packet-loss handling for critical interactions such as voting
-
-## Gameplay Systems
-
-### Crewmate Features
-
-* Complete multiple task minigames
-* Report dead bodies
-* Call emergency meetings
-* Vote during meetings
-* Ghost state after death
-
-### Killer Features
-
-* Eliminate nearby players
-* Use kill cooldown mechanics
-* Blend in during meetings and gameplay
-
-### Meeting System
-
-* Emergency meeting screen
-* Body report flow
-* Voting system
-* Skip vote support
-* Tie vote handling
-* Voting result screen
-* Player elimination system
+This document is aimed at developers working *on* the codebase. For player and
+host instructions, see the release README.
 
 ---
 
-# Implemented Task Minigames
+## Tech stack
 
-The game currently contains multiple local minigames:
-
-1. Timer task
-2. Click task
-3. Typing task
-4. Reflex task
-5. Logical order task
-6. Memory task
-
-Task completion contributes to the crewmates' win condition.
-
----
-
-# Technical Features
-
-* Camera system with player follow
-* Sprite animations
-* Collision detection and wall systems
-* Custom UI rendering
-* Audio playback using SDL_mixer
-* Lobby system and role reveal screens
-* Win screens for both teams
-* Task map overlay
-* Transparent UI button rendering
-* Cross-platform support
+| Area              | Technology              |
+| ----------------- | ----------------------- |
+| Language          | C                       |
+| Graphics          | SDL2, SDL2_image        |
+| Text rendering    | SDL2_ttf                |
+| Audio             | SDL2_mixer              |
+| Networking        | SDL2_net (UDP **and** TCP) |
+| Build system      | Make                    |
+| Platforms         | Windows, Linux, macOS   |
 
 ---
 
-# Repository Structure
+## Repository structure
 
 ```text
 .
-|-- Makefile
-|-- README.md
-|-- assets/
-|-- Fonts/
-|-- build/
-|-- client/
-|   `-- src/
-|-- server/
-|   |-- include/
-|   `-- src/
-|-- lib/
-|   |-- include/
-|   `-- src/
+├── Makefile
+├── README.md
+├── assets/                 game images, fonts (assets/fonts), and SFX (assets/SFX)
+├── client/
+│   └── src/
+│       ├── client.c            outer loop: menu → lobby → game, connection setup
+│       └── client_network.c    UDP send + TCP receive/demux on the client
+├── server/
+│   ├── include/
+│   │   └── server_context.h    the central `Server` struct (all server state)
+│   └── src/
+│       ├── server.c            main loop, server tick, all message handlers
+│       ├── server_broadcast.c  UDP/TCP broadcast helpers
+│       ├── server_lobby.c      join/leave, spawn_players, count_active_players
+│       ├── server_round.c      start_new_round, impostor + task assignment
+│       ├── server_meeting.c    voting, vote tally, TCP vote connections
+│       └── server_game_logic.c win condition, input application
+└── lib/
+    ├── include/                shared headers (public interfaces)
+    │   ├── network_data.h       ALL packet structs, enums, and tuning constants
+    │   ├── game.h               Client + GameContext structs
+    │   └── ...
+    └── src/                    shared gameplay systems
+        ├── game.c               runGame loop, GameContext lifecycle
+        ├── game_input.c         keyboard/mouse handling per phase
+        ├── game_update.c        client-side movement prediction
+        ├── game_render.c        all in-game rendering + phase dispatch
+        ├── killer_ability.c     kill targeting, cooldown, body reporting
+        ├── emergency_meeting.c  meeting UI, banners, voting interaction
+        ├── lobby.c / main_menu.c lobby + menu screens
+        ├── task*.c              task minigames
+        └── network.c            low-level socket/packet helpers
+        └── ...
 ```
 
-## Directory Overview
-
-### `client/src/`
-
-Contains the client-side networking, rendering, input handling, lobby flow, and local gameplay logic.
-
-### `server/src/`
-
-Contains the authoritative server implementation including:
-
-* game loop
-* packet handling
-* voting logic
-* meeting management
-* round transitions
-* win-condition validation
-
-### `lib/include/`
-
-Shared headers and public interfaces used by both client and server.
-
-### `lib/src/`
-
-Shared gameplay systems including:
-
-* rendering
-* player movement
-* task systems
-* emergency meetings
-* map logic
-* audio systems
-* networking helpers
-
-### `assets/`
-
-Contains all game assets including:
-
-* sprites
-* UI assets
-* sounds
-* voting result assets
-* lobby backgrounds
-* win screens
+`lib/include/network_data.h` is the single source of truth for the wire format
+and is shared by both binaries — start there.
 
 ---
 
-# Architecture
+## Architecture
 
-Shrouded uses a server-authoritative architecture.
+Shrouded is **server-authoritative**. The server owns and validates:
 
-The server controls:
+- player positions, alive/dead status, and role assignment
+- kill eligibility (requester must be alive, active, and the impostor; the
+  server independently recomputes the target and rejects mismatches)
+- dead-body positions (clients send only a `body_id`, never coordinates)
+- vote eligibility, vote tally, and meeting/phase transitions
+- task progress and win conditions
 
-* player states
-* positions
-* role assignment
-* alive/dead status
-* task progress
-* meeting states
-* voting results
-* win conditions
+Clients send input and requests, and render the most recent synchronized state.
+This prevents a client from directly setting important game state, which closes
+several basic cheat vectors.
 
-Clients send user input and gameplay requests while rendering the latest synchronized game state locally.
+### Hybrid UDP + TCP networking
 
-This prevents clients from directly controlling important gameplay state.
+This is the defining feature of the project. The server opens **two** ports:
+
+- `SERVER_PORT` (2000) — UDP
+- `SERVER_TCP_PORT` (2001) — TCP
+
+Each client opens a UDP socket and a single TCP connection on startup.
+
+| Transport | Carries | Frequency | Why |
+| --------- | ------- | --------- | --- |
+| **UDP** | `MSG_PLAYER_SYNC_DATA`, `MSG_CLIENT_INPUT`, `MSG_GAME_STATE`, `MSG_MEETING_TIMER`, joins/leaves | every tick (~60/s) | low latency; a dropped packet is harmless because the next tick overwrites it |
+| **TCP** | `MSG_KILL_EVENT`, `MSG_EMERGENCY_MEETING`, `MSG_BODY_FOUND`, `MSG_PHASE_CHANGE`, `MSG_TASK_COMPLETE`, `MSG_VOTE_REQUEST`, `MSG_VOTE_UPDATE`, `MSG_MEETING_ENDED`, `MSG_KILL_READY` | on-event (rare) | must arrive exactly once and in order; losing one permanently diverges game state |
+
+Because TCP is a byte stream (a single send may arrive split across several
+`recv` calls), both sides use **partial-read buffering**: a byte counter
+accumulates into a buffer and the message is only processed once the full struct
+has arrived. The server reads incoming `VoteRequest`s per connection using
+`voteBytesRead[]` / `voteBuffers[]` (in the `Server` struct). The client uses a
+single `tcp_buffer` union (`VoteUpdateMsg` / `PhaseChangeMsg`) and one
+`tcp_bytes_read` counter (in the `Client` struct): it first reads the 4-byte
+`MessageType` header, then reads the rest of the message sized to that type, and
+dispatches on the header — so the read framing never depends on the current game
+phase.
+
+> All TCP messages on the wire are either a `PhaseChangeMsg` (used for every
+> critical event type) or a `VoteUpdateMsg`. The first 4 bytes are always the
+> `MessageType`, which is how the receiver tells them apart.
 
 ---
 
-# Game State Flow
+## Game state flow
 
-The game uses a shared `gamePhase` enum to transition between gameplay states.
+The shared `GamePhase` enum drives the state machine on both sides:
 
 ```c
-GAME_LOBBY
-GAME_SHOW_ROLE
-GAME_RUNNING
-GAME_INFO_MEETING
-GAME_MEETING
-SHOW_VOTE_RESULT
-GAME_CREWMATES_WIN
-GAME_KILLER_WIN
+GAME_LOBBY → GAME_SHOW_ROLE → GAME_RUNNING ⇄ GAME_INFO_MEETING → GAME_MEETING
+           → SHOW_VOTE_RESULT → GAME_RUNNING → … → GAME_INNOCENTS_WIN | GAME_KILLER_WIN
 ```
 
-## Typical Game Flow
-
-```text
-GAME_LOBBY
-    ↓
-GAME_SHOW_ROLE
-    ↓
-GAME_RUNNING
-    ↓
-GAME_INFO_MEETING
-    ↓
-GAME_MEETING
-    ↓
-SHOW_VOTE_RESULT
-    ↓
-GAME_RUNNING
-```
-
-The game eventually transitions into either:
-
-* `GAME_CREWMATES_WIN`
-* `GAME_KILLER_WIN`
+The server advances phases in `update_server_tick()` (server.c) using timers in
+the `Server` struct (`state_start_time`, `phase_time`). Phase changes are pushed
+to clients over TCP as `PhaseChangeMsg`. "Play again" sends `MSG_PLAY_AGAIN`,
+which calls `start_new_round()` and returns the state machine to
+`GAME_SHOW_ROLE` without tearing down connections.
 
 ---
 
-# Networking
+## Key constants (lib/include/network_data.h)
 
-The project uses SDL_net with UDP sockets.
-
-Shared packet definitions are located in:
-
-```text
-lib/include/network_data.h
+```c
+MAX_PLAYERS            6        // hard cap; many arrays are sized to this
+SERVER_PORT            2000     // UDP
+SERVER_TCP_PORT        2001     // SERVER_PORT + 1
+TASK_COUNT             8        // tasks assigned per innocent
+SERVER_TICK_INTERVAL   0.016f   // ~60 ticks/second
+MEETING_DURATION       120000   // ms — voting window (2 minutes)
+VOTE_RESULT_DURATION   10000    // ms — result screen
+INFO_MEETING_DURATION  3000     // ms — pre-vote info screen
+SHOW_ROLE_DURATION     6000     // ms — role reveal
 ```
 
-## Important Packet Types
-
-```text
-MSG_JOIN
-MSG_LEAVE
-MSG_START_GAME
-MSG_CLIENT_INPUT
-MSG_GAME_STATE
-MSG_KILL_REQUEST
-MSG_KILL_EVENT
-MSG_EMERGENCY_MEETING
-MSG_BODY_FOUND
-MSG_TASK_COMPLETE
-MSG_VOTE_REQUEST
+```c
+COOLDOWN     30000   // ms — kill cooldown (lib/include/killer_ability.h)
+KILL_RADIUS  100     // px — kill/report range
 ```
 
-The server continuously broadcasts synchronized game state updates to connected clients.
+Minimum players to start and other gameplay rules are enforced in
+`handle_start_game()` (server.c).
 
 ---
 
-# Build Instructions
+## Task minigames
 
-## Requirements
+Eight task types are defined (`TaskType` in task.h) and assigned, shuffled, to
+each innocent in `start_new_round()`:
 
-Install the following libraries:
+```text
+TASK_TIMER, TASK_CLICK, TASK_LETTER, TASK_REFLEX,
+TASK_LOGICAL_ORDER, TASK_MEMORY, TASK_HOLD, TASK_ALTERNATE
+```
 
-* SDL2
-* SDL2_image
-* SDL2_ttf
-* SDL2_mixer
-* SDL2_net
+An innocent starts a task by walking onto its tile and pressing `E`. The server
+validates that the completed task matches the next expected task in the player's
+shuffled order before crediting it. When every innocent completes all of their
+tasks, the innocents win.
 
 ---
 
-## Build the Project
+## Build
+
+### Requirements
+
+Install SDL2 and its modules: `SDL2`, `SDL2_image`, `SDL2_ttf`, `SDL2_mixer`,
+`SDL2_net`. On Windows the Makefile targets an MSYS2/MinGW64 environment
+(`/mingw64`); on macOS it uses Homebrew paths.
+
+### Commands
+
+**macOS / Linux:**
+```bash
+make all          # builds build/client and build/server
+make clean        # remove the build/ directory
+```
+
+**Windows (MSYS2/MinGW):**
+```bash
+mingw32-make all
+mingw32-make clean
+```
+
+Compiler flags are strict (`-Wall -Wextra -Wpedantic`). The binaries are written
+to `build/`.
+
+### Running
 
 ```bash
-make all
+./build/server          # one host runs this
+./build/client          # each player runs this; prompts for server IP
 ```
 
-Generated executables:
-
-```text
-build/client
-build/server
-```
+Use `127.0.0.1` for local testing, or the host's LAN IP for network play. The
+working directory must contain the `assets/` folder (paths are relative).
 
 ---
 
-## Additional Make Targets
+## Controls
 
-```bash
-make run_server
-make run_client
-make clean
-```
+| Input       | Action                                            |
+| ----------- | ------------------------------------------------- |
+| `W A S D`   | Move                                              |
+| `Space`     | Start game (host only, in lobby, 2+ players)      |
+| `E`         | Interact: start a task on a task tile; open the meeting screen on the meeting table |
+| `K`         | Kill nearest valid target (Killer, off cooldown)  |
+| `R`         | Report a nearby body                              |
+| `M`         | Toggle task map                                   |
+| `TAB`       | Toggle task list panel                            |
+| `I`         | Toggle controls overlay                           |
+| `Q`         | Cancel an open task                               |
+| `Escape`    | Pause menu / close menus                          |
+| Mouse       | UI buttons (kill, report, meeting, vote)          |
 
----
-
-# Running the Game
-
-## Start the Server
-
-```bash
-./build/server
-```
-
-## Start the Client
-
-```bash
-./build/client
-```
-
-The client prompts for a server IP address.
-
-For local testing:
-
-```text
-127.0.0.1
-```
-
-For LAN play, enter the host computer's local IP address.
+(In `DEBUG` builds, `F1`/`F2` force an innocent/killer win.)
 
 ---
 
-# Controls
+## Known issues
 
-| Input       | Action                             |
-| ----------- | ---------------------------------- |
-| `W A S D`   | Move                               |
-| `Space`     | Start game in lobby                |
-| `Escape`    | Exit or close menus                |
-| `M`         | Toggle task map                    |
-| `E`         | Open emergency meeting and task interaction |
-| `K`         | Kill nearby player as Killer       |
-| `R`         | Report nearby body                 |
-| `Q`         | Cancel active task                 |
-| `1`         | Start timer task                   |
-| `2`         | Start click task                   |
-| `3`         | Start typing task                  |
-| `4`         | Start reflex task                  |
-| `5`         | Start logical order task           |
-| `6`         | Start memory task                  |
-| Mouse click | Interact with UI buttons and tasks |
+These are documented for anyone continuing the project:
 
----
+- **No host check on `MSG_PLAY_AGAIN`.** Unlike `handle_start_game()`,
+  `handle_play_again()` does not validate the sender, so any connected client can
+  restart the round once a win screen is reached.
+- **`tcpSockets[killer_id]` indexing.** `tcpSockets[]` is populated in
+  TCP-connection order but indexed by player id when sending `MSG_KILL_READY`
+  (`update_kill_cooldown(s->tcpSockets[s->killer_id], ...)` in server.c). These
+  can diverge if a client's TCP-connect order differs from its player-id slot.
+  Broadcasting `MSG_KILL_READY` to all sockets would remove the assumption.
 
-# Tech Stack
-
-| Area                 | Technology            |
-| -------------------- | --------------------- |
-| Programming Language | C                     |
-| Graphics             | SDL2, SDL2_image      |
-| Text Rendering       | SDL2_ttf              |
-| Audio                | SDL2_mixer            |
-| Networking           | SDL_net               |
-| Build System         | Make                  |
-| Platforms            | Windows, Linux, macOS |
-
----
+Previously reported issues that are now **fixed** in this version: the client
+TCP demultiplexing race (now reads the `MessageType` header first instead of
+selecting by `state->phase`) and the stale role image on "play again" (the role
+texture is now reloaded on entry into `GAME_SHOW_ROLE`).

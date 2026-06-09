@@ -130,8 +130,8 @@ void render_game_phase(GameContext *ctx)
         render_voting_screen(ctx->renderer, state, ctx->assets, state->voting_result);
         break;
 
-    case GAME_CREWMATES_WIN:
-        render_crewmate_win_screen(ctx->renderer, ctx->assets, *state);
+    case GAME_INNOCENTS_WIN:
+        render_innocent_win_screen(ctx->renderer, ctx->assets, *state);
         break;
 
     case GAME_KILLER_WIN:
@@ -162,7 +162,7 @@ void handle_phase_transition(GameContext *ctx, GamePhase *previous_phase, Uint32
     if (state->phase == *previous_phase)
         return;
 
-    if (state->phase == GAME_CREWMATES_WIN || state->phase == GAME_KILLER_WIN)
+    if (state->phase == GAME_INNOCENTS_WIN || state->phase == GAME_KILLER_WIN)
     {
         *win_fade_start = SDL_GetTicks();
     }
@@ -181,7 +181,7 @@ static void render_win_fade(GameContext *ctx, Uint32 win_fade_start, Uint32 win_
 {
     GameState *state = ctx->state;
 
-    if (state->phase != GAME_CREWMATES_WIN && state->phase != GAME_KILLER_WIN)
+    if (state->phase != GAME_INNOCENTS_WIN && state->phase != GAME_KILLER_WIN)
         return;
 
     Uint32 elapsed = SDL_GetTicks() - win_fade_start;
@@ -224,7 +224,7 @@ void render_pause_menu(SDL_Renderer *renderer, GameAssets assets, bool pause_men
         SDL_RenderCopy(renderer, assets.pause_exit, NULL, &exit_rect);
 }
 
-void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, GameState state)
+void render_innocent_win_screen(SDL_Renderer *renderer, GameAssets assets, GameState state)
 {
     int killer_id = -1;
 
@@ -237,9 +237,9 @@ void render_crewmate_win_screen(SDL_Renderer *renderer, GameAssets assets, GameS
         }
     }
 
-    if (killer_id >= 0 && killer_id < PLAYER_SLOTS && assets.crewmates_win_screens[killer_id])
+    if (killer_id >= 0 && killer_id < PLAYER_SLOTS && assets.innocents_win_screens[killer_id])
     {
-        SDL_RenderCopy(renderer, assets.crewmates_win_screens[killer_id], NULL, NULL);
+        SDL_RenderCopy(renderer, assets.innocents_win_screens[killer_id], NULL, NULL);
     }
 }
 

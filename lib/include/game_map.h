@@ -49,7 +49,7 @@ typedef struct
     SDL_Texture *skip_vote_banner;
     SDL_Texture *no_one_eliminated;
     SDL_Texture *killer_win_screens[PLAYER_SLOTS];
-    SDL_Texture *crewmates_win_screens[PLAYER_SLOTS];
+    SDL_Texture *innocents_win_screens[PLAYER_SLOTS];
 
     // Pausmeny
     SDL_Texture *pause_bg;

@@ -206,7 +206,7 @@ int send_task_complete(Client *client, int player_id, TaskType task_type)
 
 int send_debug_win(Client *client, MessageType type)
 {
-    if (type != MSG_DEBUG_CREWMATES_WIN && type != MSG_DEBUG_KILLER_WIN)
+    if (type != MSG_DEBUG_INNOCENTS_WIN && type != MSG_DEBUG_KILLER_WIN)
         return 0;
 
     UDPpacket *packet = create_packet(sizeof(type));

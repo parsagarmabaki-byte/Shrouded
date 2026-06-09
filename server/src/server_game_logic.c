@@ -5,8 +5,8 @@
 void check_win_condition(GameState *state)
 {
     int alive_killer = 0;
-    int alive_crewmates = 0;
-    int active_crewmates = 0;
+    int alive_innocents = 0;
+    int active_innocents = 0;
     int completed_tasks = 0;
 
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -21,20 +21,20 @@ void check_win_condition(GameState *state)
             continue;
         }
 
-        active_crewmates++;
+        active_innocents++;
         completed_tasks += state->players[i].tasks_completed;
 
         if (state->players[i].isAlive)
-            alive_crewmates++;
+            alive_innocents++;
     }
-    if (alive_killer == 0 || alive_killer >= alive_crewmates || (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT))
+    if (alive_killer == 0 || alive_killer >= alive_innocents || (active_innocents > 0 && completed_tasks >= active_innocents * TASK_COUNT))
     {
         if (alive_killer == 0)
-            state->phase = GAME_CREWMATES_WIN;
-        else if (alive_killer >= alive_crewmates)
+            state->phase = GAME_INNOCENTS_WIN;
+        else if (alive_killer >= alive_innocents)
             state->phase = GAME_KILLER_WIN;
-        else if (active_crewmates > 0 && completed_tasks >= active_crewmates * TASK_COUNT)
-            state->phase = GAME_CREWMATES_WIN;
+        else if (active_innocents > 0 && completed_tasks >= active_innocents * TASK_COUNT)
+            state->phase = GAME_INNOCENTS_WIN;
     }
 }
 
