@@ -160,7 +160,6 @@ void update_server_tick(Server *s)
         if (SDL_GetTicks64() - s->state_start_time >= SHOW_ROLE_DURATION)
         {
             s->state.phase = GAME_RUNNING;
-            printf("Game is now GAME_RUNNING\n");
             PhaseChangeMsg msg = {0};
             msg.phase = GAME_RUNNING;
             msg.type = MSG_PHASE_CHANGE;
@@ -174,7 +173,6 @@ void update_server_tick(Server *s)
             s->state.phase = GAME_MEETING;
             initiate_meeting_info(&s->meeting_info, &s->state);
             s->phase_time = SDL_GetTicks64();
-            printf("INFORMATION OF MEETING ENDED\n");
             PhaseChangeMsg msg = {0};
             msg.phase = s->state.phase;
             msg.type = MSG_PHASE_CHANGE;
@@ -194,7 +192,6 @@ void update_server_tick(Server *s)
             s->state.phase = SHOW_VOTE_RESULT;
             s->state.voting_result = resolve_voting(&s->state, s->meeting_info, s->state.voting_results);
             s->state.meeting_reason = MEETING_NONE;
-            printf("MEETING ENDED\n");
             s->last_timer_half_second = -1;
             s->phase_time = SDL_GetTicks64();
             broadcast_vote_update(s);
@@ -313,7 +310,6 @@ void handle_start_game(Server *s, IPaddress sender)
         for (int i = 0; i < MAX_PLAYERS; i++)
             s->deadBodyActive[i] = 0;
         start_new_round(&s->state, &s->state_start_time, &s->killer_id);
-        printf("Game is now GAME_SHOW_ROLE\n");
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
@@ -331,7 +327,6 @@ void handle_play_again(Server *s, IPaddress sender)
         for (int i = 0; i < MAX_PLAYERS; i++)
             s->deadBodyActive[i] = 0;
         start_new_round(&s->state, &s->state_start_time, &s->killer_id);
-        printf("Play again: game is now GAME_SHOW_ROLE\n");
         broadcast_game_state(s->socket, s->send_packet, &s->state, s->clientAddresses, s->clientUsed);
     }
 }
@@ -416,7 +411,6 @@ void handle_emergency_meeting(Server *s, IPaddress sender)
         msg.meeting_reason = MEETING_EMERGENCY;
         msg.player_id = sender_id;
 
-        printf("[SERVER] Accept: player %d started an emergency meeting.\n", sender_id);
         s->phase_time = SDL_GetTicks64();
         broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
     }
@@ -458,7 +452,6 @@ void handle_body_found(Server *s, IPaddress sender)
         msg.meeting_reason = MEETING_BODY;
         msg.player_id = reported_id;
 
-        printf("[SERVER] Accept: player %d found a body.\n", reported_id);
         s->phase_time = SDL_GetTicks64();
         broadcast_tcp_msg(s->tcpSockets, &msg, sizeof(PhaseChangeMsg));
     }
@@ -491,13 +484,6 @@ void handle_task_complete(Server *s, IPaddress sender)
                 task_completed_msg.phase = s->state.phase;
 
                 broadcast_tcp_msg(s->tcpSockets, &task_completed_msg, sizeof(PhaseChangeMsg));
-#ifdef DEBUG
-                int active_count = count_active_players(&s->state);
-                int total_expected_tasks = TASK_COUNT * (active_count - 1);
-                printf("Player %d finished task %d/%d (TaskType %d), team %d/%d\n",
-                       pid, s->state.players[pid].tasks_completed, TASK_COUNT,
-                       msg.task_type, s->state.total_tasks_completed, total_expected_tasks);
-#endif
             }
             else
             {

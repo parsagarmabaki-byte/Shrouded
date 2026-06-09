@@ -63,11 +63,6 @@ void cast_vote(Meeting *meeting_info, VoteRequest vote)
     meeting_info->votes[index] = vote;
     meeting_info->has_voted[vote.voter_id] = 1;
     meeting_info->votes_received++;
-    printf("\nVote accepted: voter=%d target=%d votes=%d/%d\n",
-           vote.voter_id,
-           vote.target_id,
-           meeting_info->votes_received,
-           meeting_info->alive_players_count);
 }
 
 int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
@@ -109,7 +104,6 @@ int calculate_votes(Meeting meeting_info, int voting_result[MAX_PLAYERS + 1])
     if (max_votes <= voting_result[MAX_PLAYERS])
         player_id = -1;
 
-    printf("\nVOTING RESULT IS TO KICK OUT player id %d\n", player_id);
     return player_id;
 }
 

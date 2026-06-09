@@ -71,23 +71,6 @@ void start_new_round(GameState *state, Uint64 *state_start_time, int *killer_id)
     spawn_players(state);
 
     *killer_id = designate_killer(state);
-    if (*killer_id >= 0)
-        printf("Player %d is killer\n", *killer_id);
-
-    printf("\n=== TASK ORDER ASSIGNMENT ===\n");
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        if (!state->players[i].active)
-            continue;
-
-        printf("Player %d: ", i);
-        for (int j = 0; j < TASK_COUNT; j++)
-        {
-            printf("%d ", state->players[i].task_order[j]);
-        }
-        printf("\n");
-    }
-    printf("=============================\n");
 
     state->emergency_meeting_reported_id = -1;
     state->meeting_reason = MEETING_NONE;
