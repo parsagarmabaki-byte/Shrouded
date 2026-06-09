@@ -85,7 +85,6 @@ static GameContext game_context_init(Client *client, gameState *state, waitForPl
     ctx.player = player_create(state, ctx.local_id);
     ctx.task = create_task(ctx.renderer);
     ctx.cam = (Camera){0, 0, LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT};
-    // ctx.show_role_asset = load_show_role_assets(ctx.renderer);
     ctx.player_role = load_role_texture(ctx.renderer, ctx.local_id, ctx.is_local_impostor);
     ctx.prev_phase = state->phase;
 

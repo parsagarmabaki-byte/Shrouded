@@ -120,15 +120,6 @@ GameAssets load_assets(SDL_Renderer *renderer)
     return asset;
 }
 
-Game_Show_Role_asset load_show_role_assets(SDL_Renderer *renderer)
-{
-    Game_Show_Role_asset asset;
-    asset.innocent_img = loading_img(renderer, "assets/images/show_role_assets/innocent.png");
-    asset.killer_img   = loading_img(renderer, "assets/images/show_role_assets/killer.png"); 
-    asset.role_art_img = loading_img(renderer, "assets/images/show_role_assets/show_role.png");
-    return asset;
-}
-
 static void destroy_texture(SDL_Texture **texture)
 {
     if (texture && *texture)
