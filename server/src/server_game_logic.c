@@ -4,6 +4,8 @@
 
 void check_win_condition(GameState *state)
 {
+    if (state->phase == GAME_KILLER_WIN || state->phase == GAME_INNOCENTS_WIN)
+        return;
     int alive_killer = 0;
     int alive_innocents = 0;
     int active_innocents = 0;

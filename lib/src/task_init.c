@@ -70,7 +70,7 @@ void start_letter_task(Task *task, SDL_Renderer *renderer)
     if (!begin_task(task, TASK_LETTER, renderer, "assets/images/task_assets/desk.png", "WRITE THE LETTER"))
         return;
 
-    const char *letters = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
+    const char *letters = "ABCDFGHIJKLMNOPRSTUVWXYZ";
     int len = 10;
     task->length = len;
     task->current_index = 0;
