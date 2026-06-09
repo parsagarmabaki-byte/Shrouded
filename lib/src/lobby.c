@@ -337,7 +337,7 @@ void renderWaitingScreen(waitForPlayers *pWait, gameState *state)
     text_set(pWait->connectedText, text, white);
     text_draw(pWait->connectedText, windowWidth / 2, windowHeight / 6 + text_get_height(pWait->connectedText) / 2);
 
-    if (state->local_player_id == state->host_player_id && connectedPlayers >= 2)
+    if (state->local_player_id == state->host_player_id && connectedPlayers >= 3)
     {
         text_draw(pWait->startText, windowWidth / 2, windowHeight - 180 + text_get_height(pWait->startText) / 2);
     }

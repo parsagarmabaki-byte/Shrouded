@@ -296,7 +296,7 @@ void handle_start_game(Server *s, IPaddress sender)
         printf("[SERVER] Ignored start request from non-host player %d\n", sender_id);
         return;
     }
-    if (countActivePlayers(&s->state) < 2)
+    if (countActivePlayers(&s->state) < 3)
     {
         printf("[SERVER] Ignored start request: at least 2 players are required\n");
         return;

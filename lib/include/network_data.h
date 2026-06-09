@@ -17,7 +17,7 @@
 #define TASK_COUNT 8 // uppdatera  när fler tasks läggs till
 
 // Milliseconds
-#define MEETING_DURATION 60000
+#define MEETING_DURATION 120000
 #define VOTE_RESULT_DURATION 10000
 #define INFO_MEETING_DURATION 3000
 #define SHOW_ROLE_DURATION 6000
