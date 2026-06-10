@@ -302,7 +302,7 @@ void handle_start_game(Server *s, IPaddress sender)
     }
     if (count_active_players(&s->state) < 3)
     {
-        printf("[SERVER] Ignored start request: at least 2 players are required\n");
+        printf("[SERVER] Ignored start request: at least 3 players are required\n");
         return;
     }
     if (s->state.phase == GAME_LOBBY)

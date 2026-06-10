@@ -223,6 +223,7 @@ void handle_tcp_vote_connections(Server *s)
         else if (type == MSG_VOTE_REQUEST)
         {
             VoteRequest vote = s->voteBuffers[i];
+            vote.voter_id = i;
             handle_tcp_vote(s, vote);
         }
         else if (type == MSG_LEAVE)
