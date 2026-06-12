@@ -143,7 +143,6 @@ int main(void)
             lastBroadcast = now;
         }
 
-        SDL_Delay(1);
     }
 
     cleanupServer(server.socket, server.tcp_socket, server.tcpSocketSet, server.tcpSockets, server.receive_packet, server.send_packet);
