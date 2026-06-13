@@ -232,21 +232,3 @@ working directory must contain the `assets/` folder (paths are relative).
 (In `DEBUG` builds, `F1`/`F2` force an innocent/killer win.)
 
 ---
-
-## Known issues
-
-These are documented for anyone continuing the project:
-
-- **No host check on `MSG_PLAY_AGAIN`.** Unlike `handle_start_game()`,
-  `handle_play_again()` does not validate the sender, so any connected client can
-  restart the round once a win screen is reached.
-- **`tcpSockets[killer_id]` indexing.** `tcpSockets[]` is populated in
-  TCP-connection order but indexed by player id when sending `MSG_KILL_READY`
-  (`update_kill_cooldown(s->tcpSockets[s->killer_id], ...)` in server.c). These
-  can diverge if a client's TCP-connect order differs from its player-id slot.
-  Broadcasting `MSG_KILL_READY` to all sockets would remove the assumption.
-
-Previously reported issues that are now **fixed** in this version: the client
-TCP demultiplexing race (now reads the `MessageType` header first instead of
-selecting by `state->phase`) and the stale role image on "play again" (the role
-texture is now reloaded on entry into `GAME_SHOW_ROLE`).
